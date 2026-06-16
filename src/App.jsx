@@ -3775,6 +3775,8 @@ const fcxMobileDashboardCss = `
   }
 
   .fcx-kpi-card {
+    position: relative;
+    overflow: hidden;
     min-height: 188px;
     padding: 21px 18px 18px;
     border-radius: 25px;
@@ -3787,6 +3789,17 @@ const fcxMobileDashboardCss = `
     gap: 8px;
     transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease;
   }
+
+  .fcx-kpi-card::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: radial-gradient(circle at 50% 0%, rgba(255,255,255,.07), transparent 48%);
+    pointer-events: none;
+  }
+
+  .fcx-kpi-card > * { position: relative; z-index: 1; }
 
   .fcx-kpi-card:hover,
   .fcx-panel:hover {
@@ -4304,19 +4317,33 @@ const fcxMobileDashboardCss = `
     .fcx-hero-art { right: -30px; width: 52%; transform: scale(1.45); opacity: .86; }
 
     .fcx-kpi-row {
-      display: flex;
-      overflow-x: auto;
-      scroll-snap-type: x mandatory;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 10px;
-      padding-bottom: 2px;
-      scrollbar-width: none;
+      padding-bottom: 0;
+      overflow: visible;
+      scroll-snap-type: none;
     }
     .fcx-kpi-row::-webkit-scrollbar { display: none; }
-    .fcx-kpi-card { flex: 0 0 158px; min-height: 188px; border-radius: 20px; padding: 16px 14px; scroll-snap-align: start; }
-    .fcx-kpi-card span { font-size: 14px; }
-    .fcx-kpi-card i { width: 54px; height: 54px; margin-top: 4px; }
-    .fcx-kpi-card strong { font-size: 25px; }
-    .fcx-kpi-card small { font-size: 12.5px; }
+    .fcx-kpi-card {
+      flex: initial;
+      min-width: 0;
+      min-height: 156px;
+      border-radius: 22px;
+      padding: 15px 13px 14px;
+      scroll-snap-align: none;
+      aspect-ratio: auto;
+      overflow: hidden;
+    }
+    .fcx-kpi-card span {
+      font-size: 13px;
+      min-height: 31px;
+      display: flex;
+      align-items: flex-start;
+    }
+    .fcx-kpi-card i { width: 48px; height: 48px; margin: 1px auto 6px; }
+    .fcx-kpi-card strong { font-size: 22px; letter-spacing: -.055em; }
+    .fcx-kpi-card small { font-size: 11.5px; gap: 5px; }
 
     .fcx-grid-main,
     .fcx-grid-bottom {
@@ -4340,7 +4367,7 @@ const fcxMobileDashboardCss = `
   @media (max-width: 380px) {
     .fcx-brand-copy h1 { font-size: 22px; }
     .fcx-brand-copy span { font-size: 15px; }
-    .fcx-kpi-card { flex-basis: 146px; }
+    .fcx-kpi-card { min-height: 148px; padding: 14px 12px; }
     .fcx-hero-copy strong { font-size: 38px; }
   }
 `;
