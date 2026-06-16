@@ -240,7 +240,7 @@ export default function App() {
   if (loading) {
     return (
       <div style={styles.app} className="tott-app dreelio-app">
-        <style>{globalCss + dreelioDashboardCss + appFeelingCss + fcxMobileDashboardCss + kpiRectangleHardFixCss + spacingPolishCss + fullAppFcxThemeCss}</style>
+        <style>{globalCss + dreelioDashboardCss + appFeelingCss + fcxMobileDashboardCss + kpiRectangleHardFixCss + spacingPolishCss + fullAppFcxThemeCss + readabilityFixCss}</style>
         <div style={styles.loadingScreen}>Laden…</div>
       </div>
     );
@@ -249,7 +249,7 @@ export default function App() {
   if (loadError) {
     return (
       <div style={styles.app} className="tott-app dreelio-app">
-        <style>{globalCss + dreelioDashboardCss + appFeelingCss + fcxMobileDashboardCss + kpiRectangleHardFixCss + spacingPolishCss + fullAppFcxThemeCss}</style>
+        <style>{globalCss + dreelioDashboardCss + appFeelingCss + fcxMobileDashboardCss + kpiRectangleHardFixCss + spacingPolishCss + fullAppFcxThemeCss + readabilityFixCss}</style>
         <div style={styles.loadingScreen}>
           <AlertCircle size={22} style={{ marginBottom: 10, color: "var(--warn)" }} />
           <div>Het clubportaal is tijdelijk niet bereikbaar.</div>
@@ -264,7 +264,7 @@ export default function App() {
   if (!me) {
     return (
       <div style={styles.app} className="tott-app dreelio-app">
-        <style>{globalCss + dreelioDashboardCss + appFeelingCss + fcxMobileDashboardCss + kpiRectangleHardFixCss + spacingPolishCss + fullAppFcxThemeCss}</style>
+        <style>{globalCss + dreelioDashboardCss + appFeelingCss + fcxMobileDashboardCss + kpiRectangleHardFixCss + spacingPolishCss + fullAppFcxThemeCss + readabilityFixCss}</style>
         <Header branding={branding} />
         <LoginScreen players={players} onLogin={login} branding={branding} />
         <footer style={styles.footer}>FC TOTT · Sponsored By Nola Marketing (website, branding en marketing)</footer>
@@ -277,7 +277,7 @@ export default function App() {
 
   return (
     <div style={styles.app} className="tott-app dreelio-app">
-      <style>{globalCss + dreelioDashboardCss + appFeelingCss + fcxMobileDashboardCss + kpiRectangleHardFixCss + spacingPolishCss + fullAppFcxThemeCss}</style>
+      <style>{globalCss + dreelioDashboardCss + appFeelingCss + fcxMobileDashboardCss + kpiRectangleHardFixCss + spacingPolishCss + fullAppFcxThemeCss + readabilityFixCss}</style>
 
       <div className="dreelio-shell">
         <DreelioSidebar
@@ -4430,6 +4430,157 @@ const kpiRectangleHardFixCss = `
   }
 `;
 
+
+const readabilityFixCss = `
+  /* Readability fix: keep the approved dark app style, but remove low-contrast light cards and invisible text in every tab. */
+  :root {
+    --bg: #030304;
+    --bg-soft: rgba(255,255,255,.055);
+    --card: #121315;
+    --line: rgba(255,255,255,.115);
+    --accent: #ff3152;
+    --accent-soft: rgba(255,49,82,.12);
+    --warn: #d6a957;
+    --warn-soft: rgba(214,169,87,.12);
+    --success: #76e168;
+    --text: #ffffff;
+    --text-dim: rgba(255,255,255,.68);
+  }
+
+  .dreelio-main .dreelio-profile-main,
+  .dreelio-main .dreelio-team-stats,
+  .dreelio-main .dreelio-panel,
+  .dreelio-main .profileCard,
+  .dreelio-main .teamStatsCard {
+    color: #fff !important;
+  }
+
+  .dreelio-main .dreelio-profile-main *,
+  .dreelio-main .dreelio-team-stats *,
+  .dreelio-main .dreelio-panel * {
+    text-shadow: none;
+  }
+
+  .dreelio-main .dreelio-profile-main [style],
+  .dreelio-main .dreelio-team-stats [style],
+  .dreelio-main .dreelio-table-wrap [style],
+  .dreelio-main .dreelio-rules-card [style],
+  .dreelio-main .dreelio-form-card [style],
+  .dreelio-main .dreelio-me-card [style] {
+    border-color: rgba(255,255,255,.13) !important;
+  }
+
+  .dreelio-main .dreelio-profile-main [style*="background: var(--bg-soft)"],
+  .dreelio-main .dreelio-profile-main [style*="background:var(--bg-soft)"],
+  .dreelio-main .dreelio-team-stats [style*="background: var(--bg-soft)"],
+  .dreelio-main .dreelio-team-stats [style*="background:var(--bg-soft)"],
+  .dreelio-main [style*="background: var(--bg-soft)"],
+  .dreelio-main [style*="background:var(--bg-soft)"] {
+    background: linear-gradient(145deg, rgba(255,255,255,.075), rgba(255,255,255,.035)) !important;
+    color: #fff !important;
+  }
+
+  .dreelio-main .dreelio-profile-main [style*="background: var(--card)"],
+  .dreelio-main .dreelio-team-stats [style*="background: var(--card)"],
+  .dreelio-main [style*="background: var(--card)"] {
+    background:
+      radial-gradient(circle at 0% 0%, rgba(255,49,82,.13), transparent 36%),
+      linear-gradient(145deg, rgba(25,26,29,.97), rgba(13,14,16,.99)) !important;
+    color: #fff !important;
+  }
+
+  .dreelio-main .dreelio-profile-main [style*="color: var(--text)"],
+  .dreelio-main .dreelio-team-stats [style*="color: var(--text)"],
+  .dreelio-main [style*="color: var(--text)"] {
+    color: #fff !important;
+  }
+
+  .dreelio-main .dreelio-profile-main [style*="color: var(--text-dim)"],
+  .dreelio-main .dreelio-team-stats [style*="color: var(--text-dim)"],
+  .dreelio-main [style*="color: var(--text-dim)"] {
+    color: rgba(255,255,255,.68) !important;
+  }
+
+  .dreelio-main .dreelio-team-stats [style*="teamStatName"],
+  .dreelio-main .dreelio-team-stats span:first-child,
+  .dreelio-main .dreelio-profile-main [style*="profileName"] {
+    color: #fff !important;
+    opacity: 1 !important;
+  }
+
+  .dreelio-main .dreelio-team-stats [style*="teamStatVal"],
+  .dreelio-main .dreelio-profile-main [style*="profileMeta"],
+  .dreelio-main .dreelio-profile-main [style*="statsHint"] {
+    color: rgba(255,255,255,.70) !important;
+    opacity: 1 !important;
+  }
+
+  .dreelio-main .donutCard,
+  .dreelio-main .statBox,
+  .dreelio-main .dreelio-profile-main > div,
+  .dreelio-main .dreelio-profile-main [style*="statBox"],
+  .dreelio-main .dreelio-profile-main [style*="donutCard"] {
+    background: linear-gradient(145deg, rgba(255,255,255,.08), rgba(255,255,255,.035)) !important;
+    border: 1px solid rgba(255,255,255,.13) !important;
+    color: #fff !important;
+  }
+
+  .dreelio-main .statValue,
+  .dreelio-main [style*="statValue"],
+  .dreelio-main .teamStatName,
+  .dreelio-main [style*="teamStatName"],
+  .dreelio-main .profileName,
+  .dreelio-main [style*="profileName"] {
+    color: #fff !important;
+  }
+
+  .dreelio-main .statLabel,
+  .dreelio-main [style*="statLabel"],
+  .dreelio-main .teamStatVal,
+  .dreelio-main [style*="teamStatVal"],
+  .dreelio-main .profileMeta,
+  .dreelio-main [style*="profileMeta"] {
+    color: rgba(255,255,255,.68) !important;
+  }
+
+  .dreelio-main .tott-h2,
+  .dreelio-main h2,
+  .dreelio-main h3 {
+    color: #fff !important;
+    opacity: 1 !important;
+  }
+
+  .dreelio-main .dreelio-team-stats {
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  .dreelio-main .dreelio-team-stats > div:first-child {
+    color: #fff !important;
+    opacity: 1 !important;
+  }
+
+  .dreelio-main .dreelio-team-stats div,
+  .dreelio-main .dreelio-team-stats span {
+    color: inherit;
+  }
+
+  .dreelio-main .dreelio-team-stats div[style*="display: flex"] span:first-child {
+    color: #fff !important;
+  }
+
+  .dreelio-main .dreelio-team-stats div[style*="display: flex"] span:not(:first-child) {
+    color: rgba(255,255,255,.72) !important;
+  }
+
+  .dreelio-main .editBtn,
+  .dreelio-main [style*="editBtn"] {
+    background: rgba(255,255,255,.08) !important;
+    color: #fff !important;
+    border: 1px solid rgba(255,255,255,.14) !important;
+  }
+`;
+
 const styles = {
   app: {
     minHeight: "100vh", background: "var(--bg)", color: "var(--text)",
@@ -4714,35 +4865,35 @@ const styles = {
   myFeeRow: { display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 },
   myFeeName: { display: "flex", alignItems: "center", gap: 8, fontSize: 14, fontWeight: 600 },
 
-  profileCard: { background: "var(--card)", color: "var(--text)", border: "1px solid var(--line)", borderRadius: 22, padding: 20, marginBottom: 16, boxShadow: "var(--shadow)" },
+  profileCard: { background: "linear-gradient(145deg, rgba(25,26,29,.97), rgba(13,14,16,.99))", color: "#fff", border: "1px solid rgba(255,255,255,.13)", borderRadius: 22, padding: 20, marginBottom: 16, boxShadow: "0 26px 80px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.055)" },
   profileTop: { display: "flex", alignItems: "center", gap: 14 },
   profilePhoto: {
-    width: 56, height: 56, borderRadius: "50%", background: "var(--bg-soft)", border: "1px solid var(--line)",
-    display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text-dim)", flexShrink: 0, overflow: "hidden",
+    width: 56, height: 56, borderRadius: "50%", background: "rgba(255,255,255,.08)", border: "1px solid rgba(255,255,255,.14)",
+    display: "flex", alignItems: "center", justifyContent: "center", color: "rgba(255,255,255,.72)", flexShrink: 0, overflow: "hidden",
   },
   profilePhotoImg: { width: "100%", height: "100%", objectFit: "cover" },
-  profileName: { fontFamily: "'Space Grotesk', sans-serif", fontSize: 18, fontWeight: 700, color: "var(--text)" },
-  profileMeta: { fontSize: 12, color: "var(--text-dim)", marginTop: 3 },
+  profileName: { fontFamily: "'Space Grotesk', sans-serif", fontSize: 18, fontWeight: 700, color: "#fff" },
+  profileMeta: { fontSize: 12, color: "rgba(255,255,255,.68)", marginTop: 3 },
   editBtn: {
-    display: "flex", alignItems: "center", gap: 6, background: "var(--bg-soft)", border: "1px solid var(--line)",
-    color: "var(--text)", padding: "8px 12px", borderRadius: 999, fontSize: 12, fontWeight: 600, flexShrink: 0,
+    display: "flex", alignItems: "center", gap: 6, background: "rgba(255,255,255,.08)", border: "1px solid rgba(255,255,255,.14)",
+    color: "#fff", padding: "8px 12px", borderRadius: 999, fontSize: 12, fontWeight: 600, flexShrink: 0,
   },
   profileEditForm: { display: "flex", flexDirection: "column", gap: 4, marginTop: 16, paddingTop: 16, borderTop: "1px solid var(--line)" },
   statGridRow: { display: "flex", gap: 14, marginTop: 18, alignItems: "stretch" },
   donutCard: {
     flexShrink: 0, display: "flex", flexDirection: "column", alignItems: "center", gap: 8,
-    justifyContent: "center", background: "var(--bg-soft)", border: "1px solid var(--line)",
-    borderRadius: 18, padding: "14px 18px",
+    justifyContent: "center", background: "linear-gradient(145deg, rgba(255,255,255,.075), rgba(255,255,255,.035))", border: "1px solid rgba(255,255,255,.13)",
+    borderRadius: 18, padding: "14px 18px", color: "#fff",
   },
   statGrid: { flex: 1, display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 10 },
-  statBox: { background: "var(--bg-soft)", border: "1px solid var(--line)", borderRadius: 18, padding: "12px 8px", textAlign: "center", display: "flex", flexDirection: "column", justifyContent: "center" },
-  statValue: { fontFamily: "'Space Grotesk', sans-serif", fontSize: 20, fontWeight: 700, color: "var(--text)" },
-  statLabel: { fontSize: 10.5, color: "var(--text-dim)", marginTop: 4, textTransform: "uppercase", letterSpacing: "0.3px" },
+  statBox: { background: "linear-gradient(145deg, rgba(255,255,255,.075), rgba(255,255,255,.035))", border: "1px solid rgba(255,255,255,.13)", borderRadius: 18, padding: "12px 8px", textAlign: "center", display: "flex", flexDirection: "column", justifyContent: "center", color: "#fff" },
+  statValue: { fontFamily: "'Space Grotesk', sans-serif", fontSize: 20, fontWeight: 700, color: "#fff" },
+  statLabel: { fontSize: 10.5, color: "rgba(255,255,255,.68)", marginTop: 4, textTransform: "uppercase", letterSpacing: "0.3px" },
 
-  teamStatsCard: { background: "var(--card)", color: "var(--text)", border: "1px solid var(--line)", borderRadius: 22, padding: 20, boxShadow: "var(--shadow)" },
-  teamStatRow: { display: "flex", alignItems: "center", gap: 14, padding: "10px 0", borderBottom: "1px solid var(--line)" },
-  teamStatName: { flex: 1, fontSize: 13.5, fontWeight: 600, color: "var(--text)" },
-  teamStatVal: { display: "flex", alignItems: "center", gap: 5, fontSize: 12.5, color: "var(--text-dim)", fontFamily: "'JetBrains Mono', monospace", minWidth: 46, justifyContent: "flex-end" },
+  teamStatsCard: { background: "linear-gradient(145deg, rgba(25,26,29,.97), rgba(13,14,16,.99))", color: "#fff", border: "1px solid rgba(255,255,255,.13)", borderRadius: 22, padding: 20, boxShadow: "0 26px 80px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.055)" },
+  teamStatRow: { display: "flex", alignItems: "center", gap: 14, padding: "10px 0", borderBottom: "1px solid rgba(255,255,255,.13)" },
+  teamStatName: { flex: 1, fontSize: 13.5, fontWeight: 700, color: "#fff" },
+  teamStatVal: { display: "flex", alignItems: "center", gap: 5, fontSize: 12.5, color: "rgba(255,255,255,.72)", fontFamily: "'JetBrains Mono', monospace", minWidth: 46, justifyContent: "flex-end" },
 
   adminPanel: { marginTop: 28 },
   beheerToggle: {
