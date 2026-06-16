@@ -151,6 +151,16 @@ export default function App() {
     setTab("wedstrijden");
   };
 
+  const changeTab = (nextTab) => {
+    setTab(nextTab);
+
+    if (typeof window !== "undefined" && window.matchMedia("(max-width: 820px)").matches) {
+      window.setTimeout(() => {
+        document.querySelector(".dreelio-main")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 80);
+    }
+  };
+
   // helper maps for attendance/lineups grouped by match
   const attendanceByMatch = {};
   attendance.forEach((a) => {
@@ -227,7 +237,7 @@ export default function App() {
         <DreelioSidebar
           me={me}
           tab={tab}
-          setTab={setTab}
+          setTab={changeTab}
           onLogout={logout}
           myOpenCount={myOpenCount}
           potTotal={potTotal}
@@ -238,7 +248,16 @@ export default function App() {
             <Header me={me} onLogout={logout} />
           </div>
 
-          <Top3 nextMatch={nextMatch} countdown={countdown} myOpenCount={myOpenCount} potTotal={potTotal} />
+          <Top3
+            nextMatch={nextMatch}
+            countdown={countdown}
+            myOpenCount={myOpenCount}
+            potTotal={potTotal}
+            me={me}
+            players={players}
+            attendanceByMatch={attendanceByMatch}
+            setTab={changeTab}
+          />
 
           <main style={styles.main} className="tott-main dreelio-main">
             {tab === "wedstrijden" && (
@@ -419,74 +438,105 @@ function DreelioSidebar({ me, tab, setTab, onLogout, myOpenCount, potTotal }) {
   );
 }
 
-function Top3({ nextMatch, countdown, myOpenCount, potTotal }) {
+function Top3({ nextMatch, countdown, myOpenCount, potTotal, me, players = [], attendanceByMatch = {}, setTab }) {
   const category = nextMatch ? matchTypeInfo(nextMatch.category) : null;
+  const firstName = (me?.name || "speler").split(" ")[0];
+  const activePlayers = players.filter((p) => p.active !== false);
+  const nextAttendance = nextMatch ? attendanceByMatch[nextMatch.id] || {} : {};
+  const presentPlayers = activePlayers.filter((p) => nextAttendance[p.id]?.status === "aanwezig");
+  const absentPlayers = activePlayers.filter((p) => nextAttendance[p.id]?.status === "afwezig");
+  const unsurePlayers = activePlayers.filter((p) => nextAttendance[p.id]?.status === "twijfel");
+  const myNextStatus = nextMatch && me ? nextAttendance[me.id]?.status : null;
+  const myStatusLabel = myNextStatus
+    ? ATTENDANCE_STATUSES.find((s) => s.key === myNextStatus)?.label
+    : "Nog niet ingevuld";
+
+  const teamPulseText = nextMatch
+    ? `${presentPlayers.length} aanwezig · ${absentPlayers.length} afwezig · ${unsurePlayers.length} twijfel`
+    : "Voeg een wedstrijd toe om de teamstatus live te zien";
 
   return (
-    <section className="dreelio-overview" aria-label="Dashboard overzicht">
-      <div className="dreelio-welcome-card">
-        <div className="dreelio-card-topline">
-          <span className="dreelio-chip">Club dashboard</span>
-          <span className="dreelio-chip muted">Seizoen 2025/26</span>
-        </div>
-        <div>
-          <div className="dreelio-kicker">Welkom terug</div>
-          <h1>Alles voor FC TOTT in één strak overzicht.</h1>
-          <p>Wedstrijden, aanwezigheid, betalingen en de boetepot blijven functioneel hetzelfde — alleen nu in een rustig Dreelio-achtig dashboard.</p>
-        </div>
-        <div className="dreelio-quick-row">
-          <div>
-            <span>Open betalingen</span>
-            <strong>{myOpenCount}</strong>
+    <>
+      <section className="dreelio-overview" aria-label="Dashboard overzicht">
+        <div className="dreelio-welcome-card">
+          <div className="dreelio-card-topline">
+            <span className="dreelio-chip"><span className="dreelio-live-dot" /> Live clubdashboard</span>
+            <span className="dreelio-chip muted">{activePlayers.length} spelers</span>
           </div>
           <div>
-            <span>Boetepot</span>
-            <strong>€{potTotal}</strong>
+            <div className="dreelio-kicker">Hoi {firstName}</div>
+            <h1>Je teamstatus in één levend overzicht.</h1>
+            <p>Zie direct wat belangrijk is: de volgende wedstrijd, wie zich heeft aangemeld, open betalingen en de stand van de boetepot.</p>
+          </div>
+          <div className="dreelio-quick-row">
+            <button type="button" onClick={() => setTab?.("wedstrijden")} className="dreelio-quick-action">
+              <span>Mijn actie</span>
+              <strong>{myStatusLabel}</strong>
+            </button>
+            <button type="button" onClick={() => setTab?.("financien")} className={`dreelio-quick-action ${myOpenCount > 0 ? "needs-attention" : ""}`}>
+              <span>Betalingen</span>
+              <strong>{myOpenCount > 0 ? `${myOpenCount} open` : "Alles rond"}</strong>
+            </button>
           </div>
         </div>
-      </div>
 
-      <article className="dreelio-kpi-card dreelio-match-card">
-        <div className="dreelio-kpi-icon"><Calendar size={19} /></div>
-        <div className="dreelio-kpi-copy">
-          <div className="dreelio-kpi-label">Volgende wedstrijd</div>
-          <div className="dreelio-kpi-title">
-            {nextMatch ? <>FC TOTT <span>vs</span> {nextMatch.opponent}</> : "Nog niets gepland"}
+        <article className="dreelio-kpi-card dreelio-match-card">
+          <div className="dreelio-kpi-icon"><Calendar size={19} /></div>
+          <div className="dreelio-kpi-copy">
+            <div className="dreelio-kpi-label">Volgende wedstrijd</div>
+            <div className="dreelio-kpi-title">
+              {nextMatch ? <>FC TOTT <span>vs</span> {nextMatch.opponent}</> : "Nog niets gepland"}
+            </div>
+            <div className="dreelio-kpi-meta">
+              {nextMatch ? formatDateShort(nextMatch.match_date) : "Voeg een wedstrijd toe"}
+              {category ? ` · ${category.label}` : ""}
+            </div>
           </div>
-          <div className="dreelio-kpi-meta">
-            {nextMatch ? formatDateShort(nextMatch.match_date) : "Voeg een wedstrijd toe"}
-            {category ? ` · ${category.label}` : ""}
+        </article>
+
+        <article className={`dreelio-kpi-card ${myOpenCount > 0 ? "is-warning" : ""}`}>
+          <div className="dreelio-kpi-icon"><AlertCircle size={19} /></div>
+          <div className="dreelio-kpi-copy">
+            <div className="dreelio-kpi-label">Betalingen</div>
+            <div className="dreelio-kpi-number">{myOpenCount}</div>
+            <div className="dreelio-kpi-meta">{myOpenCount === 1 ? "betaling open" : "betalingen open"}</div>
+          </div>
+        </article>
+
+        <article className="dreelio-kpi-card">
+          <div className="dreelio-kpi-icon"><Coins size={19} /></div>
+          <div className="dreelio-kpi-copy">
+            <div className="dreelio-kpi-label">Boetepot</div>
+            <div className="dreelio-kpi-number">€{potTotal}</div>
+            <div className="dreelio-kpi-meta">Teamstand</div>
+          </div>
+        </article>
+
+        <article className="dreelio-kpi-card dreelio-countdown-card">
+          <div className="dreelio-kpi-icon"><Clock size={19} /></div>
+          <div className="dreelio-kpi-copy">
+            <div className="dreelio-kpi-label">Countdown</div>
+            <div className="dreelio-kpi-number">{nextMatch ? countdown : "—"}</div>
+            <div className="dreelio-kpi-meta">Tot de volgende afspraak</div>
+          </div>
+        </article>
+      </section>
+
+      <section className="dreelio-activity-strip" aria-label="Live teamstatus">
+        <div className="dreelio-activity-main">
+          <span className="dreelio-live-dot" />
+          <div>
+            <strong>Team pulse</strong>
+            <span>{teamPulseText}</span>
           </div>
         </div>
-      </article>
-
-      <article className={`dreelio-kpi-card ${myOpenCount > 0 ? "is-warning" : ""}`}>
-        <div className="dreelio-kpi-icon"><AlertCircle size={19} /></div>
-        <div className="dreelio-kpi-copy">
-          <div className="dreelio-kpi-label">Betalingen</div>
-          <div className="dreelio-kpi-number">{myOpenCount}</div>
-          <div className="dreelio-kpi-meta">{myOpenCount === 1 ? "betaling open" : "betalingen open"}</div>
+        <div className="dreelio-activity-avatars">
+          <AvatarStack players={presentPlayers.length ? presentPlayers : activePlayers.slice(0, 6)} />
         </div>
-      </article>
-
-      <article className="dreelio-kpi-card">
-        <div className="dreelio-kpi-icon"><Coins size={19} /></div>
-        <div className="dreelio-kpi-copy">
-          <div className="dreelio-kpi-label">Boetepot</div>
-          <div className="dreelio-kpi-number">€{potTotal}</div>
-          <div className="dreelio-kpi-meta">Teamstand</div>
-        </div>
-      </article>
-
-      <article className="dreelio-kpi-card dreelio-countdown-card">
-        <div className="dreelio-kpi-icon"><Clock size={19} /></div>
-        <div className="dreelio-kpi-copy">
-          <div className="dreelio-kpi-label">Countdown</div>
-          <div className="dreelio-kpi-number">{nextMatch ? countdown : "—"}</div>
-          <div className="dreelio-kpi-meta">Tot de volgende afspraak</div>
-        </div>
-      </article>
-    </section>
+        <div className="dreelio-activity-stat"><strong>{presentPlayers.length}</strong><span>Aanwezig</span></div>
+        <div className="dreelio-activity-stat"><strong>{unsurePlayers.length}</strong><span>Twijfel</span></div>
+      </section>
+    </>
   );
 }
 
@@ -2129,6 +2179,163 @@ const dreelioDashboardCss = `
 
   .dreelio-mobile-topbar .tott-header { display: none; }
 
+  .dreelio-welcome-card,
+  .dreelio-kpi-card,
+  .dreelio-panel,
+  .dreelio-activity-strip {
+    animation: dreelioFadeUp 520ms ease both;
+  }
+
+  .dreelio-kpi-card:nth-child(2) { animation-delay: 40ms; }
+  .dreelio-kpi-card:nth-child(3) { animation-delay: 80ms; }
+  .dreelio-kpi-card:nth-child(4) { animation-delay: 120ms; }
+  .dreelio-kpi-card:nth-child(5) { animation-delay: 160ms; }
+
+  @keyframes dreelioFadeUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .dreelio-live-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    display: inline-block;
+    flex: 0 0 auto;
+    background: #68a354;
+    box-shadow: 0 0 0 0 rgba(104,163,84,0.42);
+    animation: dreelioPulse 1800ms ease-out infinite;
+  }
+
+  @keyframes dreelioPulse {
+    0% { box-shadow: 0 0 0 0 rgba(104,163,84,0.42); }
+    70% { box-shadow: 0 0 0 9px rgba(104,163,84,0); }
+    100% { box-shadow: 0 0 0 0 rgba(104,163,84,0); }
+  }
+
+  .dreelio-chip .dreelio-live-dot {
+    margin-right: 7px;
+  }
+
+  .dreelio-quick-action {
+    width: 100%;
+    min-height: 70px;
+    padding: 14px;
+    border-radius: 18px !important;
+    background: #f5f5f1;
+    border: 1px solid var(--dreelio-border);
+    text-align: left;
+    color: var(--dreelio-text);
+  }
+
+  .dreelio-quick-action:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 14px 32px rgba(16,21,17,0.08);
+  }
+
+  .dreelio-quick-action.needs-attention {
+    background: linear-gradient(135deg, #fff, var(--dreelio-warning-soft));
+    border-color: rgba(184,91,43,0.18);
+  }
+
+  .dreelio-quick-action span {
+    display: block;
+    color: var(--dreelio-muted);
+    font-size: 12px;
+    font-weight: 720;
+  }
+
+  .dreelio-quick-action strong {
+    display: block;
+    margin-top: 4px;
+    font-family: 'Space Grotesk', Inter, system-ui, sans-serif;
+    color: var(--dreelio-text);
+    font-size: 21px;
+    letter-spacing: -0.04em;
+  }
+
+  .dreelio-activity-strip {
+    margin: -2px 0 18px;
+    padding: 14px 16px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto auto;
+    align-items: center;
+    gap: 14px;
+    background: rgba(255,255,255,0.82);
+    border: 1px solid var(--dreelio-border);
+    border-radius: 22px;
+    box-shadow: 0 1px 1px rgba(16,21,17,0.03), 0 10px 30px rgba(16,21,17,0.04);
+  }
+
+  .dreelio-activity-main {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    min-width: 0;
+  }
+
+  .dreelio-activity-main strong,
+  .dreelio-activity-main span {
+    display: block;
+  }
+
+  .dreelio-activity-main strong {
+    color: var(--dreelio-text);
+    font-size: 13px;
+    font-weight: 850;
+  }
+
+  .dreelio-activity-main span {
+    margin-top: 2px;
+    color: var(--dreelio-muted);
+    font-size: 12.5px;
+    font-weight: 650;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .dreelio-activity-avatars {
+    min-width: 118px;
+  }
+
+  .dreelio-activity-stat {
+    min-width: 74px;
+    padding: 10px 12px;
+    border-radius: 16px;
+    background: #f6f6f3;
+    border: 1px solid var(--dreelio-border);
+  }
+
+  .dreelio-activity-stat strong,
+  .dreelio-activity-stat span {
+    display: block;
+  }
+
+  .dreelio-activity-stat strong {
+    font-family: 'Space Grotesk', Inter, system-ui, sans-serif;
+    font-size: 21px;
+    line-height: 1;
+    letter-spacing: -0.05em;
+  }
+
+  .dreelio-activity-stat span {
+    margin-top: 4px;
+    color: var(--dreelio-muted);
+    font-size: 11px;
+    font-weight: 760;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .dreelio-welcome-card,
+    .dreelio-kpi-card,
+    .dreelio-panel,
+    .dreelio-activity-strip,
+    .dreelio-live-dot {
+      animation: none !important;
+    }
+  }
+
   @media (max-width: 1080px) {
     .dreelio-shell {
       grid-template-columns: 232px minmax(0, 1fr);
@@ -2143,75 +2350,184 @@ const dreelioDashboardCss = `
   @media (max-width: 820px) {
     .dreelio-shell {
       display: block;
-      padding: 12px;
+      padding: 10px 10px 92px;
     }
+
+    .dreelio-content {
+      padding: 0;
+    }
+
     .dreelio-sidebar {
-      position: relative;
+      position: fixed;
+      left: max(10px, env(safe-area-inset-left));
+      right: max(10px, env(safe-area-inset-right));
+      bottom: max(10px, env(safe-area-inset-bottom));
       top: auto;
-      height: auto;
-      margin-bottom: 12px;
+      z-index: 80;
+      height: 68px;
+      margin: 0;
+      padding: 8px;
       border-radius: 24px;
+      box-shadow: 0 18px 60px rgba(16,21,17,0.22);
     }
+
+    .dreelio-sidebar::after,
     .dreelio-sidebar-brand,
     .dreelio-sidebar-card,
     .dreelio-sidebar-spacer,
-    .dreelio-profile-card {
-      display: none;
-    }
+    .dreelio-profile-card,
     .dreelio-sidebar-group-label {
       display: none;
     }
+
     .dreelio-sidebar-nav {
-      display: flex;
-      gap: 8px;
-      overflow-x: auto;
-      padding-bottom: 2px;
-      scrollbar-width: none;
+      height: 100%;
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 5px;
+      overflow: visible;
+      padding: 0;
     }
-    .dreelio-sidebar-nav::-webkit-scrollbar { display: none; }
+
     .dreelio-side-link {
-      width: auto;
-      min-width: max-content;
-      min-height: 40px;
-      padding: 7px 12px;
-      border-radius: 14px;
+      width: 100%;
+      min-width: 0;
+      min-height: 0;
+      height: 52px;
+      padding: 5px 3px;
+      border-radius: 17px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 3px;
+      font-size: 10.5px;
+      line-height: 1.05;
+      text-align: center;
       white-space: nowrap;
+      overflow: hidden;
     }
-    .dreelio-side-icon { width: 26px; height: 26px; }
-    .dreelio-mobile-topbar { display: block; }
+
+    .dreelio-side-link span:last-child {
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .dreelio-side-icon {
+      width: 25px;
+      height: 25px;
+      border-radius: 10px;
+    }
+
+    .dreelio-mobile-topbar {
+      display: block;
+      position: sticky;
+      top: 8px;
+      z-index: 40;
+    }
+
     .dreelio-mobile-topbar .tott-header {
       display: flex;
-      margin-bottom: 12px;
+      margin-bottom: 10px;
       border-radius: 22px !important;
-      background: #fff !important;
+      background: rgba(255,255,255,0.92) !important;
       border: 1px solid var(--dreelio-border) !important;
-      box-shadow: var(--dreelio-shadow) !important;
+      box-shadow: 0 12px 36px rgba(16,21,17,0.08) !important;
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
     }
+
     .dreelio-overview {
       grid-template-columns: 1fr;
-      gap: 12px;
+      gap: 10px;
+      margin-bottom: 12px;
     }
+
     .dreelio-welcome-card {
-      padding: 22px;
-      border-radius: 24px !important;
+      min-height: auto;
+      padding: 18px;
+      border-radius: 22px !important;
+      gap: 14px;
     }
+
+    .dreelio-card-topline {
+      display: none;
+    }
+
     .dreelio-welcome-card h1 {
-      font-size: clamp(30px, 10vw, 42px);
+      margin: 5px 0 0;
+      font-size: clamp(25px, 8vw, 34px);
+      line-height: 1.02;
     }
-    .dreelio-quick-row { grid-template-columns: 1fr; }
-    .dreelio-kpi-card { min-height: auto; }
+
+    .dreelio-welcome-card p {
+      display: none;
+    }
+
+    .dreelio-quick-row {
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .dreelio-quick-action {
+      min-height: 58px;
+      padding: 11px;
+      border-radius: 15px !important;
+    }
+
+    .dreelio-quick-action strong {
+      font-size: 17px;
+    }
+
+    .dreelio-kpi-card {
+      min-height: auto;
+      padding: 15px;
+      border-radius: 20px !important;
+    }
+
+    .dreelio-countdown-card {
+      display: none;
+    }
+
+    .dreelio-activity-strip {
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      margin-bottom: 12px;
+      padding: 12px;
+      border-radius: 18px;
+    }
+
+    .dreelio-activity-avatars {
+      min-width: 96px;
+      justify-self: end;
+    }
+
+    .dreelio-activity-stat {
+      display: none;
+    }
+
+    .dreelio-main {
+      scroll-margin-top: 88px;
+    }
   }
 
   @media (max-width: 560px) {
-    .dreelio-shell { padding: 10px; }
-    .dreelio-sidebar { border-radius: 20px; padding: 10px; }
+    .dreelio-shell { padding: 8px 8px 90px; }
+    .dreelio-sidebar { height: 66px; border-radius: 22px; padding: 7px; }
+    .dreelio-side-link { font-size: 9.8px; height: 52px; }
+    .dreelio-side-icon { width: 24px; height: 24px; }
     .dreelio-welcome-card,
     .dreelio-kpi-card,
     .dreelio-panel {
-      border-radius: 20px !important;
+      border-radius: 19px !important;
     }
-    .dreelio-panel { padding: 18px !important; }
+    .dreelio-panel { padding: 16px !important; }
     .dreelio-main .tott-h2, .tott-h2 { font-size: 22px !important; }
+    .dreelio-kpi-number { font-size: 28px; }
+    .dreelio-kpi-title { font-size: 18px; }
+    .dreelio-kpi-icon { width: 38px; height: 38px; border-radius: 13px; }
+    .dreelio-activity-main span { max-width: 185px; }
+    .tott-main { padding-left: 0 !important; padding-right: 0 !important; }
   }
 `;
 
