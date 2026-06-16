@@ -74,6 +74,33 @@ function deadlineLabel(match) {
 }
 
 const SESSION_KEY = "tott_session_player_id";
+
+
+function useMobileViewportLock() {
+  useEffect(() => {
+    let meta = document.querySelector('meta[name="viewport"]');
+    if (!meta) {
+      meta = document.createElement('meta');
+      meta.setAttribute('name', 'viewport');
+      document.head.appendChild(meta);
+    }
+    meta.setAttribute(
+      'content',
+      'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover'
+    );
+
+    const preventGesture = (event) => event.preventDefault();
+    document.addEventListener('gesturestart', preventGesture, { passive: false });
+    document.addEventListener('gesturechange', preventGesture, { passive: false });
+    document.addEventListener('gestureend', preventGesture, { passive: false });
+
+    return () => {
+      document.removeEventListener('gesturestart', preventGesture);
+      document.removeEventListener('gesturechange', preventGesture);
+      document.removeEventListener('gestureend', preventGesture);
+    };
+  }, []);
+}
 const LOCAL_POSTS_KEY = "tott_local_club_posts_v1";
 const LOCAL_BRANDING_KEY = "tott_local_branding_correct_original_logo_v2";
 const LOCAL_VIDEOS_KEY = "tott_local_match_videos_v1";
@@ -161,6 +188,7 @@ const NAV = [
 ];
 
 export default function App() {
+  useMobileViewportLock();
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(null);
   const [tab, setTab] = useState("overzicht");
@@ -300,7 +328,7 @@ export default function App() {
   if (loading) {
     return (
       <div style={styles.app} className="tott-app dreelio-app">
-        <style>{globalCss + dreelioDashboardCss + appFeelingCss + fcxMobileDashboardCss + kpiRectangleHardFixCss + spacingPolishCss + fullAppFcxThemeCss + readabilityFixCss + roleVideoCss}</style>
+        <style>{globalCss + dreelioDashboardCss + appFeelingCss + fcxMobileDashboardCss + kpiRectangleHardFixCss + spacingPolishCss + fullAppFcxThemeCss + readabilityFixCss + roleVideoCss + mobileZoomLockCss}</style>
         <div style={styles.loadingScreen}>Laden…</div>
       </div>
     );
@@ -309,7 +337,7 @@ export default function App() {
   if (loadError) {
     return (
       <div style={styles.app} className="tott-app dreelio-app">
-        <style>{globalCss + dreelioDashboardCss + appFeelingCss + fcxMobileDashboardCss + kpiRectangleHardFixCss + spacingPolishCss + fullAppFcxThemeCss + readabilityFixCss + roleVideoCss}</style>
+        <style>{globalCss + dreelioDashboardCss + appFeelingCss + fcxMobileDashboardCss + kpiRectangleHardFixCss + spacingPolishCss + fullAppFcxThemeCss + readabilityFixCss + roleVideoCss + mobileZoomLockCss}</style>
         <div style={styles.loadingScreen}>
           <AlertCircle size={22} style={{ marginBottom: 10, color: "var(--warn)" }} />
           <div>Het clubportaal is tijdelijk niet bereikbaar.</div>
@@ -324,7 +352,7 @@ export default function App() {
   if (!me) {
     return (
       <div style={styles.app} className="tott-app dreelio-app">
-        <style>{globalCss + dreelioDashboardCss + appFeelingCss + fcxMobileDashboardCss + kpiRectangleHardFixCss + spacingPolishCss + fullAppFcxThemeCss + readabilityFixCss + roleVideoCss}</style>
+        <style>{globalCss + dreelioDashboardCss + appFeelingCss + fcxMobileDashboardCss + kpiRectangleHardFixCss + spacingPolishCss + fullAppFcxThemeCss + readabilityFixCss + roleVideoCss + mobileZoomLockCss}</style>
         <Header branding={branding} />
         <LoginScreen players={players} onLogin={login} branding={branding} />
         <footer style={styles.footer}>FC TOTT · Sponsored By Nola Marketing (website, branding en marketing)</footer>
@@ -337,7 +365,7 @@ export default function App() {
 
   return (
     <div style={styles.app} className="tott-app dreelio-app">
-      <style>{globalCss + dreelioDashboardCss + appFeelingCss + fcxMobileDashboardCss + kpiRectangleHardFixCss + spacingPolishCss + fullAppFcxThemeCss + readabilityFixCss + roleVideoCss}</style>
+      <style>{globalCss + dreelioDashboardCss + appFeelingCss + fcxMobileDashboardCss + kpiRectangleHardFixCss + spacingPolishCss + fullAppFcxThemeCss + readabilityFixCss + roleVideoCss + mobileZoomLockCss}</style>
 
       <div className="dreelio-shell">
         <DreelioSidebar
@@ -5869,4 +5897,33 @@ const roleVideoCss = `
   box-shadow: 0 0 16px rgba(214,169,87,.12) !important;
 }
 
+`;
+
+
+const mobileZoomLockCss = `
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    overscroll-behavior-x: none;
+  }
+
+  body {
+    touch-action: pan-x pan-y;
+    overscroll-behavior-x: none;
+  }
+
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+
+  .fcx-mobile-app,
+  .dreelio-page,
+  .dreelio-main,
+  .fcx-bottom-nav,
+  .fcx-mobile-shell {
+    max-width: 100vw !important;
+    overflow-x: hidden !important;
+  }
 `;
