@@ -240,7 +240,7 @@ export default function App() {
   if (loading) {
     return (
       <div style={styles.app} className="tott-app dreelio-app">
-        <style>{globalCss + dreelioDashboardCss + appFeelingCss + fcxMobileDashboardCss + kpiRectangleHardFixCss + spacingPolishCss}</style>
+        <style>{globalCss + dreelioDashboardCss + appFeelingCss + fcxMobileDashboardCss + kpiRectangleHardFixCss + spacingPolishCss + fullAppFcxThemeCss}</style>
         <div style={styles.loadingScreen}>Laden…</div>
       </div>
     );
@@ -249,7 +249,7 @@ export default function App() {
   if (loadError) {
     return (
       <div style={styles.app} className="tott-app dreelio-app">
-        <style>{globalCss + dreelioDashboardCss + appFeelingCss + fcxMobileDashboardCss + kpiRectangleHardFixCss + spacingPolishCss}</style>
+        <style>{globalCss + dreelioDashboardCss + appFeelingCss + fcxMobileDashboardCss + kpiRectangleHardFixCss + spacingPolishCss + fullAppFcxThemeCss}</style>
         <div style={styles.loadingScreen}>
           <AlertCircle size={22} style={{ marginBottom: 10, color: "var(--warn)" }} />
           <div>Het clubportaal is tijdelijk niet bereikbaar.</div>
@@ -264,7 +264,7 @@ export default function App() {
   if (!me) {
     return (
       <div style={styles.app} className="tott-app dreelio-app">
-        <style>{globalCss + dreelioDashboardCss + appFeelingCss + fcxMobileDashboardCss + kpiRectangleHardFixCss + spacingPolishCss}</style>
+        <style>{globalCss + dreelioDashboardCss + appFeelingCss + fcxMobileDashboardCss + kpiRectangleHardFixCss + spacingPolishCss + fullAppFcxThemeCss}</style>
         <Header branding={branding} />
         <LoginScreen players={players} onLogin={login} branding={branding} />
         <footer style={styles.footer}>FC TOTT · Sponsored By Nola Marketing (website, branding en marketing)</footer>
@@ -277,7 +277,7 @@ export default function App() {
 
   return (
     <div style={styles.app} className="tott-app dreelio-app">
-      <style>{globalCss + dreelioDashboardCss + appFeelingCss + fcxMobileDashboardCss + kpiRectangleHardFixCss + spacingPolishCss}</style>
+      <style>{globalCss + dreelioDashboardCss + appFeelingCss + fcxMobileDashboardCss + kpiRectangleHardFixCss + spacingPolishCss + fullAppFcxThemeCss}</style>
 
       <div className="dreelio-shell">
         <DreelioSidebar
@@ -4896,6 +4896,532 @@ const spacingPolishCss = `
     .fcx-grid-main,
     .fcx-grid-bottom {
       gap: 13px !important;
+    }
+  }
+`;
+
+
+const fullAppFcxThemeCss = `
+  /* Full app style pass: apply the approved Overzicht dark red/gold app language to every tab. */
+  :root {
+    --fcx-page: #030304;
+    --fcx-card: #121315;
+    --fcx-card-2: #17181b;
+    --fcx-line: rgba(255,255,255,.105);
+    --fcx-line-strong: rgba(255,255,255,.155);
+    --fcx-red: #ff3152;
+    --fcx-red-2: #cf1435;
+    --fcx-gold: #d6a957;
+    --fcx-gold-soft: #f4d27c;
+    --fcx-green: #76e168;
+    --fcx-text: #fff;
+    --fcx-muted: rgba(255,255,255,.58);
+    --fcx-muted-2: rgba(255,255,255,.38);
+    --fcx-radius: 24px;
+    --fcx-shadow: 0 26px 80px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.055);
+  }
+
+  body,
+  .dreelio-app,
+  .dreelio-shell,
+  .dreelio-content {
+    background:
+      radial-gradient(circle at 12% -8%, rgba(255,49,82,.16), transparent 28%),
+      radial-gradient(circle at 88% 0%, rgba(214,169,87,.10), transparent 28%),
+      #030304 !important;
+    color: var(--fcx-text) !important;
+  }
+
+  .dreelio-shell {
+    gap: 18px !important;
+  }
+
+  .dreelio-content {
+    border-radius: 0 !important;
+  }
+
+  .dreelio-main {
+    color: var(--fcx-text) !important;
+  }
+
+  .dreelio-main > section:not(.fcx-phone-dashboard) {
+    animation: fcxTabIn 420ms cubic-bezier(.2,.8,.2,1) both;
+  }
+
+  @keyframes fcxTabIn {
+    from { opacity: 0; transform: translateY(12px); filter: blur(5px); }
+    to { opacity: 1; transform: none; filter: blur(0); }
+  }
+
+  .dreelio-main .tott-sectionhead {
+    margin: 10px 0 16px !important;
+    padding: 0 2px !important;
+  }
+
+  .dreelio-main .tott-sectionhead > div:first-child {
+    min-width: 0;
+  }
+
+  .dreelio-main .tott-h2,
+  .tott-h2 {
+    color: #fff !important;
+    font-size: clamp(28px, 5vw, 48px) !important;
+    line-height: .98 !important;
+    letter-spacing: -.06em !important;
+    text-shadow: 0 0 28px rgba(255,49,82,.10);
+  }
+
+  .dreelio-main [style*="eyebrow"],
+  .dreelio-main .tott-sectionhead + .dreelio-muted-note,
+  .dreelio-muted-note,
+  .dreelio-admin-only-note {
+    color: var(--fcx-muted) !important;
+  }
+
+  .dreelio-main div[style*="text-transform: uppercase"],
+  .dreelio-main .tott-sectionhead div[style*="letter-spacing"] {
+    color: var(--fcx-gold) !important;
+  }
+
+  .dreelio-panel,
+  .dreelio-login-card,
+  .dreelio-post-card,
+  .dreelio-post-composer,
+  .dreelio-me-card,
+  .dreelio-form-card,
+  .dreelio-rules-card,
+  .dreelio-profile-main,
+  .dreelio-team-stats,
+  .dreelio-table-wrap,
+  .dreelio-admin-panel,
+  .dreelio-pot-card,
+  .dreelio-add-row,
+  .dreelio-match-card-row {
+    background:
+      radial-gradient(circle at 0% 0%, rgba(255,49,82,.13), transparent 36%),
+      linear-gradient(145deg, rgba(25,26,29,.96), rgba(13,14,16,.98)) !important;
+    border: 1px solid var(--fcx-line) !important;
+    border-radius: var(--fcx-radius) !important;
+    box-shadow: var(--fcx-shadow) !important;
+    color: var(--fcx-text) !important;
+  }
+
+  .dreelio-panel::before,
+  .dreelio-post-card::before,
+  .dreelio-post-composer::before {
+    pointer-events: none;
+  }
+
+  .dreelio-post-card.is-pinned,
+  .dreelio-pot-card,
+  .dreelio-team-stats,
+  .dreelio-table-wrap {
+    background:
+      radial-gradient(circle at 94% 0%, rgba(214,169,87,.16), transparent 34%),
+      radial-gradient(circle at 0% 0%, rgba(255,49,82,.10), transparent 34%),
+      linear-gradient(145deg, rgba(25,26,29,.96), rgba(13,14,16,.98)) !important;
+    border-color: rgba(214,169,87,.24) !important;
+  }
+
+  .dreelio-me-card,
+  .dreelio-match-card-row {
+    border-color: rgba(255,49,82,.20) !important;
+  }
+
+  .dreelio-main .dreelio-panel + .dreelio-panel,
+  .dreelio-post-list .dreelio-post-card + .dreelio-post-card {
+    margin-top: 16px !important;
+  }
+
+  .dreelio-match-list,
+  .dreelio-post-list {
+    gap: 18px !important;
+  }
+
+  .dreelio-main input,
+  .dreelio-main select,
+  .dreelio-main textarea,
+  .dreelio-login-card input,
+  .dreelio-login-card select,
+  .dreelio-login-card textarea {
+    background: rgba(255,255,255,.055) !important;
+    color: #fff !important;
+    border: 1px solid rgba(255,255,255,.12) !important;
+    border-radius: 16px !important;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.05) !important;
+  }
+
+  .dreelio-main input::placeholder,
+  .dreelio-main textarea::placeholder,
+  .dreelio-login-card input::placeholder {
+    color: rgba(255,255,255,.36) !important;
+  }
+
+  .dreelio-main input:focus,
+  .dreelio-main select:focus,
+  .dreelio-main textarea:focus,
+  .dreelio-login-card input:focus {
+    outline: none !important;
+    border-color: rgba(255,49,82,.62) !important;
+    box-shadow: 0 0 0 4px rgba(255,49,82,.14), inset 0 1px 0 rgba(255,255,255,.08) !important;
+  }
+
+  .dreelio-main select option {
+    background: #101113;
+    color: #fff;
+  }
+
+  .dreelio-main button,
+  .dreelio-login-card button {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .dreelio-main button:not(.fcx-kpi-card):not(.dreelio-side-link):not(.dreelio-logout):not(.fcx-bell),
+  .dreelio-login-card button {
+    border-radius: 999px !important;
+  }
+
+  .dreelio-main button[style*="primary"],
+  .dreelio-main button[style*="Plaatsen"],
+  .dreelio-main button[style*="Opslaan"],
+  .dreelio-main button[style*="Toevoegen"],
+  .dreelio-main button[style*="Publiceren"] {
+    background: linear-gradient(135deg, #ff3152, #c90f30) !important;
+    border: 1px solid rgba(255,255,255,.14) !important;
+    color: #fff !important;
+    box-shadow: 0 16px 32px rgba(255,49,82,.20), inset 0 1px 0 rgba(255,255,255,.18) !important;
+  }
+
+  .dreelio-main .tott-sectionhead button,
+  .dreelio-file-button,
+  .dreelio-pin-toggle,
+  .dreelio-main .attendanceToggle,
+  .dreelio-main button[aria-label="Route openen"] {
+    background: rgba(255,255,255,.06) !important;
+    color: #fff !important;
+    border: 1px solid rgba(255,255,255,.11) !important;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.055) !important;
+  }
+
+  .dreelio-main .tott-sectionhead button:hover,
+  .dreelio-file-button:hover,
+  .dreelio-pin-toggle:hover {
+    border-color: rgba(255,49,82,.38) !important;
+    box-shadow: 0 0 24px rgba(255,49,82,.10), inset 0 1px 0 rgba(255,255,255,.08) !important;
+  }
+
+  .dreelio-main div,
+  .dreelio-main span,
+  .dreelio-main p,
+  .dreelio-main td,
+  .dreelio-main th,
+  .dreelio-main label,
+  .dreelio-main small,
+  .dreelio-main strong {
+    border-color: rgba(255,255,255,.10) !important;
+  }
+
+  .dreelio-main .meCardTitle,
+  .dreelio-main [style*="meCardTitle"],
+  .dreelio-main [style*="profileName"],
+  .dreelio-main [style*="profileMeta"],
+  .dreelio-main [style*="matchOpponent"],
+  .dreelio-main [style*="ruleText"],
+  .dreelio-main [style*="adminRowName"],
+  .dreelio-main [style*="teamStatName"],
+  .dreelio-main [style*="myFeeName"] {
+    color: #fff !important;
+  }
+
+  .dreelio-main .matchMeta,
+  .dreelio-main [style*="matchMeta"],
+  .dreelio-main [style*="deadlineNote"],
+  .dreelio-main [style*="profileMeta"],
+  .dreelio-main [style*="statsHint"],
+  .dreelio-main [style*="adminRowMeta"],
+  .dreelio-main [style*="teamStatVal"],
+  .dreelio-main [style*="potSub"],
+  .dreelio-main [style*="statLabel"] {
+    color: var(--fcx-muted) !important;
+  }
+
+  .dreelio-main .h3,
+  .dreelio-main [style*="h3"] {
+    color: var(--fcx-gold) !important;
+  }
+
+  .dreelio-main .profilePhoto,
+  .dreelio-post-avatar,
+  .dreelio-profile-avatar,
+  .avatarStackItem {
+    background: radial-gradient(circle at 50% 24%, rgba(255,49,82,.25), #191a1d 62%, #070708) !important;
+    border: 1px solid rgba(255,255,255,.11) !important;
+    color: #fff !important;
+  }
+
+  .dreelio-post-head,
+  .dreelio-post-actions,
+  .dreelio-upload-row,
+  .dreelio-image-preview-row,
+  .dreelio-main .ruleRow,
+  .dreelio-main .adminRow,
+  .dreelio-main .myFeeRow,
+  .dreelio-main .teamStatRow,
+  .dreelio-main .attendanceFullRow,
+  .tott-finance-table tr,
+  .tott-finance-table td,
+  .tott-finance-table th {
+    border-color: rgba(255,255,255,.10) !important;
+  }
+
+  .dreelio-post-category,
+  .dreelio-main .catTag,
+  .dreelio-main .matchTypeTag,
+  .dreelio-main .statusPill,
+  .dreelio-main .statusPillStatic,
+  .dreelio-main .warnBadge,
+  .dreelio-main .fineAmount,
+  .dreelio-main .ruleNum {
+    border-radius: 999px !important;
+    background: rgba(255,255,255,.065) !important;
+    border: 1px solid rgba(255,255,255,.11) !important;
+    color: #fff !important;
+  }
+
+  .dreelio-post-category.pinned,
+  .dreelio-main .fineAmount,
+  .dreelio-main .ruleNum {
+    color: var(--fcx-gold) !important;
+    border-color: rgba(214,169,87,.26) !important;
+    background: rgba(214,169,87,.09) !important;
+  }
+
+  .dreelio-main .pillPaid,
+  .dreelio-main [style*="pillPaid"] {
+    color: var(--fcx-green) !important;
+    background: rgba(118,225,104,.10) !important;
+    border-color: rgba(118,225,104,.24) !important;
+  }
+
+  .dreelio-main .pillOpen,
+  .dreelio-main [style*="pillOpen"] {
+    color: var(--fcx-red) !important;
+    background: rgba(255,49,82,.10) !important;
+    border-color: rgba(255,49,82,.28) !important;
+  }
+
+  .dreelio-main .deadlinePassed,
+  .dreelio-main .loginError,
+  .dreelio-main .unsureWarning {
+    background: rgba(255,49,82,.10) !important;
+    border: 1px solid rgba(255,49,82,.22) !important;
+    color: #fff !important;
+    border-radius: 18px !important;
+  }
+
+  .dreelio-main .tableWrap,
+  .tott-finance-table {
+    color: #fff !important;
+  }
+
+  .tott-finance-table th {
+    color: var(--fcx-gold) !important;
+    background: rgba(214,169,87,.055) !important;
+  }
+
+  .tott-finance-table td {
+    color: rgba(255,255,255,.78) !important;
+  }
+
+  .dreelio-main .donutCard,
+  .dreelio-main .statBox,
+  .dreelio-main .lineupEditor,
+  .dreelio-main .attendanceList,
+  .dreelio-main .goalsListLight,
+  .dreelio-main .lineupPreviewWrap {
+    background: rgba(255,255,255,.045) !important;
+    border: 1px solid rgba(255,255,255,.095) !important;
+    border-radius: 18px !important;
+    color: #fff !important;
+  }
+
+  .dreelio-main .lineupChip,
+  .dreelio-main .adminActionBtn,
+  .dreelio-main .iconBtn,
+  .dreelio-main .iconBtnGhost,
+  .dreelio-main .editBtn,
+  .dreelio-main .pwToggle,
+  .dreelio-main .beheerToggle {
+    background: rgba(255,255,255,.06) !important;
+    border: 1px solid rgba(255,255,255,.12) !important;
+    color: rgba(255,255,255,.78) !important;
+  }
+
+  .dreelio-main .lineupChipActive,
+  .dreelio-main .lineupChipActiveKeeper,
+  .dreelio-main .adminActionBtnOk {
+    color: var(--fcx-green) !important;
+    border-color: rgba(118,225,104,.26) !important;
+    background: rgba(118,225,104,.10) !important;
+  }
+
+  .dreelio-main .adminActionBtnDanger {
+    color: var(--fcx-red) !important;
+    border-color: rgba(255,49,82,.28) !important;
+    background: rgba(255,49,82,.10) !important;
+  }
+
+  .dreelio-main .potAmount,
+  .dreelio-main [style*="potAmount"],
+  .dreelio-main .statValue,
+  .dreelio-main [style*="statValue"] {
+    color: #fff !important;
+    text-shadow: 0 0 28px rgba(255,49,82,.11);
+  }
+
+  .dreelio-login-card {
+    max-width: 440px !important;
+    background:
+      radial-gradient(circle at 80% 0%, rgba(214,169,87,.17), transparent 34%),
+      radial-gradient(circle at 0% 0%, rgba(255,49,82,.17), transparent 36%),
+      linear-gradient(145deg, rgba(25,26,29,.96), rgba(13,14,16,.98)) !important;
+  }
+
+  .dreelio-login-card .loginTitle,
+  .dreelio-login-card [style*="loginTitle"] {
+    color: #fff !important;
+  }
+
+  .dreelio-login-card .loginSub,
+  .dreelio-login-card [style*="loginSub"],
+  .dreelio-login-card label {
+    color: var(--fcx-muted) !important;
+  }
+
+  .dreelio-sidebar {
+    background:
+      radial-gradient(circle at 50% 100%, rgba(255,49,82,.16), transparent 40%),
+      linear-gradient(180deg, #151619, #08090a) !important;
+    border-color: rgba(255,255,255,.10) !important;
+  }
+
+  .dreelio-side-link.is-active {
+    background: radial-gradient(circle at 50% 0%, rgba(255,49,82,.18), rgba(255,255,255,.05) 68%) !important;
+    color: var(--fcx-red) !important;
+    border-color: rgba(255,49,82,.20) !important;
+  }
+
+  .dreelio-side-link.is-active .dreelio-side-icon {
+    background: rgba(255,49,82,.10) !important;
+    color: var(--fcx-red) !important;
+  }
+
+  .dreelio-nav-badge {
+    background: var(--fcx-red) !important;
+    color: #fff !important;
+    box-shadow: 0 0 18px rgba(255,49,82,.45) !important;
+  }
+
+  .dreelio-mobile-topbar {
+    background: rgba(15,16,18,.84) !important;
+    border: 1px solid rgba(255,255,255,.10) !important;
+    color: #fff !important;
+    backdrop-filter: blur(22px) saturate(160%);
+    -webkit-backdrop-filter: blur(22px) saturate(160%);
+  }
+
+  .dreelio-mobile-logo img,
+  .dreelio-sidebar-logo img {
+    border-radius: 50%;
+  }
+
+  .dreelio-main .modalOverlay {
+    background: rgba(0,0,0,.72) !important;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+
+  .dreelio-main .modalCard,
+  .modalCard {
+    background:
+      radial-gradient(circle at 0% 0%, rgba(255,49,82,.14), transparent 34%),
+      linear-gradient(145deg, #18191c, #0d0e10) !important;
+    border: 1px solid rgba(255,255,255,.12) !important;
+    color: #fff !important;
+    border-radius: 24px !important;
+    box-shadow: var(--fcx-shadow) !important;
+  }
+
+  .dreelio-main .modalTitle,
+  .modalTitle { color: #fff !important; }
+  .dreelio-main .modalSub,
+  .modalSub { color: var(--fcx-muted) !important; }
+
+  @media (min-width: 861px) {
+    .dreelio-main > section:not(.fcx-phone-dashboard) {
+      max-width: 960px;
+      margin: 0 auto;
+    }
+
+    .dreelio-match-card-row,
+    .dreelio-profile-main,
+    .dreelio-rules-card,
+    .dreelio-form-card,
+    .dreelio-table-wrap,
+    .dreelio-admin-panel,
+    .dreelio-post-card,
+    .dreelio-post-composer,
+    .dreelio-pot-card,
+    .dreelio-me-card {
+      border-radius: 28px !important;
+      padding: 24px !important;
+    }
+  }
+
+  @media (max-width: 860px) {
+    .dreelio-main > section:not(.fcx-phone-dashboard) {
+      padding: 0 0 155px !important;
+    }
+
+    .dreelio-main .tott-sectionhead {
+      margin: 6px 0 14px !important;
+      padding: 0 2px !important;
+    }
+
+    .dreelio-main .tott-h2,
+    .tott-h2 {
+      font-size: 36px !important;
+    }
+
+    .dreelio-panel,
+    .dreelio-post-card,
+    .dreelio-post-composer,
+    .dreelio-me-card,
+    .dreelio-form-card,
+    .dreelio-rules-card,
+    .dreelio-profile-main,
+    .dreelio-table-wrap,
+    .dreelio-admin-panel,
+    .dreelio-pot-card,
+    .dreelio-match-card-row {
+      border-radius: 24px !important;
+      padding: 18px !important;
+      margin-bottom: 18px !important;
+    }
+
+    .dreelio-match-list,
+    .dreelio-post-list {
+      gap: 18px !important;
+    }
+
+    .tott-finance-table tr {
+      background: rgba(255,255,255,.035) !important;
+      border-radius: 18px !important;
+      margin-bottom: 10px !important;
+    }
+
+    .tott-finance-cell::before {
+      color: var(--fcx-muted) !important;
     }
   }
 `;
