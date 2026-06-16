@@ -240,7 +240,7 @@ export default function App() {
   if (loading) {
     return (
       <div style={styles.app} className="tott-app dreelio-app">
-        <style>{globalCss + dreelioDashboardCss + appFeelingCss + fcxMobileDashboardCss + kpiRectangleHardFixCss}</style>
+        <style>{globalCss + dreelioDashboardCss + appFeelingCss + fcxMobileDashboardCss + kpiRectangleHardFixCss + spacingPolishCss}</style>
         <div style={styles.loadingScreen}>Laden…</div>
       </div>
     );
@@ -249,7 +249,7 @@ export default function App() {
   if (loadError) {
     return (
       <div style={styles.app} className="tott-app dreelio-app">
-        <style>{globalCss + dreelioDashboardCss + appFeelingCss + fcxMobileDashboardCss + kpiRectangleHardFixCss}</style>
+        <style>{globalCss + dreelioDashboardCss + appFeelingCss + fcxMobileDashboardCss + kpiRectangleHardFixCss + spacingPolishCss}</style>
         <div style={styles.loadingScreen}>
           <AlertCircle size={22} style={{ marginBottom: 10, color: "var(--warn)" }} />
           <div>Het clubportaal is tijdelijk niet bereikbaar.</div>
@@ -264,7 +264,7 @@ export default function App() {
   if (!me) {
     return (
       <div style={styles.app} className="tott-app dreelio-app">
-        <style>{globalCss + dreelioDashboardCss + appFeelingCss + fcxMobileDashboardCss + kpiRectangleHardFixCss}</style>
+        <style>{globalCss + dreelioDashboardCss + appFeelingCss + fcxMobileDashboardCss + kpiRectangleHardFixCss + spacingPolishCss}</style>
         <Header branding={branding} />
         <LoginScreen players={players} onLogin={login} branding={branding} />
         <footer style={styles.footer}>FC TOTT · Sponsored By Nola Marketing (website, branding en marketing)</footer>
@@ -277,7 +277,7 @@ export default function App() {
 
   return (
     <div style={styles.app} className="tott-app dreelio-app">
-      <style>{globalCss + dreelioDashboardCss + appFeelingCss + fcxMobileDashboardCss + kpiRectangleHardFixCss}</style>
+      <style>{globalCss + dreelioDashboardCss + appFeelingCss + fcxMobileDashboardCss + kpiRectangleHardFixCss + spacingPolishCss}</style>
 
       <div className="dreelio-shell">
         <DreelioSidebar
@@ -4786,4 +4786,116 @@ const appFeelingCss = `
   .dreelio-side-link { position:relative; } .dreelio-side-link.is-active:before { content:""; position:absolute; left:-8px; top:50%; width:4px; height:24px; border-radius:999px; transform:translateY(-50%); background:#7ee069; box-shadow:0 0 22px rgba(126,224,105,.28); }
   @media (max-width:1100px){ .dreelio-overview{grid-template-columns:repeat(2,minmax(0,1fr));} .dreelio-welcome-card{grid-column:1/-1;grid-row:auto;} }
   @media (max-width:860px){ .dreelio-shell{display:block;padding:10px 10px 86px;} .dreelio-content{max-width:520px;} .dreelio-sidebar{position:fixed!important;left:10px;right:10px;bottom:10px;top:auto;height:68px;z-index:50;padding:8px;border-radius:24px;display:block;overflow:visible;background:rgba(10,15,11,.88);backdrop-filter:blur(24px) saturate(160%);} .dreelio-sidebar:after,.dreelio-sidebar-brand,.dreelio-sidebar-group-label,.dreelio-sidebar-card,.dreelio-sidebar-spacer,.dreelio-profile-card{display:none!important;} .dreelio-sidebar-nav{height:100%;display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;} .dreelio-side-link{min-height:52px;height:52px;padding:6px 2px;border-radius:18px;flex-direction:column;justify-content:center;gap:3px;text-align:center;font-size:9.5px;line-height:1;} .dreelio-side-link .dreelio-side-icon{width:24px;height:24px;border-radius:9px;} .dreelio-side-link.is-active{background:#fff;color:#101511;} .dreelio-side-link.is-active:before{display:none;} .dreelio-nav-badge{right:7px;top:5px;min-width:15px;height:15px;padding:0 4px;font-size:8px;} .dreelio-overview{grid-template-columns:1fr 1fr;gap:10px;} .dreelio-welcome-card{grid-column:1/-1;min-height:300px;padding:20px;border-radius:30px!important;} .dreelio-welcome-card h1{font-size:38px;line-height:.95;} .dreelio-kpi-card{min-height:134px;padding:14px;flex-direction:column;gap:10px;} .dreelio-activity-strip{grid-template-columns:1fr 1fr;margin-bottom:12px;} .dreelio-activity-avatars{display:none;} }
+`;
+
+
+const spacingPolishCss = `
+  /* Spacing polish: more breathing room between the Overzicht blocks. */
+  .fcx-phone-dashboard {
+    gap: 22px !important;
+  }
+
+  .fcx-hero-card {
+    margin-bottom: 0 !important;
+  }
+
+  .fcx-kpi-row {
+    margin: 0 0 2px !important;
+  }
+
+  .fcx-grid-main,
+  .fcx-grid-bottom {
+    gap: 20px !important;
+    margin-top: 0 !important;
+  }
+
+  .fcx-panel,
+  .fcx-kpi-card,
+  .fcx-hero-card {
+    isolation: isolate;
+  }
+
+  @media (max-width: 860px) {
+    .dreelio-shell {
+      padding-bottom: 138px !important;
+    }
+
+    .dreelio-main {
+      padding-bottom: 148px !important;
+    }
+
+    .fcx-phone-dashboard {
+      gap: 18px !important;
+      padding: 0 0 150px !important;
+    }
+
+    .fcx-app-header {
+      margin-bottom: 2px !important;
+    }
+
+    .fcx-hero-card {
+      margin-bottom: 2px !important;
+    }
+
+    .fcx-kpi-row {
+      gap: 14px !important;
+      margin: 0 0 4px !important;
+    }
+
+    .fcx-grid-main,
+    .fcx-grid-bottom {
+      gap: 18px !important;
+    }
+
+    .fcx-panel {
+      margin: 0 !important;
+    }
+
+    .dreelio-sidebar {
+      bottom: max(14px, env(safe-area-inset-bottom)) !important;
+    }
+  }
+
+  @media (max-width: 430px) {
+    .dreelio-shell {
+      padding-left: 14px !important;
+      padding-right: 14px !important;
+    }
+
+    .dreelio-main {
+      padding-left: 0 !important;
+      padding-right: 0 !important;
+    }
+
+    .fcx-phone-dashboard {
+      gap: 17px !important;
+      padding-bottom: 160px !important;
+    }
+
+    .fcx-kpi-row {
+      gap: 13px !important;
+      margin-bottom: 5px !important;
+    }
+
+    .fcx-grid-main,
+    .fcx-grid-bottom {
+      gap: 17px !important;
+    }
+
+    .fcx-panel {
+      border-radius: 24px !important;
+    }
+  }
+
+  @media (max-width: 380px) {
+    .fcx-phone-dashboard {
+      gap: 15px !important;
+    }
+
+    .fcx-kpi-row,
+    .fcx-grid-main,
+    .fcx-grid-bottom {
+      gap: 13px !important;
+    }
+  }
 `;
