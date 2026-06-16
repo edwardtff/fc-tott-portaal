@@ -4,7 +4,7 @@ import {
   Check, X, Plus, Trash2, ChevronRight, Users, AlertCircle, HelpCircle,
   ChevronDown, ChevronUp, Lock, LogOut, UserCog, UserPlus, UserMinus,
   Goal, Handshake, Star, Shield, Camera, Eye, EyeOff, Coins, Gavel,
-  Repeat, Trophy, Flag, Award, Bell, Newspaper, MessageCircle, Pin, Settings,
+  Repeat, Trophy, Flag, Award, Bell, Newspaper, MessageCircle, Pin, Settings, LayoutDashboard, Activity, Zap,
 } from "lucide-react";
 import * as db from "./lib/db";
 
@@ -122,6 +122,7 @@ function makePostId() {
 // App shell
 // ============================================================
 const NAV = [
+  { key: "overzicht", label: "Overzicht", icon: LayoutDashboard },
   { key: "wedstrijden", label: "Wedstrijden", icon: Calendar },
   { key: "updates", label: "Updates", icon: Newspaper },
   { key: "profiel", label: "Profiel", icon: UserCog },
@@ -133,7 +134,7 @@ const NAV = [
 export default function App() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(null);
-  const [tab, setTab] = useState("wedstrijden");
+  const [tab, setTab] = useState("overzicht");
 
   const [players, setPlayers] = useState([]);
   const [matches, setMatches] = useState([]);
@@ -194,7 +195,7 @@ export default function App() {
   const logout = () => {
     setSessionId(null);
     localStorage.removeItem(SESSION_KEY);
-    setTab("wedstrijden");
+    setTab("overzicht");
   };
 
   const changeTab = (nextTab) => {
@@ -239,7 +240,7 @@ export default function App() {
   if (loading) {
     return (
       <div style={styles.app} className="tott-app dreelio-app">
-        <style>{globalCss + dreelioDashboardCss}</style>
+        <style>{globalCss + dreelioDashboardCss + appFeelingCss}</style>
         <div style={styles.loadingScreen}>Laden…</div>
       </div>
     );
@@ -248,7 +249,7 @@ export default function App() {
   if (loadError) {
     return (
       <div style={styles.app} className="tott-app dreelio-app">
-        <style>{globalCss + dreelioDashboardCss}</style>
+        <style>{globalCss + dreelioDashboardCss + appFeelingCss}</style>
         <div style={styles.loadingScreen}>
           <AlertCircle size={22} style={{ marginBottom: 10, color: "var(--warn)" }} />
           <div>Het clubportaal is tijdelijk niet bereikbaar.</div>
@@ -263,7 +264,7 @@ export default function App() {
   if (!me) {
     return (
       <div style={styles.app} className="tott-app dreelio-app">
-        <style>{globalCss + dreelioDashboardCss}</style>
+        <style>{globalCss + dreelioDashboardCss + appFeelingCss}</style>
         <Header branding={branding} />
         <LoginScreen players={players} onLogin={login} branding={branding} />
         <footer style={styles.footer}>FC TOTT · Sponsored By Nola Marketing (website, branding en marketing)</footer>
@@ -276,7 +277,7 @@ export default function App() {
 
   return (
     <div style={styles.app} className="tott-app dreelio-app">
-      <style>{globalCss + dreelioDashboardCss}</style>
+      <style>{globalCss + dreelioDashboardCss + appFeelingCss}</style>
 
       <div className="dreelio-shell">
         <DreelioSidebar
@@ -297,21 +298,22 @@ export default function App() {
             <Header me={me} onLogout={logout} branding={branding} />
           </div>
 
-          <Top3
-            nextMatch={nextMatch}
-            countdown={countdown}
-            myOpenCount={myOpenCount}
-            potTotal={potTotal}
-            me={me}
-            players={players}
-            attendanceByMatch={attendanceByMatch}
-            setTab={changeTab}
-            posts={clubPosts}
-            branding={branding}
-            statsByPlayer={statsByPlayer}
-          />
-
           <main style={styles.main} className="tott-main dreelio-main">
+            {tab === "overzicht" && (
+              <Top3
+                nextMatch={nextMatch}
+                countdown={countdown}
+                myOpenCount={myOpenCount}
+                potTotal={potTotal}
+                me={me}
+                players={players}
+                attendanceByMatch={attendanceByMatch}
+                setTab={changeTab}
+                posts={clubPosts}
+                branding={branding}
+                statsByPlayer={statsByPlayer}
+              />
+            )}
             {tab === "wedstrijden" && (
               <MatchesTab
                 matches={matches} players={players}
@@ -449,6 +451,7 @@ function DreelioSidebar({ me, tab, setTab, onLogout, myOpenCount, potTotal, post
   const logoUrl = branding?.logoUrl || DEFAULT_BRANDING.logoUrl;
   const needsMatchResponse = !!(nextMatch && me && !attendanceByMatch[nextMatch.id]?.[me.id]?.status);
   const badgeFor = (key) => {
+    if (key === "overzicht" && (myOpenCount > 0 || needsMatchResponse)) return "live";
     if (key === "financien" && myOpenCount > 0) return myOpenCount;
     if (key === "updates" && postsCount > 0) return Math.min(postsCount, 9);
     if (key === "wedstrijden" && needsMatchResponse) return "!";
@@ -548,7 +551,7 @@ function Top3({ nextMatch, countdown, myOpenCount, potTotal, me, players = [], a
       <section className="dreelio-overview" aria-label="Dashboard overzicht">
         <div className="dreelio-welcome-card">
           <div className="dreelio-card-topline">
-            <span className="dreelio-chip"><span className="dreelio-live-dot" /> Live clubdashboard</span>
+            <span className="dreelio-chip"><span className="dreelio-live-dot" /> Live app dashboard</span>
             <span className="dreelio-chip muted">{activePlayers.length} spelers</span>
             <button type="button" className="dreelio-bell-button" onClick={() => setNotificationsOpen((open) => !open)}>
               <Bell size={15} />
@@ -577,8 +580,8 @@ function Top3({ nextMatch, countdown, myOpenCount, potTotal, me, players = [], a
           )}
           <div>
             <div className="dreelio-kicker">Hoi {firstName}</div>
-            <h1>Je teamstatus in één levend overzicht.</h1>
-            <p>Zie direct wat belangrijk is: de volgende wedstrijd, wie zich heeft aangemeld, open betalingen en de stand van de boetepot.</p>
+            <h1>Je live team-app in één overzicht.</h1>
+            <p>Een compact startscherm voor wedstrijden, betalingen, team pulse en updates.</p>
           </div>
           <div className="dreelio-quick-row">
             <button type="button" onClick={() => setTab?.("wedstrijden")} className="dreelio-quick-action">
@@ -3813,3 +3816,27 @@ const styles = {
   empty: { display: "flex", alignItems: "center", gap: 8, color: "var(--text-dim)", fontSize: 13.5, padding: "20px 4px" },
   footer: { textAlign: "center", padding: "18px 0 28px", fontSize: 11.5, color: "var(--text-dim)", borderTop: "1px solid var(--line)" },
 };
+
+
+const appFeelingCss = `
+  .dreelio-app { background: radial-gradient(circle at 88% 0%, rgba(126,224,105,.13), transparent 31%), linear-gradient(180deg,#f7f7f2,#ecebe5) !important; }
+  .dreelio-content { max-width: 1260px; width: 100%; margin: 0 auto; }
+  .dreelio-main { animation: appScreenIn 420ms cubic-bezier(.2,.8,.2,1) both; }
+  @keyframes appScreenIn { from { opacity:0; transform: translateY(10px) scale(.992); filter: blur(4px);} to { opacity:1; transform:none; filter:blur(0);} }
+  .dreelio-overview { grid-template-columns: minmax(0,1.45fr) repeat(2,minmax(210px,.72fr)); gap:14px; margin:0 0 14px; }
+  .dreelio-welcome-card { min-height:330px; border-radius:34px !important; color:#fff; background: radial-gradient(circle at 84% 16%, rgba(126,224,105,.38), transparent 26%), radial-gradient(circle at 18% 0%, rgba(243,200,107,.18), transparent 30%), linear-gradient(135deg,#070b08 0%,#101812 55%,#1e2b20 100%) !important; border-color:rgba(255,255,255,.09) !important; box-shadow:0 30px 80px rgba(6,10,7,.23) !important; }
+  .dreelio-welcome-card:before { content:""; position:absolute; inset:-120px -80px auto auto; width:330px; height:330px; border-radius:999px; background:radial-gradient(circle,rgba(126,224,105,.32),transparent 62%); animation: appGlowFloat 7s ease-in-out infinite alternate; }
+  @keyframes appGlowFloat { from { transform:translate3d(0,0,0) scale(1); opacity:.7;} to { transform:translate3d(-24px,28px,0) scale(1.08); opacity:1;} }
+  .dreelio-welcome-card h1 { color:#fff; max-width:620px; font-size:clamp(34px,4.7vw,66px); }
+  .dreelio-welcome-card p, .dreelio-welcome-card .dreelio-kicker { color:rgba(255,255,255,.68); }
+  .dreelio-welcome-card .dreelio-chip, .dreelio-welcome-card .dreelio-bell-button, .dreelio-welcome-card .dreelio-quick-action { background:rgba(255,255,255,.10); color:#fff; border-color:rgba(255,255,255,.12); backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px); }
+  .dreelio-welcome-card .dreelio-quick-action span { color:rgba(255,255,255,.58); } .dreelio-welcome-card .dreelio-quick-action strong { color:#fff; }
+  .dreelio-kpi-card { border-radius:26px !important; min-height:154px; transition:transform .18s ease, box-shadow .18s ease; }
+  .dreelio-kpi-card:hover, .dreelio-home-update-item:hover { transform:translateY(-2px); box-shadow:0 22px 56px rgba(16,21,17,.09) !important; }
+  .dreelio-kpi-icon { background:#111711; color:#7ee069; border-color:rgba(255,255,255,.08); box-shadow:0 14px 28px rgba(16,21,17,.12); }
+  .dreelio-match-card { background: radial-gradient(circle at 90% 20%, rgba(126,224,105,.13), transparent 38%), #fff !important; }
+  .dreelio-activity-strip { border-radius:26px; background:linear-gradient(135deg,rgba(255,255,255,.9),rgba(248,248,244,.84)); backdrop-filter:blur(18px) saturate(140%); }
+  .dreelio-side-link { position:relative; } .dreelio-side-link.is-active:before { content:""; position:absolute; left:-8px; top:50%; width:4px; height:24px; border-radius:999px; transform:translateY(-50%); background:#7ee069; box-shadow:0 0 22px rgba(126,224,105,.28); }
+  @media (max-width:1100px){ .dreelio-overview{grid-template-columns:repeat(2,minmax(0,1fr));} .dreelio-welcome-card{grid-column:1/-1;grid-row:auto;} }
+  @media (max-width:860px){ .dreelio-shell{display:block;padding:10px 10px 86px;} .dreelio-content{max-width:520px;} .dreelio-sidebar{position:fixed!important;left:10px;right:10px;bottom:10px;top:auto;height:68px;z-index:50;padding:8px;border-radius:24px;display:block;overflow:visible;background:rgba(10,15,11,.88);backdrop-filter:blur(24px) saturate(160%);} .dreelio-sidebar:after,.dreelio-sidebar-brand,.dreelio-sidebar-group-label,.dreelio-sidebar-card,.dreelio-sidebar-spacer,.dreelio-profile-card{display:none!important;} .dreelio-sidebar-nav{height:100%;display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;} .dreelio-side-link{min-height:52px;height:52px;padding:6px 2px;border-radius:18px;flex-direction:column;justify-content:center;gap:3px;text-align:center;font-size:9.5px;line-height:1;} .dreelio-side-link .dreelio-side-icon{width:24px;height:24px;border-radius:9px;} .dreelio-side-link.is-active{background:#fff;color:#101511;} .dreelio-side-link.is-active:before{display:none;} .dreelio-nav-badge{right:7px;top:5px;min-width:15px;height:15px;padding:0 4px;font-size:8px;} .dreelio-overview{grid-template-columns:1fr 1fr;gap:10px;} .dreelio-welcome-card{grid-column:1/-1;min-height:300px;padding:20px;border-radius:30px!important;} .dreelio-welcome-card h1{font-size:38px;line-height:.95;} .dreelio-kpi-card{min-height:134px;padding:14px;flex-direction:column;gap:10px;} .dreelio-activity-strip{grid-template-columns:1fr 1fr;margin-bottom:12px;} .dreelio-activity-avatars{display:none;} }
+`;
