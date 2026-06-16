@@ -436,7 +436,7 @@ export default function App() {
               <ProfileTab
                 me={me} players={players}
                 attendanceByMatch={attendanceByMatch} matches={matches}
-                statsByPlayer={statsByPlayer} isAdmin={isAdmin} reloadAll={reloadAll}
+                statsByPlayer={statsByPlayer} isAdmin={isAdmin} reloadAll={reloadAll} onLogout={logout}
               />
             )}
             {tab === "boetepot" && (
@@ -1541,7 +1541,7 @@ function DonutChart({ pct, size = 76, stroke = 8 }) {
   );
 }
 
-function ProfileTab({ me, players, attendanceByMatch, matches, statsByPlayer, isAdmin, reloadAll }) {
+function ProfileTab({ me, players, attendanceByMatch, matches, statsByPlayer, isAdmin, reloadAll, onLogout }) {
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState({ photo: me.photo || "", position: me.position || "Allround", number: me.number || "" });
   const [busy, setBusy] = useState(false);
@@ -1617,6 +1617,15 @@ function ProfileTab({ me, players, attendanceByMatch, matches, statsByPlayer, is
         {isAdmin && (
           <div style={styles.statsHint}>Goals en assists worden bijgehouden via de uitslag van elke wedstrijd, in het Wedstrijden-tabblad.</div>
         )}
+
+        <button
+          type="button"
+          className="fcx-profile-logout"
+          onClick={onLogout}
+        >
+          <LogOut size={17} />
+          Uitloggen
+        </button>
       </div>
 
       {isAdmin && (
@@ -4817,6 +4826,39 @@ const readabilityFixCss = `
     background: rgba(255,255,255,.08) !important;
     color: #fff !important;
     border: 1px solid rgba(255,255,255,.14) !important;
+  }
+
+  .fcx-profile-logout {
+    width: 100%;
+    min-height: 48px;
+    margin-top: 18px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    border-radius: 18px !important;
+    border: 1px solid rgba(255,255,255,.12) !important;
+    background: rgba(255,255,255,.07) !important;
+    color: #fff !important;
+    font-size: 14px;
+    font-weight: 850;
+    letter-spacing: -.01em;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.08);
+  }
+
+  .fcx-profile-logout:hover {
+    background: rgba(255,255,255,.11) !important;
+    border-color: rgba(246,193,88,.32) !important;
+  }
+
+  @media (max-width: 860px) {
+    .fcx-profile-logout {
+      margin-top: 16px;
+      min-height: 52px;
+      border-radius: 20px !important;
+      background: linear-gradient(135deg, rgba(246,193,88,.14), rgba(255,255,255,.06)) !important;
+      border-color: rgba(246,193,88,.24) !important;
+    }
   }
 `;
 
