@@ -182,8 +182,8 @@ export default function App() {
 
   if (loading) {
     return (
-      <div style={styles.app}>
-        <style>{globalCss}</style>
+      <div style={styles.app} className="tott-app">
+        <style>{globalCss + appleDashboardCss}</style>
         <div style={styles.loadingScreen}>Laden…</div>
       </div>
     );
@@ -191,8 +191,8 @@ export default function App() {
 
   if (loadError) {
     return (
-      <div style={styles.app}>
-        <style>{globalCss}</style>
+      <div style={styles.app} className="tott-app">
+        <style>{globalCss + appleDashboardCss}</style>
         <div style={styles.loadingScreen}>
           <AlertCircle size={22} style={{ marginBottom: 10, color: "var(--warn)" }} />
           <div>Kon geen verbinding maken met de database.</div>
@@ -207,8 +207,8 @@ export default function App() {
 
   if (!me) {
     return (
-      <div style={styles.app}>
-        <style>{globalCss}</style>
+      <div style={styles.app} className="tott-app">
+        <style>{globalCss + appleDashboardCss}</style>
         <Header />
         <LoginScreen players={players} onLogin={login} />
         <footer style={styles.footer}>FC TOTT · Sponsored By Nola Marketing (website, branding en marketing)</footer>
@@ -220,8 +220,8 @@ export default function App() {
   const potTotal = fines.reduce((sum, f) => sum + Number(f.amount), 0);
 
   return (
-    <div style={styles.app}>
-      <style>{globalCss}</style>
+    <div style={styles.app} className="tott-app">
+      <style>{globalCss + appleDashboardCss}</style>
       <Header me={me} onLogout={logout} />
       <Top3 nextMatch={nextMatch} countdown={countdown} myOpenCount={myOpenCount} potTotal={potTotal} />
 
@@ -306,7 +306,7 @@ function LoginScreen({ players, onLogin }) {
 
   return (
     <div style={styles.loginWrap}>
-      <form style={styles.loginCard} onSubmit={submit}>
+      <form style={styles.loginCard} className="tott-login-card" onSubmit={submit}>
         <div style={styles.loginIcon}><Lock size={20} /></div>
         <div style={styles.loginTitle}>Inloggen bij FC TOTT</div>
         <div style={styles.loginSub}>Gebruik de inloggegevens die je van het bestuur hebt gekregen.</div>
@@ -356,43 +356,83 @@ function Header({ me, onLogout }) {
 }
 
 function Top3({ nextMatch, countdown, myOpenCount, potTotal }) {
-  return (
-    <div style={styles.heroWrap} className="tott-herowrap">
-      <div style={styles.heroCard} className="tott-hero">
-        <div style={styles.heroTopRow}>
-          <span style={styles.heroDateBadge}>
-            <Calendar size={12} />
-            {nextMatch ? formatDateShort(nextMatch.match_date) : "Gepland"}
-          </span>
-          {nextMatch && <span style={styles.heroPillBadge}>{matchTypeInfo(nextMatch.category).label}</span>}
-        </div>
-        <div style={styles.heroLabel}>Volgende wedstrijd</div>
-        <div style={styles.heroTitle}>
-          {nextMatch ? <>FC TOTT <span style={{ opacity: 0.55, fontWeight: 600 }}>vs</span> {nextMatch.opponent}</> : "Nog niets gepland"}
-        </div>
-        {nextMatch && <div style={styles.heroCountdown}><Clock size={13} /> {countdown}</div>}
-      </div>
+  const category = nextMatch ? matchTypeInfo(nextMatch.category) : null;
 
-      <div style={styles.heroSideCol}>
-        <div style={{ ...styles.heroStatCard, ...(myOpenCount > 0 ? styles.heroStatCardWarn : {}) }}>
-          <div style={styles.heroStatIconWrap}>
-            <AlertCircle size={15} />
+  return (
+    <div className="tott-dashboard-hero">
+      <section className="tott-next-card">
+        <div className="tott-next-card-inner">
+          <div className="tott-hero-topline">
+            <span className="tott-soft-pill">
+              <Calendar size={14} />
+              {nextMatch ? formatDateShort(nextMatch.match_date) : "Nog niet gepland"}
+            </span>
+
+            {category && (
+              <span className="tott-soft-pill tott-soft-pill-muted">
+                {category.label}
+              </span>
+            )}
           </div>
-          <div>
-            <div style={styles.heroStatValue}>{myOpenCount}</div>
-            <div style={styles.heroStatLabel}>{myOpenCount === 1 ? "betaling open" : "betalingen open"}</div>
+
+          <div className="tott-hero-maincopy">
+            <div className="tott-hero-label">Volgende wedstrijd</div>
+
+            <div className={`tott-hero-title ${!nextMatch ? "tott-hero-empty" : ""}`}>
+              {nextMatch ? (
+                <>
+                  FC TOTT <span className="tott-hero-vs">vs</span> {nextMatch.opponent}
+                </>
+              ) : (
+                "Nog niets gepland"
+              )}
+            </div>
+          </div>
+
+          <div className="tott-hero-bottom">
+            {nextMatch ? (
+              <div className="tott-countdown-pill">
+                <Clock size={15} />
+                {countdown}
+              </div>
+            ) : (
+              <div className="tott-hero-note">
+                Zodra er een wedstrijd is toegevoegd, verschijnt hij hier als primaire dashboardkaart.
+              </div>
+            )}
+
+            <div className="tott-hero-note">
+              Wedstrijden, aanwezigheid, boetepot en betalingen in één rustig overzicht.
+            </div>
           </div>
         </div>
-        <div style={styles.heroStatCard}>
-          <div style={styles.heroStatIconWrap}>
-            <Coins size={15} />
+      </section>
+
+      <aside className="tott-kpi-grid">
+        <div className={`tott-kpi-card ${myOpenCount > 0 ? "warn" : ""}`}>
+          <div className="tott-kpi-icon">
+            <AlertCircle size={19} />
           </div>
+
           <div>
-            <div style={styles.heroStatValue}>€{potTotal}</div>
-            <div style={styles.heroStatLabel}>In de boetepot</div>
+            <div className="tott-kpi-value">{myOpenCount}</div>
+            <div className="tott-kpi-label">
+              {myOpenCount === 1 ? "betaling open" : "betalingen open"}
+            </div>
           </div>
         </div>
-      </div>
+
+        <div className="tott-kpi-card">
+          <div className="tott-kpi-icon">
+            <Coins size={19} />
+          </div>
+
+          <div>
+            <div className="tott-kpi-value">€{potTotal}</div>
+            <div className="tott-kpi-label">In de boetepot</div>
+          </div>
+        </div>
+      </aside>
     </div>
   );
 }
@@ -480,7 +520,7 @@ function MatchesTab({ matches, players, attendanceByMatch, lineupsByMatch, goals
   return (
     <section>
       {me && nextMatch && (
-        <div style={styles.meCard}>
+        <div style={styles.meCard} className="tott-card tott-me-card">
           <div style={styles.meCardHead}>
             <div style={styles.meCardTitle}>Kom jij naar de volgende wedstrijd?</div>
             <span style={styles.catTag}>{matchTypeInfo(nextMatch.category).label}</span>
@@ -519,7 +559,7 @@ function MatchesTab({ matches, players, attendanceByMatch, lineupsByMatch, goals
 
       {reasonPrompt && (
         <div style={styles.modalOverlay} onClick={() => setReasonPrompt(null)}>
-          <div style={styles.modalCard} onClick={(e) => e.stopPropagation()}>
+          <div style={styles.modalCard} className="tott-modal-card" onClick={(e) => e.stopPropagation()}>
             <div style={styles.modalTitle}>
               Reden voor "{ATTENDANCE_STATUSES.find((s) => s.key === reasonPrompt.status)?.label}"
             </div>
@@ -547,7 +587,7 @@ function MatchesTab({ matches, players, attendanceByMatch, lineupsByMatch, goals
       </div>
 
       {isAdmin && showForm && (
-        <div style={styles.formCard}>
+        <div style={styles.formCard} className="tott-card tott-form-card">
           <div style={styles.formRow} className="tott-formrow">
             <select style={styles.input} value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })}>
               {MATCH_TYPES.map((t) => <option key={t.key} value={t.key}>{t.label}</option>)}
@@ -565,7 +605,7 @@ function MatchesTab({ matches, players, attendanceByMatch, lineupsByMatch, goals
         </div>
       )}
 
-      <div style={styles.matchList}>
+      <div style={styles.matchList} className="tott-match-list">
         {sorted.length === 0 && <EmptyState text="Nog geen wedstrijden gepland." />}
         {sorted.map((m) => {
           const past = new Date(m.match_date).getTime() < Date.now();
@@ -582,7 +622,7 @@ function MatchesTab({ matches, players, attendanceByMatch, lineupsByMatch, goals
           const hasUnsure = counts.twijfel > 0;
 
           return (
-            <div key={m.id} style={{ ...styles.matchCard, ...styles.matchCardCol, opacity: past ? 0.55 : 1 }}>
+            <div key={m.id} className="tott-card tott-match-card" style={{ ...styles.matchCard, ...styles.matchCardCol, opacity: past ? 0.55 : 1 }}>
               <div style={styles.matchCardTop} className="tott-matchtop">
                 {(() => {
                   const info = matchTypeInfo(m.category);
@@ -750,7 +790,7 @@ function LineupEditor({ players, attendance, lineup, onSave }) {
   }
 
   return (
-    <div style={styles.lineupEditor}>
+    <div style={styles.lineupEditor} className="tott-lineup-editor">
       <div style={styles.lineupLabel}>Keeper (1)</div>
       <div style={styles.lineupGrid}>
         {available.map((p) => (
@@ -815,7 +855,7 @@ function MatchResultEditor({ match, players, goals, reloadAll }) {
   };
 
   return (
-    <div style={styles.lineupEditor}>
+    <div style={styles.lineupEditor} className="tott-lineup-editor">
       <div style={styles.lineupLabel}>Eindstand</div>
       <div style={styles.scoreInputRow}>
         <span style={styles.scoreInputTeam}>FC TOTT</span>
@@ -918,7 +958,7 @@ function ProfileTab({ me, players, attendanceByMatch, matches, statsByPlayer, is
 
   return (
     <section>
-      <div style={styles.profileCard}>
+      <div style={styles.profileCard} className="tott-card tott-profile-card">
         <div style={styles.profileTop}>
           <div style={styles.profilePhoto}>
             {me.photo ? <img src={me.photo} alt={me.name} style={styles.profilePhotoImg} /> : <Users size={28} />}
@@ -970,7 +1010,7 @@ function ProfileTab({ me, players, attendanceByMatch, matches, statsByPlayer, is
       </div>
 
       {isAdmin && (
-        <div style={styles.teamStatsCard}>
+        <div style={styles.teamStatsCard} className="tott-card tott-team-stats-card">
           <div style={{ ...styles.h2, marginBottom: 12, color: "var(--text)" }}>Hele team — statistieken</div>
           {players.map((p) => {
             const pStats = statsByPlayer[p.id] || { goals: 0, assists: 0 };
@@ -1047,7 +1087,7 @@ function FinePotTab({ fineRules, fines, players, isAdmin, reloadAll }) {
         </div>
       </div>
 
-      <div style={styles.potCard}>
+      <div style={styles.potCard} className="tott-pot-card">
         <Coins size={26} style={{ opacity: 0.85 }} />
         <div>
           <div style={styles.potAmount}>€{potTotal}</div>
@@ -1056,7 +1096,7 @@ function FinePotTab({ fineRules, fines, players, isAdmin, reloadAll }) {
       </div>
 
       <div style={styles.h3}>Regels &amp; bedragen</div>
-      <div style={styles.rulesCard}>
+      <div style={styles.rulesCard} className="tott-card tott-rules-card">
         {fineRules.map((r) => (
           <div key={r.id} style={styles.ruleRow}>
             <Gavel size={14} style={{ color: "var(--accent)", flexShrink: 0 }} />
@@ -1072,7 +1112,7 @@ function FinePotTab({ fineRules, fines, players, isAdmin, reloadAll }) {
 
       {isAdmin && (
         <>
-          <div style={styles.formCard}>
+          <div style={styles.formCard} className="tott-card tott-form-card">
             <div style={styles.formRow} className="tott-formrow">
               <input style={styles.input} placeholder="Omschrijving regel" value={newRule.label}
                 onChange={(e) => setNewRule({ ...newRule, label: e.target.value })} />
@@ -1083,7 +1123,7 @@ function FinePotTab({ fineRules, fines, players, isAdmin, reloadAll }) {
           </div>
 
           <div style={styles.h3}>Boete toekennen</div>
-          <div style={styles.formCard}>
+          <div style={styles.formCard} className="tott-card tott-form-card">
             <div style={styles.formRow} className="tott-formrow">
               <select style={styles.input} value={assign.playerId} onChange={(e) => setAssign({ ...assign, playerId: e.target.value })}>
                 <option value="">Kies speler…</option>
@@ -1102,7 +1142,7 @@ function FinePotTab({ fineRules, fines, players, isAdmin, reloadAll }) {
       {totalsByPlayer.length > 0 && (
         <>
           <div style={styles.h3}>Boetes per speler</div>
-          <div style={styles.rulesCard}>
+          <div style={styles.rulesCard} className="tott-card tott-rules-card">
             {totalsByPlayer.map(({ player, total }) => (
               <div key={player.id} style={styles.ruleRow}>
                 <span style={styles.ruleText}>{player.name}</span>
@@ -1116,7 +1156,7 @@ function FinePotTab({ fineRules, fines, players, isAdmin, reloadAll }) {
       {isAdmin && fines.length > 0 && (
         <>
           <div style={styles.h3}>Boetegeschiedenis</div>
-          <div style={styles.rulesCard}>
+          <div style={styles.rulesCard} className="tott-card tott-rules-card">
             {fines.map((f) => {
               const p = players.find((pl) => pl.id === f.player_id);
               return (
@@ -1163,7 +1203,7 @@ function RulesTab({ rules, isAdmin, reloadAll }) {
           <h2 style={styles.h2} className="tott-h2">Huisregels</h2>
         </div>
       </div>
-      <div style={styles.rulesCard}>
+      <div style={styles.rulesCard} className="tott-card tott-rules-card">
         {rules.map((r, i) => (
           <div key={r.id} style={styles.ruleRow}>
             <span style={styles.ruleNum}>{String(i + 1).padStart(2, "0")}</span>
@@ -1201,7 +1241,7 @@ function FinanceTab({ players, feeTypes, feesByPlayer, me, isAdmin, reloadAll })
 
   return (
     <section>
-      <div style={styles.meCard}>
+      <div style={styles.meCard} className="tott-card tott-me-card">
         <div style={styles.meCardTitle}>Jouw betalingen, {me.name.split(" ")[0]}</div>
         <div style={styles.myFeeList}>
           {feeTypes.map((f) => {
@@ -1232,7 +1272,7 @@ function FinanceTab({ players, feeTypes, feesByPlayer, me, isAdmin, reloadAll })
       </button>
 
       {showAll && (
-        <div style={styles.tableWrap}>
+        <div style={styles.tableWrap} className="tott-table-wrap">
           <table style={styles.table} className="tott-finance-table">
             <thead>
               <tr>
@@ -1308,7 +1348,7 @@ function AdminPanel({ players, reloadAll }) {
   };
 
   return (
-    <div style={styles.adminPanel}>
+    <div style={styles.adminPanel} className="tott-card tott-admin-panel">
       <button style={styles.beheerToggle} onClick={() => setOpen((o) => !o)}>
         <UserCog size={14} style={{ marginRight: 6, verticalAlign: "-2px" }} />
         {open ? "Sluit beheerderspaneel" : "Beheerderspaneel — spelers, accounts & toegang"}
@@ -1317,7 +1357,7 @@ function AdminPanel({ players, reloadAll }) {
       {open && (
         <div style={styles.adminBody}>
           <div style={styles.h3}>Spelers &amp; accounts</div>
-          <div style={styles.rulesCard}>
+          <div style={styles.rulesCard} className="tott-card tott-rules-card">
             {players.map((p) => (
               <div key={p.id} style={styles.adminRow}>
                 <div style={{ flex: 1, minWidth: 0 }}>
@@ -1339,7 +1379,7 @@ function AdminPanel({ players, reloadAll }) {
           </div>
 
           <div style={styles.h3}>Nieuw account aanmaken</div>
-          <div style={styles.formCard}>
+          <div style={styles.formCard} className="tott-card tott-form-card">
             <div style={styles.formRow} className="tott-formrow">
               <input style={styles.input} placeholder="Volledige naam" value={newPlayer.name}
                 onChange={(e) => setNewPlayer({ ...newPlayer, name: e.target.value })} />
@@ -1487,6 +1527,623 @@ const globalCss = `
     .tott-addrow > button { width: auto; }
   }
 `;
+
+const appleDashboardCss = `
+  :root {
+    --bg: transparent;
+    --bg-soft: #f5f4ef;
+    --card: rgba(255, 255, 255, 0.76);
+    --line: rgba(20, 23, 17, 0.08);
+    --accent: #4A5D23;
+    --accent-soft: #E8EDDD;
+    --warn: #C44A2E;
+    --warn-soft: #FFF0EA;
+    --success: #4A5D23;
+    --text: #141711;
+    --text-dim: #6F7268;
+    --shadow-sm: 0 1px 2px rgba(20,20,18,0.04);
+    --shadow: 0 18px 48px rgba(19,21,15,0.07), 0 5px 16px rgba(19,21,15,0.04);
+    --shadow-lg: 0 26px 80px rgba(19,21,15,0.10), 0 8px 24px rgba(19,21,15,0.06);
+    --apple-radius-xl: 34px;
+    --apple-radius-lg: 26px;
+    --apple-radius-md: 18px;
+    --apple-glass: rgba(255,255,255,0.72);
+    --apple-border: rgba(20, 23, 17, 0.08);
+    --apple-border-strong: rgba(20, 23, 17, 0.14);
+  }
+
+  html,
+  body,
+  #root {
+    min-height: 100%;
+  }
+
+  body {
+    margin: 0 !important;
+    background:
+      radial-gradient(circle at 10% -8%, rgba(201,217,160,0.48), transparent 33%),
+      radial-gradient(circle at 92% 0%, rgba(255,255,255,0.95), transparent 36%),
+      linear-gradient(180deg, #fbfaf7 0%, #f6f5f1 52%, #efeee8 100%) !important;
+    color: var(--text) !important;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: geometricPrecision;
+  }
+
+  .tott-app {
+    background: transparent !important;
+    color: var(--text) !important;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  button,
+  input,
+  select,
+  textarea {
+    font: inherit;
+  }
+
+  button {
+    transition:
+      transform 160ms ease,
+      box-shadow 160ms ease,
+      background 160ms ease,
+      border-color 160ms ease,
+      opacity 160ms ease;
+  }
+
+  button:hover:not(:disabled) {
+    transform: translateY(-1px);
+  }
+
+  button:active:not(:disabled) {
+    transform: translateY(0);
+  }
+
+  input:focus,
+  select:focus,
+  textarea:focus,
+  button:focus-visible {
+    outline: none !important;
+    box-shadow:
+      0 0 0 4px rgba(74,93,35,0.10),
+      inset 0 1px 0 rgba(255,255,255,0.9) !important;
+  }
+
+  /* Header */
+
+  .tott-header {
+    width: min(1220px, calc(100% - 44px)) !important;
+    max-width: 1220px !important;
+    margin: 18px auto 14px !important;
+    padding: 14px 18px !important;
+    border-radius: 28px !important;
+    background: rgba(255,255,255,0.72) !important;
+    border: 1px solid rgba(255,255,255,0.72) !important;
+    box-shadow: 0 12px 40px rgba(19,21,15,0.06) !important;
+    backdrop-filter: blur(24px) saturate(160%);
+    -webkit-backdrop-filter: blur(24px) saturate(160%);
+  }
+
+  .tott-crest {
+    width: 48px !important;
+    height: 48px !important;
+    border-radius: 17px !important;
+    background: linear-gradient(145deg, #1b1f16 0%, #0e110d 100%) !important;
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,0.14),
+      0 12px 24px rgba(19,21,15,0.18) !important;
+    letter-spacing: -0.4px !important;
+  }
+
+  .tott-clubname {
+    font-size: 20px !important;
+    letter-spacing: -0.6px !important;
+    color: var(--text) !important;
+  }
+
+  .tott-clubsub {
+    color: var(--text-dim) !important;
+    font-size: 13px !important;
+  }
+
+  .tott-header button {
+    border-radius: 999px !important;
+    background: rgba(20,23,17,0.06) !important;
+    color: var(--text) !important;
+    border: 1px solid rgba(20,23,17,0.08) !important;
+  }
+
+  /* Apple/SaaS dashboard top */
+
+  .tott-dashboard-hero {
+    width: min(1220px, calc(100% - 44px));
+    margin: 22px auto 18px;
+    display: grid;
+    grid-template-columns: minmax(0, 1.45fr) minmax(300px, 0.75fr);
+    gap: 18px;
+    align-items: stretch;
+  }
+
+  .tott-next-card,
+  .tott-kpi-card {
+    position: relative;
+    overflow: hidden;
+    border: 1px solid var(--apple-border);
+    box-shadow: var(--shadow-lg);
+    backdrop-filter: blur(26px) saturate(160%);
+    -webkit-backdrop-filter: blur(26px) saturate(160%);
+  }
+
+  .tott-next-card {
+    min-height: 232px;
+    padding: 30px;
+    border-radius: var(--apple-radius-xl);
+    background:
+      linear-gradient(135deg, rgba(255,255,255,0.90) 0%, rgba(246,246,241,0.83) 52%, rgba(232,237,221,0.92) 100%);
+  }
+
+  .tott-next-card::before {
+    content: "";
+    position: absolute;
+    inset: auto -90px -128px auto;
+    width: 310px;
+    height: 310px;
+    border-radius: 999px;
+    background: radial-gradient(circle, rgba(74,93,35,0.20), transparent 63%);
+    pointer-events: none;
+  }
+
+  .tott-next-card::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: linear-gradient(180deg, rgba(255,255,255,0.66), transparent 48%);
+    pointer-events: none;
+  }
+
+  .tott-next-card-inner {
+    position: relative;
+    z-index: 1;
+    min-height: 172px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 28px;
+  }
+
+  .tott-hero-topline {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .tott-soft-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 8px 12px;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.74);
+    border: 1px solid rgba(20,23,17,0.08);
+    color: var(--text);
+    font-size: 12px;
+    font-weight: 750;
+    box-shadow: 0 6px 18px rgba(19,21,15,0.04);
+  }
+
+  .tott-soft-pill-muted {
+    color: var(--accent);
+    background: rgba(232,237,221,0.84);
+  }
+
+  .tott-hero-label {
+    color: var(--accent);
+    font-size: 12px;
+    font-weight: 850;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 9px;
+  }
+
+  .tott-hero-title {
+    max-width: 820px;
+    color: var(--text);
+    font-size: clamp(34px, 4.4vw, 62px);
+    line-height: 0.98;
+    letter-spacing: -0.065em;
+    font-weight: 850;
+  }
+
+  .tott-hero-vs {
+    color: rgba(20,23,17,0.38);
+    font-weight: 650;
+  }
+
+  .tott-hero-empty {
+    max-width: 620px;
+  }
+
+  .tott-hero-bottom {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+    flex-wrap: wrap;
+  }
+
+  .tott-countdown-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    border-radius: 999px;
+    color: #fff;
+    background: #141711;
+    font-size: 13px;
+    font-weight: 760;
+    box-shadow: 0 14px 26px rgba(20,23,17,0.18);
+  }
+
+  .tott-hero-note {
+    max-width: 380px;
+    color: var(--text-dim);
+    font-size: 13px;
+    line-height: 1.45;
+  }
+
+  .tott-kpi-grid {
+    display: grid;
+    gap: 18px;
+  }
+
+  .tott-kpi-card {
+    min-height: 107px;
+    padding: 22px;
+    border-radius: var(--apple-radius-lg);
+    background: rgba(255,255,255,0.78);
+    display: flex;
+    align-items: center;
+    gap: 15px;
+  }
+
+  .tott-kpi-card.warn {
+    background:
+      linear-gradient(135deg, rgba(255,255,255,0.88), rgba(255,240,234,0.94));
+    border-color: rgba(196,74,46,0.16);
+  }
+
+  .tott-kpi-icon {
+    width: 44px;
+    height: 44px;
+    flex: 0 0 auto;
+    display: grid;
+    place-items: center;
+    border-radius: 17px;
+    background: #f0f0eb;
+    color: var(--accent);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.85);
+  }
+
+  .tott-kpi-card.warn .tott-kpi-icon {
+    color: var(--warn);
+    background: rgba(255,230,220,0.88);
+  }
+
+  .tott-kpi-value {
+    color: var(--text);
+    font-size: 28px;
+    font-weight: 850;
+    letter-spacing: -0.055em;
+    line-height: 1;
+  }
+
+  .tott-kpi-label {
+    color: var(--text-dim);
+    font-size: 13px;
+    font-weight: 650;
+    margin-top: 6px;
+  }
+
+  /* Navigation */
+
+  .tott-nav {
+    width: min(1220px, calc(100% - 44px)) !important;
+    max-width: 1220px !important;
+    margin: 0 auto 20px !important;
+    padding: 7px !important;
+    border-radius: 24px !important;
+    background: rgba(255,255,255,0.68) !important;
+    border: 1px solid rgba(255,255,255,0.72) !important;
+    box-shadow: 0 12px 34px rgba(19,21,15,0.055) !important;
+    backdrop-filter: blur(22px) saturate(160%);
+    -webkit-backdrop-filter: blur(22px) saturate(160%);
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .tott-nav::-webkit-scrollbar {
+    display: none;
+  }
+
+  .tott-navbtn {
+    min-height: 43px !important;
+    padding: 10px 16px !important;
+    border-radius: 18px !important;
+    border: 1px solid transparent !important;
+    color: var(--text-dim) !important;
+    font-size: 14px !important;
+    font-weight: 740 !important;
+    white-space: nowrap !important;
+  }
+
+  .tott-navbtn:hover {
+    background: rgba(20,23,17,0.045) !important;
+    color: var(--text) !important;
+  }
+
+  .tott-navbtn[style*="background"] {
+    box-shadow: 0 9px 24px rgba(19,21,15,0.08) !important;
+  }
+
+  .tott-main {
+    width: min(1220px, calc(100% - 44px)) !important;
+    max-width: 1220px !important;
+    margin: 0 auto !important;
+    padding: 18px 0 54px !important;
+  }
+
+  .tott-sectionhead {
+    margin: 26px 0 16px !important;
+    padding: 0 2px !important;
+  }
+
+  .tott-h2 {
+    color: var(--text) !important;
+    font-size: 31px !important;
+    line-height: 1.06 !important;
+    letter-spacing: -0.045em !important;
+  }
+
+  /* Cards and surfaces */
+
+  .tott-card,
+  .tott-me-card,
+  .tott-form-card,
+  .tott-rules-card,
+  .tott-profile-card,
+  .tott-team-stats-card,
+  .tott-admin-panel,
+  .tott-modal-card,
+  .tott-login-card,
+  .tott-table-wrap,
+  .tott-lineup-editor,
+  .tott-match-card {
+    border-radius: var(--apple-radius-lg) !important;
+    background: rgba(255,255,255,0.74) !important;
+    border: 1px solid var(--apple-border) !important;
+    box-shadow: var(--shadow) !important;
+    backdrop-filter: blur(22px) saturate(155%);
+    -webkit-backdrop-filter: blur(22px) saturate(155%);
+  }
+
+  .tott-login-card {
+    box-shadow: var(--shadow-lg) !important;
+  }
+
+  .tott-me-card {
+    padding: 24px !important;
+  }
+
+  .tott-form-card {
+    padding: 20px !important;
+  }
+
+  .tott-rules-card,
+  .tott-table-wrap {
+    overflow: hidden !important;
+  }
+
+  .tott-profile-card {
+    padding: 28px !important;
+  }
+
+  .tott-team-stats-card,
+  .tott-admin-panel {
+    padding: 20px !important;
+  }
+
+  .tott-pot-card {
+    position: relative !important;
+    border-radius: var(--apple-radius-xl) !important;
+    background:
+      linear-gradient(135deg, #171a13 0%, #252c17 100%) !important;
+    border: 1px solid rgba(255,255,255,0.10) !important;
+    box-shadow: var(--shadow-lg) !important;
+    overflow: hidden !important;
+  }
+
+  .tott-pot-card * {
+    color: rgba(255,255,255,0.92) !important;
+  }
+
+  .tott-pot-card::after {
+    content: "";
+    position: absolute;
+    right: -80px;
+    bottom: -90px;
+    width: 220px;
+    height: 220px;
+    background: radial-gradient(circle, rgba(201,217,160,0.32), transparent 68%);
+    border-radius: 999px;
+    pointer-events: none;
+  }
+
+  .tott-match-list {
+    display: grid !important;
+    gap: 14px !important;
+  }
+
+  .tott-match-card {
+    overflow: hidden !important;
+    padding: 18px !important;
+  }
+
+  .tott-matchtop {
+    align-items: center !important;
+  }
+
+  .tott-matchmeta {
+    color: var(--text-dim) !important;
+  }
+
+  .tott-main input,
+  .tott-main select,
+  .tott-main textarea,
+  .tott-login-card input {
+    border-radius: 16px !important;
+    background: rgba(255,255,255,0.78) !important;
+    border: 1px solid var(--apple-border) !important;
+    color: var(--text) !important;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.9) !important;
+  }
+
+  .tott-main button,
+  .tott-login-card button {
+    border-radius: 999px !important;
+  }
+
+  .tott-formrow {
+    gap: 12px !important;
+  }
+
+  .tott-me-btnrow button {
+    border-radius: 20px !important;
+  }
+
+  .tott-finance-table tr {
+    border-color: var(--apple-border) !important;
+  }
+
+  .tott-finance-table th,
+  .tott-finance-table td {
+    border-color: var(--apple-border) !important;
+  }
+
+  .tott-pill,
+  [style*="Voldaan"],
+  [style*="Open"] {
+    border-radius: 999px !important;
+  }
+
+  .tott-admin-panel {
+    margin-top: 36px !important;
+  }
+
+  footer {
+    width: min(1220px, calc(100% - 44px));
+    margin: 0 auto;
+    color: rgba(20,23,17,0.42) !important;
+    border-top: 1px solid rgba(20,23,17,0.08) !important;
+  }
+
+  @media (max-width: 860px) {
+    .tott-header,
+    .tott-dashboard-hero,
+    .tott-nav,
+    .tott-main,
+    footer {
+      width: min(100% - 28px, 1220px) !important;
+    }
+
+    .tott-dashboard-hero {
+      grid-template-columns: 1fr;
+      gap: 14px;
+      margin-top: 14px;
+    }
+
+    .tott-next-card {
+      min-height: auto;
+      padding: 22px;
+    }
+
+    .tott-hero-title {
+      font-size: clamp(30px, 10vw, 44px);
+    }
+
+    .tott-kpi-grid {
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .tott-kpi-card {
+      min-height: 92px;
+      padding: 16px;
+    }
+
+    .tott-kpi-value {
+      font-size: 23px;
+    }
+
+    .tott-nav {
+      justify-content: flex-start !important;
+      margin-bottom: 14px !important;
+    }
+
+    .tott-navbtn {
+      padding: 10px 13px !important;
+      font-size: 13px !important;
+    }
+
+    .tott-main {
+      padding-bottom: 40px !important;
+    }
+  }
+
+  @media (max-width: 560px) {
+    .tott-header {
+      margin-top: 12px !important;
+      border-radius: 22px !important;
+    }
+
+    .tott-crest {
+      width: 42px !important;
+      height: 42px !important;
+      border-radius: 15px !important;
+    }
+
+    .tott-clubname {
+      font-size: 17px !important;
+    }
+
+    .tott-kpi-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .tott-hero-bottom {
+      align-items: flex-start;
+      flex-direction: column;
+    }
+
+    .tott-h2 {
+      font-size: 26px !important;
+    }
+
+    .tott-me-card,
+    .tott-profile-card,
+    .tott-form-card,
+    .tott-team-stats-card,
+    .tott-admin-panel {
+      padding: 18px !important;
+    }
+  }
+`;
+
 
 const styles = {
   app: {
