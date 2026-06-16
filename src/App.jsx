@@ -4,6 +4,7 @@ import {
   Check, X, Plus, Trash2, ChevronRight, Users, AlertCircle, HelpCircle,
   ChevronDown, ChevronUp, Lock, LogOut, UserCog, UserPlus, UserMinus,
   Goal, Handshake, Star, Shield, Camera, Eye, EyeOff, Coins, Gavel,
+  Repeat, Trophy, Flag, Award,
 } from "lucide-react";
 import * as db from "./lib/db";
 
@@ -11,18 +12,19 @@ import * as db from "./lib/db";
 // Constants
 // ============================================================
 const MATCH_TYPES = [
-  { key: "oefenwedstrijd", label: "Oefenwedstrijd", deadlineHours: 24 },
-  { key: "groepsactiviteit", label: "Groepsactiviteit", deadlineHours: 24 },
-  { key: "toernooi", label: "Toernooi", deadlineHours: 48 },
-  { key: "competitie", label: "Competitie", deadlineHours: 48 },
-  { key: "beker", label: "Bekerwedstrijd", deadlineHours: 48 },
+  { key: "oefenwedstrijd", label: "Oefenwedstrijd", deadlineHours: 24, icon: "Repeat", color: "#5B7C99", bg: "#E7EEF3" },
+  { key: "groepsactiviteit", label: "Groepsactiviteit", deadlineHours: 24, icon: "Users", color: "#8A6FB0", bg: "#EFE9F6" },
+  { key: "toernooi", label: "Toernooi", deadlineHours: 48, icon: "Trophy", color: "#B0822E", bg: "#F6EEDD" },
+  { key: "competitie", label: "Competitie", deadlineHours: 48, icon: "Flag", color: "#4A5D23", bg: "#E8EDDD" },
+  { key: "beker", label: "Bekerwedstrijd", deadlineHours: 48, icon: "Award", color: "#C7401F", bg: "#FBE7E1" },
 ];
 const matchTypeInfo = (key) => MATCH_TYPES.find((t) => t.key === key) || MATCH_TYPES[0];
+const MATCH_TYPE_ICONS = { Repeat, Users, Trophy, Flag, Award };
 
 const ATTENDANCE_STATUSES = [
-  { key: "aanwezig", label: "Aanwezig", icon: Check, color: "var(--success)", needsReason: false },
-  { key: "afwezig", label: "Afwezig", icon: X, color: "var(--warn)", needsReason: true },
-  { key: "twijfel", label: "Weet ik nog niet", icon: HelpCircle, color: "#A6790A", needsReason: true },
+  { key: "aanwezig", label: "Aanwezig", icon: Check, color: "var(--success)", bg: "var(--accent-soft)", needsReason: false },
+  { key: "afwezig", label: "Afwezig", icon: X, color: "var(--warn)", bg: "var(--warn-soft)", needsReason: true },
+  { key: "twijfel", label: "Weet ik nog niet", icon: HelpCircle, color: "#A6790A", bg: "#F6EEDD", needsReason: true },
 ];
 
 const FEE_ICONS = { inschrijving: Users, kleding: ShirtIcon, drinken: GlassWater, oefenwedstrijden: Swords };
@@ -355,28 +357,40 @@ function Header({ me, onLogout }) {
 
 function Top3({ nextMatch, countdown, myOpenCount, potTotal }) {
   return (
-    <div style={styles.top3} className="tott-top3">
-      <div style={styles.top3Item}>
-        <Calendar size={15} style={{ opacity: 0.8 }} />
-        <div>
-          <div style={styles.top3Label}>Volgende wedstrijd</div>
-          <div style={styles.top3Value}>{nextMatch ? `vs ${nextMatch.opponent} · ${countdown}` : "Nog niets gepland"}</div>
+    <div style={styles.heroWrap} className="tott-herowrap">
+      <div style={styles.heroCard} className="tott-hero">
+        <div style={styles.heroTopRow}>
+          <span style={styles.heroDateBadge}>
+            <Calendar size={12} />
+            {nextMatch ? formatDateShort(nextMatch.match_date) : "Gepland"}
+          </span>
+          {nextMatch && <span style={styles.heroPillBadge}>{matchTypeInfo(nextMatch.category).label}</span>}
         </div>
+        <div style={styles.heroLabel}>Volgende wedstrijd</div>
+        <div style={styles.heroTitle}>
+          {nextMatch ? <>FC TOTT <span style={{ opacity: 0.55, fontWeight: 600 }}>vs</span> {nextMatch.opponent}</> : "Nog niets gepland"}
+        </div>
+        {nextMatch && <div style={styles.heroCountdown}><Clock size={13} /> {countdown}</div>}
       </div>
-      {myOpenCount > 0 && (
-        <div style={{ ...styles.top3Item, ...styles.top3Warn }}>
-          <AlertCircle size={15} />
+
+      <div style={styles.heroSideCol}>
+        <div style={{ ...styles.heroStatCard, ...(myOpenCount > 0 ? styles.heroStatCardWarn : {}) }}>
+          <div style={styles.heroStatIconWrap}>
+            <AlertCircle size={15} />
+          </div>
           <div>
-            <div style={styles.top3Label}>Voor jou</div>
-            <div style={styles.top3Value}>{myOpenCount} {myOpenCount === 1 ? "betaling open" : "betalingen open"}</div>
+            <div style={styles.heroStatValue}>{myOpenCount}</div>
+            <div style={styles.heroStatLabel}>{myOpenCount === 1 ? "betaling open" : "betalingen open"}</div>
           </div>
         </div>
-      )}
-      <div style={styles.top3Item}>
-        <Coins size={15} style={{ opacity: 0.8 }} />
-        <div>
-          <div style={styles.top3Label}>Boetepot</div>
-          <div style={styles.top3Value}>€{potTotal}</div>
+        <div style={styles.heroStatCard}>
+          <div style={styles.heroStatIconWrap}>
+            <Coins size={15} />
+          </div>
+          <div>
+            <div style={styles.heroStatValue}>€{potTotal}</div>
+            <div style={styles.heroStatLabel}>In de boetepot</div>
+          </div>
         </div>
       </div>
     </div>
@@ -386,6 +400,27 @@ function Top3({ nextMatch, countdown, myOpenCount, potTotal }) {
 // ============================================================
 // Wedstrijden + Aanwezigheid + Opstelling
 // ============================================================
+function AvatarStack({ players: list, max = 6 }) {
+  const shown = list.slice(0, max);
+  const extra = list.length - shown.length;
+  return (
+    <div style={styles.avatarStack}>
+      {shown.map((p, i) => (
+        <div key={p.id} style={{ ...styles.avatarStackItem, zIndex: shown.length - i, marginLeft: i === 0 ? 0 : -10 }}>
+          {p.photo ? (
+            <img src={p.photo} alt={p.name} style={styles.avatarStackImg} />
+          ) : (
+            <span>{(p.name || "?").slice(0, 2).toUpperCase()}</span>
+          )}
+        </div>
+      ))}
+      {extra > 0 && (
+        <div style={{ ...styles.avatarStackItem, ...styles.avatarStackMore, marginLeft: -10 }}>+{extra}</div>
+      )}
+    </div>
+  );
+}
+
 function MatchesTab({ matches, players, attendanceByMatch, lineupsByMatch, goalsByMatch, me, isAdmin, reloadAll }) {
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ category: "competitie", opponent: "", date: "", location: "" });
@@ -500,7 +535,10 @@ function MatchesTab({ matches, players, attendanceByMatch, lineupsByMatch, goals
       )}
 
       <div style={styles.sectionHead} className="tott-sectionhead">
-        <h2 style={styles.h2} className="tott-h2">Wedstrijden</h2>
+        <div>
+          <div style={styles.eyebrow}>Programma</div>
+          <h2 style={styles.h2} className="tott-h2">Wedstrijden</h2>
+        </div>
         {isAdmin && (
           <button style={styles.addBtn} onClick={() => setShowForm((s) => !s)}>
             <Plus size={15} /> Update toevoegen
@@ -546,7 +584,15 @@ function MatchesTab({ matches, players, attendanceByMatch, lineupsByMatch, goals
           return (
             <div key={m.id} style={{ ...styles.matchCard, ...styles.matchCardCol, opacity: past ? 0.55 : 1 }}>
               <div style={styles.matchCardTop} className="tott-matchtop">
-                <div style={styles.matchTypeTag}>{matchTypeInfo(m.category).label}</div>
+                {(() => {
+                  const info = matchTypeInfo(m.category);
+                  const TypeIcon = MATCH_TYPE_ICONS[info.icon];
+                  return (
+                    <div style={{ ...styles.matchTypeTag, color: info.color, background: info.bg }}>
+                      <TypeIcon size={11} /> {info.label}
+                    </div>
+                  );
+                })()}
                 <div style={styles.matchMain}>
                   <div style={styles.matchOpponent}>FC TOTT — {m.opponent}</div>
                   <div style={styles.matchMeta} className="tott-matchmeta">
@@ -565,7 +611,7 @@ function MatchesTab({ matches, players, attendanceByMatch, lineupsByMatch, goals
               </div>
 
               {hasScore && matchGoals.length > 0 && (
-                <div style={styles.lineupPreview}>
+                <div style={{ ...styles.lineupPreview, paddingBottom: 12 }}>
                   <Goal size={13} /> Doelpunten:&nbsp;
                   {matchGoals.map((g, i) => {
                     const scorer = players.find((p) => p.id === g.scorer_id)?.name || "Onbekend";
@@ -580,12 +626,15 @@ function MatchesTab({ matches, players, attendanceByMatch, lineupsByMatch, goals
               )}
 
               {lineup && (lineup.keeper || lineup.fielders?.length > 0) && (
-                <div style={styles.lineupPreview}>
-                  <Shield size={13} /> Opstelling:&nbsp;
-                  {lineup.keeper && <strong>{players.find((p) => p.id === lineup.keeper)?.name} (keeper)</strong>}
-                  {lineup.fielders?.length > 0 && (
-                    <>, {lineup.fielders.map((id) => players.find((p) => p.id === id)?.name).filter(Boolean).join(", ")}</>
-                  )}
+                <div style={styles.lineupPreviewWrap}>
+                  <AvatarStack players={[lineup.keeper, ...(lineup.fielders || [])].filter(Boolean).map((id) => players.find((p) => p.id === id)).filter(Boolean)} />
+                  <div style={styles.lineupPreview}>
+                    <Shield size={13} /> Opstelling:&nbsp;
+                    {lineup.keeper && <strong>{players.find((p) => p.id === lineup.keeper)?.name} (keeper)</strong>}
+                    {lineup.fielders?.length > 0 && (
+                      <>, {lineup.fielders.map((id) => players.find((p) => p.id === id)?.name).filter(Boolean).join(", ")}</>
+                    )}
+                  </div>
                 </div>
               )}
 
@@ -617,7 +666,7 @@ function MatchesTab({ matches, players, attendanceByMatch, lineupsByMatch, goals
                         <span style={styles.attendanceName}>{p.name}</span>
                         <div style={styles.attendanceStatusWrap}>
                           {statusInfo ? (
-                            <span style={{ ...styles.statusPillStatic, color: statusInfo.color, borderColor: statusInfo.color }}>
+                            <span style={{ ...styles.statusPillStatic, color: statusInfo.color, background: statusInfo.bg, border: "none" }}>
                               {React.createElement(statusInfo.icon, { size: 12 })} {statusInfo.label}
                             </span>
                           ) : (
@@ -820,6 +869,31 @@ function MatchResultEditor({ match, players, goals, reloadAll }) {
 // ============================================================
 // Profiel
 // ============================================================
+function DonutChart({ pct, size = 76, stroke = 8 }) {
+  const r = (size - stroke) / 2;
+  const c = 2 * Math.PI * r;
+  const value = pct === null ? 0 : pct;
+  const offset = c - (value / 100) * c;
+  return (
+    <div style={{ position: "relative", width: size, height: size, flexShrink: 0 }}>
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ transform: "rotate(-90deg)" }}>
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="var(--bg-soft)" strokeWidth={stroke} />
+        <circle
+          cx={size / 2} cy={size / 2} r={r} fill="none" stroke="var(--accent)" strokeWidth={stroke}
+          strokeDasharray={c} strokeDashoffset={offset} strokeLinecap="round"
+          style={{ transition: "stroke-dashoffset 0.5s ease" }}
+        />
+      </svg>
+      <div style={{
+        position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center",
+        fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: size * 0.24, color: "var(--text)",
+      }}>
+        {pct === null ? "—" : `${pct}%`}
+      </div>
+    </div>
+  );
+}
+
 function ProfileTab({ me, players, attendanceByMatch, matches, statsByPlayer, isAdmin, reloadAll }) {
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState({ photo: me.photo || "", position: me.position || "Allround", number: me.number || "" });
@@ -873,18 +947,20 @@ function ProfileTab({ me, players, attendanceByMatch, matches, statsByPlayer, is
           </div>
         )}
 
-        <div style={styles.statGrid}>
-          <div style={styles.statBox}>
-            <div style={styles.statValue}>{pct === null ? "—" : `${pct}%`}</div>
+        <div style={styles.statGridRow} className="tott-statgridrow">
+          <div style={styles.donutCard}>
+            <DonutChart pct={pct} />
             <div style={styles.statLabel}>Aanwezigheid</div>
           </div>
-          <div style={styles.statBox}>
-            <div style={styles.statValue}>{myStats.goals}</div>
-            <div style={styles.statLabel}><Goal size={11} style={{ verticalAlign: "-1px" }} /> Goals</div>
-          </div>
-          <div style={styles.statBox}>
-            <div style={styles.statValue}>{myStats.assists}</div>
-            <div style={styles.statLabel}><Handshake size={11} style={{ verticalAlign: "-1px" }} /> Assists</div>
+          <div style={styles.statGrid}>
+            <div style={styles.statBox}>
+              <div style={styles.statValue}>{myStats.goals}</div>
+              <div style={styles.statLabel}><Goal size={11} style={{ verticalAlign: "-1px" }} /> Goals</div>
+            </div>
+            <div style={styles.statBox}>
+              <div style={styles.statValue}>{myStats.assists}</div>
+              <div style={styles.statLabel}><Handshake size={11} style={{ verticalAlign: "-1px" }} /> Assists</div>
+            </div>
           </div>
         </div>
         {isAdmin && (
@@ -964,7 +1040,10 @@ function FinePotTab({ fineRules, fines, players, isAdmin, reloadAll }) {
   return (
     <section>
       <div style={styles.sectionHead} className="tott-sectionhead">
-        <h2 style={styles.h2} className="tott-h2">Boetepot</h2>
+        <div>
+          <div style={styles.eyebrow}>Team</div>
+          <h2 style={styles.h2} className="tott-h2">Boetepot</h2>
+        </div>
       </div>
 
       <div style={styles.potCard}>
@@ -1078,7 +1157,10 @@ function RulesTab({ rules, isAdmin, reloadAll }) {
   return (
     <section>
       <div style={styles.sectionHead} className="tott-sectionhead">
-        <h2 style={styles.h2} className="tott-h2">Huisregels</h2>
+        <div>
+          <div style={styles.eyebrow}>Afspraken</div>
+          <h2 style={styles.h2} className="tott-h2">Huisregels</h2>
+        </div>
       </div>
       <div style={styles.rulesCard}>
         {rules.map((r, i) => (
@@ -1138,7 +1220,10 @@ function FinanceTab({ players, feeTypes, feesByPlayer, me, isAdmin, reloadAll })
       </div>
 
       <div style={styles.sectionHead} className="tott-sectionhead">
-        <h2 style={styles.h2} className="tott-h2">Financiën</h2>
+        <div>
+          <div style={styles.eyebrow}>Betalingen</div>
+          <h2 style={styles.h2} className="tott-h2">Financiën</h2>
+        </div>
       </div>
 
       <button style={styles.attendanceToggle} onClick={() => setShowAll((s) => !s)}>
@@ -1322,7 +1407,9 @@ const globalCss = `
   .tott-clubname { font-size: 16.5px; }
   .tott-clubsub { font-size: 11.5px; }
 
-  .tott-top3 { padding: 12px 14px; flex-direction: column; gap: 8px; }
+  .tott-herowrap { padding: 12px 14px; flex-direction: column; gap: 10px; }
+  .tott-hero { padding: 18px; }
+  .tott-hero-title { font-size: 19px; }
 
   .tott-nav { padding: 10px 12px 0; gap: 2px; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; scroll-snap-type: x proximity; }
   .tott-nav::-webkit-scrollbar { display: none; }
@@ -1355,13 +1442,14 @@ const globalCss = `
   .tott-addrow > button { width: 100%; }
 
   .tott-me-btnrow { grid-template-columns: 1fr; }
+  .tott-statgridrow { flex-direction: column; align-items: stretch; }
 
   @media (min-width: 480px) {
     .tott-me-btnrow { grid-template-columns: repeat(3, 1fr); }
   }
 
   @media (min-width: 560px) {
-    .tott-top3 { flex-direction: row; }
+    .tott-herowrap { flex-direction: row; }
   }
 
   @media (min-width: 720px) {
@@ -1370,7 +1458,7 @@ const globalCss = `
     .tott-clubname { font-size: 19px; }
     .tott-clubsub { font-size: 12.5px; }
 
-    .tott-top3 { padding: 14px 20px; }
+    .tott-herowrap { padding: 16px 20px; }
 
     .tott-nav { padding: 14px 20px 0; gap: 6px; overflow-x: visible; }
     .tott-navbtn { padding: 10px 14px; font-size: 13.5px; }
@@ -1444,14 +1532,40 @@ const styles = {
     padding: "8px 10px", color: "var(--text-dim)", flexShrink: 0,
   },
 
-  top3: { display: "flex", gap: 10, padding: "14px 16px", background: "var(--card)", borderBottom: "1px solid var(--line)" },
-  top3Item: {
-    flex: 1, display: "flex", alignItems: "center", gap: 10,
-    background: "var(--bg-soft)", border: "1px solid var(--line)", borderRadius: 14, padding: "10px 12px",
+  heroWrap: { display: "flex", gap: 14, padding: "16px 20px", borderBottom: "1px solid var(--line)" },
+  heroCard: {
+    flex: "1.4", minWidth: 0, background: "linear-gradient(135deg, var(--accent) 0%, #2E3B14 100%)",
+    borderRadius: 22, padding: "20px 22px", color: "#fff", display: "flex", flexDirection: "column",
+    gap: 6, boxShadow: "0 8px 24px rgba(74,93,35,0.28)", position: "relative", overflow: "hidden",
   },
-  top3Warn: { borderColor: "var(--warn)", background: "var(--warn-soft)" },
-  top3Label: { fontSize: 10.5, color: "var(--text-dim)", textTransform: "uppercase", letterSpacing: "0.4px" },
-  top3Value: { fontSize: 13.5, fontWeight: 700, marginTop: 1 },
+  heroTopRow: { display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 4 },
+  heroDateBadge: {
+    display: "inline-flex", alignItems: "center", gap: 5, fontSize: 11, fontWeight: 700,
+    background: "rgba(255,255,255,0.18)", borderRadius: 999, padding: "4px 10px", whiteSpace: "nowrap",
+  },
+  heroPillBadge: {
+    fontSize: 10.5, fontWeight: 700, background: "rgba(255,255,255,0.92)", color: "var(--accent)",
+    borderRadius: 999, padding: "4px 10px", whiteSpace: "nowrap",
+  },
+  heroLabel: { fontSize: 11.5, fontWeight: 600, opacity: 0.8, textTransform: "uppercase", letterSpacing: "0.4px" },
+  heroTitle: { fontFamily: "'Space Grotesk', sans-serif", fontSize: 22, fontWeight: 700, lineHeight: 1.2, marginTop: 2 },
+  heroCountdown: {
+    display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12.5, fontWeight: 600,
+    marginTop: 10, opacity: 0.92,
+  },
+
+  heroSideCol: { flex: "1", minWidth: 0, display: "flex", flexDirection: "column", gap: 10 },
+  heroStatCard: {
+    flex: 1, display: "flex", alignItems: "center", gap: 10, background: "var(--card)",
+    border: "1px solid var(--line)", borderRadius: 16, padding: "12px 14px", boxShadow: "var(--shadow)",
+  },
+  heroStatCardWarn: { borderColor: "var(--warn)", background: "var(--warn-soft)" },
+  heroStatIconWrap: {
+    width: 30, height: 30, borderRadius: "50%", background: "var(--bg-soft)", display: "flex",
+    alignItems: "center", justifyContent: "center", color: "var(--accent)", flexShrink: 0,
+  },
+  heroStatValue: { fontFamily: "'Space Grotesk', sans-serif", fontSize: 16, fontWeight: 700, lineHeight: 1.1 },
+  heroStatLabel: { fontSize: 10.5, color: "var(--text-dim)", marginTop: 2, lineHeight: 1.2 },
 
   nav: { display: "flex", gap: 6, padding: "14px 20px 0", borderBottom: "1px solid var(--line)" },
   navBtn: {
@@ -1463,6 +1577,7 @@ const styles = {
   main: { flex: 1, padding: "24px 20px 40px", maxWidth: 880, width: "100%", margin: "0 auto" },
 
   sectionHead: { display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 18 },
+  eyebrow: { fontSize: 11, fontWeight: 700, color: "var(--accent)", textTransform: "uppercase", letterSpacing: "0.6px", marginBottom: 3 },
   h2: { fontFamily: "'Space Grotesk', sans-serif", fontSize: 21, margin: 0, fontWeight: 700 },
   h3: { fontFamily: "'Space Grotesk', sans-serif", fontSize: 15, fontWeight: 700, margin: "22px 0 10px" },
 
@@ -1500,8 +1615,8 @@ const styles = {
   matchCardCol: { flexDirection: "column", alignItems: "stretch", gap: 0 },
   matchCardTop: { display: "flex", alignItems: "center", gap: 14, paddingBottom: 12 },
   matchTypeTag: {
-    fontSize: 10.5, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.5px",
-    color: "var(--accent)", border: "1px solid var(--accent)", borderRadius: 5, padding: "4px 8px", flexShrink: 0,
+    display: "inline-flex", alignItems: "center", gap: 4, fontSize: 10.5, fontWeight: 700,
+    letterSpacing: "0.2px", borderRadius: 999, padding: "5px 10px", flexShrink: 0,
   },
   matchMain: { flex: 1, minWidth: 0 },
   matchOpponent: { fontWeight: 700, fontSize: 14.5, marginBottom: 4 },
@@ -1510,10 +1625,19 @@ const styles = {
   iconBtn: { background: "transparent", border: "none", color: "var(--text-dim)", padding: 6 },
   iconBtnGhost: { background: "transparent", border: "none", color: "var(--text-dim)", padding: 4 },
 
+  lineupPreviewWrap: { display: "flex", flexDirection: "column", gap: 8, paddingBottom: 12 },
   lineupPreview: {
-    fontSize: 12, color: "var(--text-dim)", padding: "0 0 12px", display: "flex",
+    fontSize: 12, color: "var(--text-dim)", padding: 0, display: "flex",
     alignItems: "flex-start", gap: 6, lineHeight: 1.5,
   },
+  avatarStack: { display: "flex", alignItems: "center" },
+  avatarStackItem: {
+    width: 26, height: 26, borderRadius: "50%", background: "var(--accent-soft)", color: "var(--accent)",
+    border: "2px solid var(--card)", display: "flex", alignItems: "center", justifyContent: "center",
+    fontSize: 10, fontWeight: 700, overflow: "hidden", flexShrink: 0,
+  },
+  avatarStackImg: { width: "100%", height: "100%", objectFit: "cover" },
+  avatarStackMore: { background: "var(--bg-soft)", color: "var(--text-dim)" },
 
   scoreBadge: {
     fontFamily: "'JetBrains Mono', monospace", fontSize: 15, fontWeight: 700,
@@ -1547,7 +1671,7 @@ const styles = {
   attendanceStatusWrap: { display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" },
   statusPillStatic: {
     display: "inline-flex", alignItems: "center", gap: 5, border: "1px solid var(--line)",
-    borderRadius: 6, padding: "4px 9px", fontSize: 11.5, fontWeight: 600, color: "var(--text-dim)",
+    borderRadius: 999, padding: "4px 10px", fontSize: 11.5, fontWeight: 600, color: "var(--text-dim)",
   },
   adminReason: {
     display: "inline-flex", alignItems: "center", gap: 4, fontSize: 11.5, color: "var(--text-dim)",
@@ -1652,8 +1776,14 @@ const styles = {
     color: "var(--text)", padding: "8px 12px", borderRadius: 999, fontSize: 12, fontWeight: 600, flexShrink: 0,
   },
   profileEditForm: { display: "flex", flexDirection: "column", gap: 4, marginTop: 16, paddingTop: 16, borderTop: "1px solid var(--line)" },
-  statGrid: { display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10, marginTop: 18 },
-  statBox: { background: "var(--bg-soft)", border: "1px solid var(--line)", borderRadius: 14, padding: "12px 8px", textAlign: "center" },
+  statGridRow: { display: "flex", gap: 14, marginTop: 18, alignItems: "stretch" },
+  donutCard: {
+    flexShrink: 0, display: "flex", flexDirection: "column", alignItems: "center", gap: 8,
+    justifyContent: "center", background: "var(--bg-soft)", border: "1px solid var(--line)",
+    borderRadius: 14, padding: "14px 16px",
+  },
+  statGrid: { flex: 1, display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 10 },
+  statBox: { background: "var(--bg-soft)", border: "1px solid var(--line)", borderRadius: 14, padding: "12px 8px", textAlign: "center", display: "flex", flexDirection: "column", justifyContent: "center" },
   statValue: { fontFamily: "'Space Grotesk', sans-serif", fontSize: 20, fontWeight: 700 },
   statLabel: { fontSize: 10.5, color: "var(--text-dim)", marginTop: 4, textTransform: "uppercase", letterSpacing: "0.3px" },
 
