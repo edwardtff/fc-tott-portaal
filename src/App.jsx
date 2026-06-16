@@ -611,13 +611,13 @@ function MatchesTab({ matches, players, attendanceByMatch, lineupsByMatch, goals
               </div>
 
               {hasScore && matchGoals.length > 0 && (
-                <div style={{ ...styles.lineupPreview, paddingBottom: 12, color: "var(--dark-text-dim)" }}>
+                <div style={{ ...styles.lineupPreview, paddingBottom: 12 }}>
                   <Goal size={13} /> Doelpunten:&nbsp;
                   {matchGoals.map((g, i) => {
                     const scorer = players.find((p) => p.id === g.scorer_id)?.name || "Onbekend";
                     const assist = players.find((p) => p.id === g.assist_id)?.name;
                     return (
-                      <span key={g.id} style={{ color: "var(--dark-text)" }}>
+                      <span key={g.id} style={{ color: "var(--text)" }}>
                         {i > 0 && ", "}{scorer}{assist ? ` (assist: ${assist})` : ""}
                       </span>
                     );
@@ -628,11 +628,11 @@ function MatchesTab({ matches, players, attendanceByMatch, lineupsByMatch, goals
               {lineup && (lineup.keeper || lineup.fielders?.length > 0) && (
                 <div style={styles.lineupPreviewWrap}>
                   <AvatarStack players={[lineup.keeper, ...(lineup.fielders || [])].filter(Boolean).map((id) => players.find((p) => p.id === id)).filter(Boolean)} />
-                  <div style={{ ...styles.lineupPreview, color: "var(--dark-text-dim)" }}>
+                  <div style={styles.lineupPreview}>
                     <Shield size={13} /> Opstelling:&nbsp;
-                    {lineup.keeper && <strong style={{ color: "var(--dark-text)" }}>{players.find((p) => p.id === lineup.keeper)?.name} (keeper)</strong>}
+                    {lineup.keeper && <strong style={{ color: "var(--text)" }}>{players.find((p) => p.id === lineup.keeper)?.name} (keeper)</strong>}
                     {lineup.fielders?.length > 0 && (
-                      <span style={{ color: "var(--dark-text)" }}>, {lineup.fielders.map((id) => players.find((p) => p.id === id)?.name).filter(Boolean).join(", ")}</span>
+                      <span style={{ color: "var(--text)" }}>, {lineup.fielders.map((id) => players.find((p) => p.id === id)?.name).filter(Boolean).join(", ")}</span>
                     )}
                   </div>
                 </div>
@@ -644,16 +644,17 @@ function MatchesTab({ matches, players, attendanceByMatch, lineupsByMatch, goals
                 </div>
               )}
 
-              <button style={{ ...styles.attendanceToggle, background: "rgba(255,255,255,0.06)", borderColor: "transparent" }} onClick={() => setExpanded(isOpen ? null : m.id)}>
-                <span style={{ ...styles.attendanceSummary, color: "var(--dark-text)" }}>
-                  <Check size={13} color="var(--accent-soft)" /> {counts.aanwezig}
-                  <X size={13} color="#E8917A" style={{ marginLeft: 10 }} /> {counts.afwezig}
-                  <HelpCircle size={13} color="#E0C285" style={{ marginLeft: 10 }} /> {counts.twijfel}
+              <button style={styles.attendanceToggle} onClick={() => setExpanded(isOpen ? null : m.id)}>
+                <span style={styles.attendanceSummary}>
+                  <Check size={13} color="var(--accent)" /> {counts.aanwezig}
+                  <X size={13} color="var(--warn)" style={{ marginLeft: 10 }} /> {counts.afwezig}
+                  <HelpCircle size={13} color="#A6790A" style={{ marginLeft: 10 }} /> {counts.twijfel}
                 </span>
-                <span style={{ ...styles.attendanceToggleLabel, color: "var(--dark-text-dim)" }}>
+                <span style={styles.attendanceToggleLabel}>
                   Iedereen {isOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
                 </span>
               </button>
+
 
               {isOpen && (
                 <div style={styles.attendanceList}>
@@ -686,38 +687,34 @@ function MatchesTab({ matches, players, attendanceByMatch, lineupsByMatch, goals
 
               {isAdmin && (
                 <div style={styles.lineupSection}>
-                  <button style={{ ...styles.attendanceToggle, background: "rgba(255,255,255,0.06)", borderColor: "transparent" }} onClick={() => setLineupOpenFor(lineupOpenFor === m.id ? null : m.id)}>
-                    <span style={{ ...styles.attendanceToggleLabel, color: "var(--dark-text-dim)" }}>
+                  <button style={styles.attendanceToggle} onClick={() => setLineupOpenFor(lineupOpenFor === m.id ? null : m.id)}>
+                    <span style={styles.attendanceToggleLabel}>
                       <Shield size={14} /> Opstelling instellen {lineupOpenFor === m.id ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
                     </span>
                   </button>
                   {lineupOpenFor === m.id && (
-                    <div style={styles.darkCardInsetForm}>
-                      <LineupEditor
-                        players={players} attendance={matchAtt} lineup={lineup || { keeper: null, fielders: [] }}
-                        onSave={async (next) => {
-                          await db.saveLineup(m.id, next.keeper, next.fielders);
-                          await reloadAll();
-                        }}
-                      />
-                    </div>
+                    <LineupEditor
+                      players={players} attendance={matchAtt} lineup={lineup || { keeper: null, fielders: [] }}
+                      onSave={async (next) => {
+                        await db.saveLineup(m.id, next.keeper, next.fielders);
+                        await reloadAll();
+                      }}
+                    />
                   )}
                 </div>
               )}
 
               {isAdmin && (
                 <div style={styles.lineupSection}>
-                  <button style={{ ...styles.attendanceToggle, background: "rgba(255,255,255,0.06)", borderColor: "transparent" }} onClick={() => setResultOpenFor(resultOpenFor === m.id ? null : m.id)}>
-                    <span style={{ ...styles.attendanceToggleLabel, color: "var(--dark-text-dim)" }}>
+                  <button style={styles.attendanceToggle} onClick={() => setResultOpenFor(resultOpenFor === m.id ? null : m.id)}>
+                    <span style={styles.attendanceToggleLabel}>
                       <Goal size={14} /> Uitslag &amp; doelpunten invullen {resultOpenFor === m.id ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
                     </span>
                   </button>
                   {resultOpenFor === m.id && (
-                    <div style={styles.darkCardInsetForm}>
-                      <MatchResultEditor
-                        match={m} players={players} goals={matchGoals} reloadAll={reloadAll}
-                      />
-                    </div>
+                    <MatchResultEditor
+                      match={m} players={players} goals={matchGoals} reloadAll={reloadAll}
+                    />
                   )}
                 </div>
               )}
@@ -881,16 +878,16 @@ function DonutChart({ pct, size = 76, stroke = 8 }) {
   return (
     <div style={{ position: "relative", width: size, height: size, flexShrink: 0 }}>
       <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ transform: "rotate(-90deg)" }}>
-        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="rgba(255,255,255,0.12)" strokeWidth={stroke} />
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="var(--line)" strokeWidth={stroke} />
         <circle
-          cx={size / 2} cy={size / 2} r={r} fill="none" stroke="var(--accent-soft)" strokeWidth={stroke}
+          cx={size / 2} cy={size / 2} r={r} fill="none" stroke="var(--accent)" strokeWidth={stroke}
           strokeDasharray={c} strokeDashoffset={offset} strokeLinecap="round"
           style={{ transition: "stroke-dashoffset 0.5s ease" }}
         />
       </svg>
       <div style={{
         position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center",
-        fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: size * 0.24, color: "var(--dark-text)",
+        fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: size * 0.24, color: "var(--text)",
       }}>
         {pct === null ? "—" : `${pct}%`}
       </div>
@@ -974,7 +971,7 @@ function ProfileTab({ me, players, attendanceByMatch, matches, statsByPlayer, is
 
       {isAdmin && (
         <div style={styles.teamStatsCard}>
-          <div style={{ ...styles.h2, marginBottom: 12, color: "var(--dark-text)" }}>Hele team — statistieken</div>
+          <div style={{ ...styles.h2, marginBottom: 12, color: "var(--text)" }}>Hele team — statistieken</div>
           {players.map((p) => {
             const pStats = statsByPlayer[p.id] || { goals: 0, assists: 0 };
             const pMatches = matches.filter((m) => attendanceByMatch[m.id]?.[p.id]?.status !== undefined);
@@ -1367,7 +1364,7 @@ function AdminPanel({ players, reloadAll }) {
 
 function EmptyState({ text, dark = false }) {
   return (
-    <div style={{ ...styles.empty, ...(dark ? { color: "var(--dark-text-dim)" } : {}) }}>
+    <div style={{ ...styles.empty, ...(dark ? { color: "var(--text-dim)" } : {}) }}>
       <ChevronRight size={14} style={{ opacity: 0.5 }} />
       {text}
     </div>
@@ -1379,24 +1376,20 @@ function EmptyState({ text, dark = false }) {
 // ============================================================
 const globalCss = `
   :root {
-    --bg: #FFFFFF;
-    --bg-soft: #F7F7F4;
+    --bg: #FAFAF8;
+    --bg-soft: #F3F2EE;
     --card: #FFFFFF;
-    --line: #E2E2DC;
+    --line: #EFEEE8;
     --accent: #4A5D23;
-    --accent-soft: #E8EDDD;
-    --warn: #C7401F;
-    --warn-soft: #FBE7E1;
+    --accent-soft: #EEF1E4;
+    --warn: #B5651D;
+    --warn-soft: #F6EEE3;
     --success: #4A5D23;
-    --text: #181815;
-    --text-dim: #6B6B63;
-    --shadow: 0 1px 3px rgba(24,24,21,0.06), 0 1px 2px rgba(24,24,21,0.04);
-    --dark-card: #1A1C16;
-    --dark-card-2: #24261E;
-    --dark-line: rgba(255,255,255,0.1);
-    --dark-text: #F4F4F0;
-    --dark-text-dim: rgba(244,244,240,0.6);
-    --shadow-dark: 0 10px 30px rgba(0,0,0,0.25);
+    --text: #1C1C1A;
+    --text-dim: #7A7A72;
+    --shadow-sm: 0 1px 2px rgba(20,20,18,0.04);
+    --shadow: 0 1px 2px rgba(20,20,18,0.04), 0 4px 16px rgba(20,20,18,0.05);
+    --shadow-lg: 0 2px 4px rgba(20,20,18,0.04), 0 12px 32px rgba(20,20,18,0.07);
   }
   * { box-sizing: border-box; }
   body { margin: 0; background: var(--bg-soft); }
@@ -1421,7 +1414,7 @@ const globalCss = `
   .tott-hero { padding: 18px; }
   .tott-hero-title { font-size: 19px; }
 
-  .tott-nav { padding: 10px 12px 0; gap: 2px; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; scroll-snap-type: x proximity; }
+  .tott-nav { padding: 8px 10px; gap: 2px; margin: 10px 14px 0; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; scroll-snap-type: x proximity; }
   .tott-nav::-webkit-scrollbar { display: none; }
   .tott-navbtn { padding: 9px 10px; font-size: 12.5px; white-space: nowrap; flex-shrink: 0; scroll-snap-align: start; }
 
@@ -1470,7 +1463,7 @@ const globalCss = `
 
     .tott-herowrap { padding: 16px 20px; }
 
-    .tott-nav { padding: 14px 20px 0; gap: 6px; overflow-x: visible; }
+    .tott-nav { padding: 12px 20px; margin: 12px 20px 0; gap: 6px; overflow-x: visible; }
     .tott-navbtn { padding: 10px 14px; font-size: 13.5px; }
 
     .tott-main { padding: 24px 20px 40px; }
@@ -1542,48 +1535,51 @@ const styles = {
     padding: "8px 10px", color: "var(--text-dim)", flexShrink: 0,
   },
 
-  heroWrap: { display: "flex", gap: 12, padding: "16px 20px", borderBottom: "1px solid var(--line)" },
+  heroWrap: { display: "flex", gap: 14, padding: "20px 20px 0" },
   heroCard: {
-    flex: "1.4", minWidth: 0, background: "var(--dark-card)",
-    borderRadius: 26, padding: "20px 22px", color: "var(--dark-text)", display: "flex", flexDirection: "column",
-    gap: 6, boxShadow: "var(--shadow-dark)", position: "relative", overflow: "hidden",
+    flex: "1.4", minWidth: 0, background: "var(--card)",
+    borderRadius: 28, padding: "24px 26px", color: "var(--text)", display: "flex", flexDirection: "column",
+    gap: 6, boxShadow: "var(--shadow-lg)", border: "1px solid var(--line)", position: "relative", overflow: "hidden",
   },
-  heroTopRow: { display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 4 },
+  heroTopRow: { display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 6 },
   heroDateBadge: {
     display: "inline-flex", alignItems: "center", gap: 5, fontSize: 11, fontWeight: 700,
-    background: "rgba(255,255,255,0.1)", color: "var(--dark-text)", borderRadius: 999, padding: "4px 10px", whiteSpace: "nowrap",
+    background: "var(--bg-soft)", color: "var(--text-dim)", borderRadius: 999, padding: "5px 11px", whiteSpace: "nowrap",
   },
   heroPillBadge: {
-    fontSize: 10.5, fontWeight: 700, background: "var(--accent)", color: "#fff",
-    borderRadius: 999, padding: "4px 10px", whiteSpace: "nowrap",
+    fontSize: 10.5, fontWeight: 700, background: "var(--accent-soft)", color: "var(--accent)",
+    borderRadius: 999, padding: "5px 11px", whiteSpace: "nowrap",
   },
-  heroLabel: { fontSize: 11.5, fontWeight: 600, color: "var(--dark-text-dim)", textTransform: "uppercase", letterSpacing: "0.4px" },
-  heroTitle: { fontFamily: "'Space Grotesk', sans-serif", fontSize: 22, fontWeight: 700, lineHeight: 1.2, marginTop: 2 },
+  heroLabel: { fontSize: 11.5, fontWeight: 600, color: "var(--text-dim)", textTransform: "uppercase", letterSpacing: "0.5px" },
+  heroTitle: { fontFamily: "'Space Grotesk', sans-serif", fontSize: 23, fontWeight: 700, lineHeight: 1.25, marginTop: 3, color: "var(--text)" },
   heroCountdown: {
     display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12.5, fontWeight: 600,
-    marginTop: 10, color: "var(--accent-soft)",
+    marginTop: 12, color: "var(--accent)",
   },
 
-  heroSideCol: { flex: "1", minWidth: 0, display: "flex", flexDirection: "column", gap: 10 },
+  heroSideCol: { flex: "1", minWidth: 0, display: "flex", flexDirection: "column", gap: 12 },
   heroStatCard: {
-    flex: 1, display: "flex", alignItems: "center", gap: 10, background: "var(--dark-card)", color: "var(--dark-text)",
-    border: "none", borderRadius: 18, padding: "12px 14px", boxShadow: "var(--shadow-dark)",
+    flex: 1, display: "flex", alignItems: "center", gap: 11, background: "var(--card)", color: "var(--text)",
+    border: "1px solid var(--line)", borderRadius: 20, padding: "14px 16px", boxShadow: "var(--shadow)",
   },
-  heroStatCardWarn: { background: "var(--warn)" },
+  heroStatCardWarn: { background: "var(--warn-soft)", border: "1px solid var(--warn-soft)" },
   heroStatIconWrap: {
-    width: 30, height: 30, borderRadius: "50%", background: "rgba(255,255,255,0.12)", display: "flex",
-    alignItems: "center", justifyContent: "center", color: "var(--accent-soft)", flexShrink: 0,
+    width: 32, height: 32, borderRadius: "50%", background: "var(--bg-soft)", display: "flex",
+    alignItems: "center", justifyContent: "center", color: "var(--accent)", flexShrink: 0,
   },
-  heroStatValue: { fontFamily: "'Space Grotesk', sans-serif", fontSize: 16, fontWeight: 700, lineHeight: 1.1 },
-  heroStatLabel: { fontSize: 10.5, color: "var(--dark-text-dim)", marginTop: 2, lineHeight: 1.2 },
+  heroStatValue: { fontFamily: "'Space Grotesk', sans-serif", fontSize: 16, fontWeight: 700, lineHeight: 1.15, color: "var(--text)" },
+  heroStatLabel: { fontSize: 10.5, color: "var(--text-dim)", marginTop: 2, lineHeight: 1.25 },
 
-  nav: { display: "flex", gap: 6, padding: "14px 20px 0", borderBottom: "1px solid var(--line)" },
-  navBtn: {
-    display: "flex", alignItems: "center", gap: 7, padding: "10px 14px", background: "transparent",
-    border: "none", color: "var(--text-dim)", fontSize: 13.5, fontWeight: 600,
-    borderBottom: "2px solid transparent", marginBottom: -1,
+  nav: {
+    display: "flex", gap: 4, padding: "12px 20px", margin: "12px 20px 0",
+    background: "var(--bg-soft)", borderRadius: 999, border: "1px solid var(--line)",
   },
-  navBtnActive: { color: "var(--text)", borderBottom: "2px solid var(--accent)" },
+  navBtn: {
+    display: "flex", alignItems: "center", gap: 7, padding: "9px 15px", background: "transparent",
+    border: "none", color: "var(--text-dim)", fontSize: 13.5, fontWeight: 600,
+    borderRadius: 999, whiteSpace: "nowrap",
+  },
+  navBtnActive: { color: "var(--text)", background: "var(--card)", boxShadow: "var(--shadow-sm)" },
   main: { flex: 1, padding: "24px 20px 40px", maxWidth: 880, width: "100%", margin: "0 auto" },
 
   sectionHead: { display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 18 },
@@ -1620,8 +1616,8 @@ const styles = {
   matchList: { display: "flex", flexDirection: "column", gap: 12 },
   matchCard: {
     display: "flex", alignItems: "center", gap: 14,
-    background: "var(--dark-card)", border: "none", borderRadius: 22, padding: "16px 18px", boxShadow: "var(--shadow-dark)",
-    color: "var(--dark-text)",
+    background: "var(--card)", border: "1px solid var(--line)", borderRadius: 22, padding: "18px 20px", boxShadow: "var(--shadow)",
+    color: "var(--text)",
   },
   matchCardCol: { flexDirection: "column", alignItems: "stretch", gap: 0 },
   matchCardTop: { display: "flex", alignItems: "center", gap: 14, paddingBottom: 12 },
@@ -1630,10 +1626,10 @@ const styles = {
     letterSpacing: "0.2px", borderRadius: 999, padding: "5px 10px", flexShrink: 0,
   },
   matchMain: { flex: 1, minWidth: 0 },
-  matchOpponent: { fontWeight: 700, fontSize: 14.5, marginBottom: 4, color: "var(--dark-text)" },
-  matchMeta: { display: "flex", gap: 14, flexWrap: "wrap", fontSize: 12.5, color: "var(--dark-text-dim)" },
+  matchOpponent: { fontWeight: 700, fontSize: 14.5, marginBottom: 4, color: "var(--text)" },
+  matchMeta: { display: "flex", gap: 14, flexWrap: "wrap", fontSize: 12.5, color: "var(--text-dim)" },
   metaItem: { display: "flex", alignItems: "center", gap: 5 },
-  iconBtn: { background: "transparent", border: "none", color: "var(--dark-text-dim)", padding: 6 },
+  iconBtn: { background: "transparent", border: "none", color: "var(--text-dim)", padding: 6 },
   iconBtnGhost: { background: "transparent", border: "none", color: "var(--text-dim)", padding: 4 },
 
   lineupPreviewWrap: { display: "flex", flexDirection: "column", gap: 8, paddingBottom: 12 },
@@ -1662,7 +1658,7 @@ const styles = {
     width: 56, textAlign: "center", background: "var(--bg)", border: "1px solid var(--line)",
     borderRadius: 7, padding: "8px 6px", color: "var(--text)", fontSize: 14, fontFamily: "'JetBrains Mono', monospace",
   },
-  statsHint: { fontSize: 11.5, color: "var(--dark-text-dim)", marginTop: 14, lineHeight: 1.4 },
+  statsHint: { fontSize: 11.5, color: "var(--text-dim)", marginTop: 14, lineHeight: 1.4 },
 
   unsureWarning: {
     display: "flex", alignItems: "flex-start", gap: 7, fontSize: 11.5, color: "#A6790A",
@@ -1678,21 +1674,18 @@ const styles = {
   attendanceToggleLabel: { display: "flex", alignItems: "center", gap: 5 },
   attendanceList: { display: "flex", flexDirection: "column", gap: 10, padding: "10px 0 4px" },
   attendanceFullRow: { display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, flexWrap: "wrap" },
-  attendanceName: { fontSize: 13.5, fontWeight: 600, flex: 1, minWidth: 100, color: "var(--dark-text)" },
+  attendanceName: { fontSize: 13.5, fontWeight: 600, flex: 1, minWidth: 100, color: "var(--text)" },
   attendanceStatusWrap: { display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" },
   statusPillStatic: {
     display: "inline-flex", alignItems: "center", gap: 5, border: "1px solid var(--line)",
     borderRadius: 999, padding: "4px 10px", fontSize: 11.5, fontWeight: 600, color: "var(--text-dim)",
   },
   adminReason: {
-    display: "inline-flex", alignItems: "center", gap: 4, fontSize: 11.5, color: "var(--dark-text-dim)",
+    display: "inline-flex", alignItems: "center", gap: 4, fontSize: 11.5, color: "var(--text-dim)",
     fontStyle: "italic", maxWidth: 220, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
   },
 
   lineupSection: { marginTop: 4 },
-  darkCardInsetForm: {
-    background: "var(--card)", borderRadius: 16, padding: 14, marginTop: 10, color: "var(--text)",
-  },
   lineupEditor: { padding: "10px 0 4px" },
   lineupLabel: { fontSize: 11.5, fontWeight: 700, color: "var(--text-dim)", textTransform: "uppercase", letterSpacing: "0.4px", marginBottom: 8 },
   lineupGrid: { display: "flex", flexWrap: "wrap", gap: 7, marginBottom: 4 },
@@ -1738,76 +1731,76 @@ const styles = {
   modalSub: { fontSize: 12, color: "var(--text-dim)" },
   modalActions: { display: "flex", gap: 8, marginTop: 14, justifyContent: "flex-end" },
 
-  rulesCard: { background: "var(--dark-card)", color: "var(--dark-text)", border: "none", borderRadius: 22, overflow: "hidden", marginBottom: 14, boxShadow: "var(--shadow-dark)" },
-  ruleRow: { display: "flex", alignItems: "center", gap: 12, padding: "13px 16px", borderBottom: "1px solid var(--dark-line)" },
+  rulesCard: { background: "var(--card)", color: "var(--text)", border: "1px solid var(--line)", borderRadius: 22, overflow: "hidden", marginBottom: 14, boxShadow: "var(--shadow)" },
+  ruleRow: { display: "flex", alignItems: "center", gap: 12, padding: "13px 16px", borderBottom: "1px solid var(--line)" },
   ruleNum: { fontFamily: "'JetBrains Mono', monospace", color: "var(--accent-soft)", fontSize: 12.5, flexShrink: 0 },
-  ruleText: { flex: 1, fontSize: 14, lineHeight: 1.5, color: "var(--dark-text)" },
-  fineAmount: { fontFamily: "'JetBrains Mono', monospace", fontSize: 13.5, fontWeight: 700, color: "var(--accent-soft)", flexShrink: 0 },
+  ruleText: { flex: 1, fontSize: 14, lineHeight: 1.5, color: "var(--text)" },
+  fineAmount: { fontFamily: "'JetBrains Mono', monospace", fontSize: 13.5, fontWeight: 700, color: "var(--accent)", flexShrink: 0 },
   addRuleRow: { display: "flex", gap: 10, marginTop: 16 },
 
   potCard: {
-    display: "flex", alignItems: "center", gap: 16, background: "var(--dark-card)", color: "var(--dark-text)",
-    border: "none", borderRadius: 22, padding: 18, marginBottom: 8, boxShadow: "var(--shadow-dark)",
+    display: "flex", alignItems: "center", gap: 16, background: "var(--card)", color: "var(--text)",
+    border: "1px solid var(--line)", borderRadius: 22, padding: 18, marginBottom: 8, boxShadow: "var(--shadow)",
   },
-  potAmount: { fontFamily: "'Space Grotesk', sans-serif", fontSize: 28, fontWeight: 700, color: "var(--dark-text)" },
-  potSub: { fontSize: 12.5, color: "var(--dark-text-dim)", marginTop: 2, lineHeight: 1.4 },
+  potAmount: { fontFamily: "'Space Grotesk', sans-serif", fontSize: 28, fontWeight: 700, color: "var(--text)" },
+  potSub: { fontSize: 12.5, color: "var(--text-dim)", marginTop: 2, lineHeight: 1.4 },
 
   legend: { display: "flex", gap: 16, flexWrap: "wrap", marginBottom: 16, fontSize: 12.5, color: "var(--text-dim)" },
   legendItem: { display: "flex", alignItems: "center", gap: 6 },
   legendAmount: { fontFamily: "'JetBrains Mono', monospace", color: "var(--text)" },
-  tableWrap: { background: "var(--dark-card)", color: "var(--dark-text)", border: "none", borderRadius: 22, overflow: "auto", marginBottom: 16, boxShadow: "var(--shadow-dark)" },
+  tableWrap: { background: "var(--card)", color: "var(--text)", border: "1px solid var(--line)", borderRadius: 22, overflow: "auto", marginBottom: 16, boxShadow: "var(--shadow)" },
   table: { width: "100%", borderCollapse: "collapse" },
   th: {
     textAlign: "left", padding: "12px 14px", fontSize: 11, textTransform: "uppercase",
-    letterSpacing: "0.4px", color: "var(--dark-text-dim)", borderBottom: "1px solid var(--dark-line)", whiteSpace: "nowrap",
+    letterSpacing: "0.4px", color: "var(--text-dim)", borderBottom: "1px solid var(--line)", whiteSpace: "nowrap",
   },
   thName: {
     textAlign: "left", padding: "12px 14px", fontSize: 11, textTransform: "uppercase",
-    letterSpacing: "0.4px", color: "var(--dark-text-dim)", borderBottom: "1px solid var(--dark-line)",
+    letterSpacing: "0.4px", color: "var(--text-dim)", borderBottom: "1px solid var(--line)",
   },
   tr: {},
-  td: { padding: "12px 14px", borderBottom: "1px solid var(--dark-line)", whiteSpace: "nowrap", color: "var(--dark-text)" },
-  tdName: { padding: "12px 14px", borderBottom: "1px solid var(--dark-line)", fontWeight: 600, fontSize: 13.5, color: "var(--dark-text)" },
+  td: { padding: "12px 14px", borderBottom: "1px solid var(--line)", whiteSpace: "nowrap", color: "var(--text)" },
+  tdName: { padding: "12px 14px", borderBottom: "1px solid var(--line)", fontWeight: 600, fontSize: 13.5, color: "var(--text)" },
   warnBadge: { display: "inline-flex", alignItems: "center", gap: 4, marginLeft: 10, fontSize: 10.5, color: "var(--warn)", fontWeight: 600 },
   statusPill: {
     display: "flex", alignItems: "center", gap: 5, border: "1px solid var(--line)",
-    borderRadius: 6, padding: "5px 10px", fontSize: 12, fontWeight: 600, background: "transparent",
+    borderRadius: 999, padding: "5px 12px", fontSize: 12, fontWeight: 600, background: "transparent",
   },
-  pillPaid: { color: "var(--success)", borderColor: "var(--success)" },
-  pillOpen: { color: "var(--warn)", borderColor: "var(--warn)" },
+  pillPaid: { color: "var(--accent)", borderColor: "var(--accent-soft)", background: "var(--accent-soft)" },
+  pillOpen: { color: "var(--warn)", borderColor: "var(--warn-soft)", background: "var(--warn-soft)" },
   myFeeList: { display: "flex", flexDirection: "column", gap: 8 },
   myFeeRow: { display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 },
   myFeeName: { display: "flex", alignItems: "center", gap: 8, fontSize: 14, fontWeight: 600 },
 
-  profileCard: { background: "var(--dark-card)", color: "var(--dark-text)", border: "none", borderRadius: 22, padding: 18, marginBottom: 16, boxShadow: "var(--shadow-dark)" },
+  profileCard: { background: "var(--card)", color: "var(--text)", border: "1px solid var(--line)", borderRadius: 22, padding: 20, marginBottom: 16, boxShadow: "var(--shadow)" },
   profileTop: { display: "flex", alignItems: "center", gap: 14 },
   profilePhoto: {
-    width: 56, height: 56, borderRadius: "50%", background: "rgba(255,255,255,0.08)", border: "none",
-    display: "flex", alignItems: "center", justifyContent: "center", color: "var(--dark-text-dim)", flexShrink: 0, overflow: "hidden",
+    width: 56, height: 56, borderRadius: "50%", background: "var(--bg-soft)", border: "1px solid var(--line)",
+    display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text-dim)", flexShrink: 0, overflow: "hidden",
   },
   profilePhotoImg: { width: "100%", height: "100%", objectFit: "cover" },
-  profileName: { fontFamily: "'Space Grotesk', sans-serif", fontSize: 18, fontWeight: 700, color: "var(--dark-text)" },
-  profileMeta: { fontSize: 12, color: "var(--dark-text-dim)", marginTop: 3 },
+  profileName: { fontFamily: "'Space Grotesk', sans-serif", fontSize: 18, fontWeight: 700, color: "var(--text)" },
+  profileMeta: { fontSize: 12, color: "var(--text-dim)", marginTop: 3 },
   editBtn: {
-    display: "flex", alignItems: "center", gap: 6, background: "rgba(255,255,255,0.08)", border: "none",
-    color: "var(--dark-text)", padding: "8px 12px", borderRadius: 999, fontSize: 12, fontWeight: 600, flexShrink: 0,
+    display: "flex", alignItems: "center", gap: 6, background: "var(--bg-soft)", border: "1px solid var(--line)",
+    color: "var(--text)", padding: "8px 12px", borderRadius: 999, fontSize: 12, fontWeight: 600, flexShrink: 0,
   },
-  profileEditForm: { display: "flex", flexDirection: "column", gap: 4, marginTop: 16, paddingTop: 16, borderTop: "1px solid var(--dark-line)" },
+  profileEditForm: { display: "flex", flexDirection: "column", gap: 4, marginTop: 16, paddingTop: 16, borderTop: "1px solid var(--line)" },
   statGridRow: { display: "flex", gap: 14, marginTop: 18, alignItems: "stretch" },
   donutCard: {
     flexShrink: 0, display: "flex", flexDirection: "column", alignItems: "center", gap: 8,
-    justifyContent: "center", background: "rgba(255,255,255,0.05)", border: "none",
-    borderRadius: 16, padding: "14px 16px",
+    justifyContent: "center", background: "var(--bg-soft)", border: "1px solid var(--line)",
+    borderRadius: 18, padding: "14px 18px",
   },
   statGrid: { flex: 1, display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 10 },
-  statBox: { background: "rgba(255,255,255,0.05)", border: "none", borderRadius: 16, padding: "12px 8px", textAlign: "center", display: "flex", flexDirection: "column", justifyContent: "center" },
-  statValue: { fontFamily: "'Space Grotesk', sans-serif", fontSize: 20, fontWeight: 700, color: "var(--dark-text)" },
-  statLabel: { fontSize: 10.5, color: "var(--dark-text-dim)", marginTop: 4, textTransform: "uppercase", letterSpacing: "0.3px" },
+  statBox: { background: "var(--bg-soft)", border: "1px solid var(--line)", borderRadius: 18, padding: "12px 8px", textAlign: "center", display: "flex", flexDirection: "column", justifyContent: "center" },
+  statValue: { fontFamily: "'Space Grotesk', sans-serif", fontSize: 20, fontWeight: 700, color: "var(--text)" },
+  statLabel: { fontSize: 10.5, color: "var(--text-dim)", marginTop: 4, textTransform: "uppercase", letterSpacing: "0.3px" },
 
-  teamStatsCard: { background: "var(--dark-card)", color: "var(--dark-text)", border: "none", borderRadius: 22, padding: 18, boxShadow: "var(--shadow-dark)" },
-  teamStatRow: { display: "flex", alignItems: "center", gap: 14, padding: "10px 0", borderBottom: "1px solid var(--dark-line)" },
-  teamStatName: { flex: 1, fontSize: 13.5, fontWeight: 600, color: "var(--dark-text)" },
-  teamStatVal: { display: "flex", alignItems: "center", gap: 5, fontSize: 12.5, color: "var(--dark-text-dim)", fontFamily: "'JetBrains Mono', monospace", minWidth: 46, justifyContent: "flex-end" },
+  teamStatsCard: { background: "var(--card)", color: "var(--text)", border: "1px solid var(--line)", borderRadius: 22, padding: 20, boxShadow: "var(--shadow)" },
+  teamStatRow: { display: "flex", alignItems: "center", gap: 14, padding: "10px 0", borderBottom: "1px solid var(--line)" },
+  teamStatName: { flex: 1, fontSize: 13.5, fontWeight: 600, color: "var(--text)" },
+  teamStatVal: { display: "flex", alignItems: "center", gap: 5, fontSize: 12.5, color: "var(--text-dim)", fontFamily: "'JetBrains Mono', monospace", minWidth: 46, justifyContent: "flex-end" },
 
   adminPanel: { marginTop: 28 },
   beheerToggle: {
@@ -1815,15 +1808,15 @@ const styles = {
     borderRadius: 14, padding: "10px 14px", color: "var(--text-dim)", fontSize: 12.5, fontWeight: 600, textAlign: "center",
   },
   adminBody: { marginTop: 16 },
-  adminRow: { display: "flex", alignItems: "center", gap: 10, padding: "12px 16px", borderBottom: "1px solid var(--dark-line)" },
-  adminRowName: { fontSize: 13.5, fontWeight: 700, display: "flex", alignItems: "center", color: "var(--dark-text)" },
-  adminRowMeta: { fontSize: 11.5, color: "var(--dark-text-dim)", marginTop: 2 },
+  adminRow: { display: "flex", alignItems: "center", gap: 10, padding: "12px 16px", borderBottom: "1px solid var(--line)" },
+  adminRowName: { fontSize: 13.5, fontWeight: 700, display: "flex", alignItems: "center", color: "var(--text)" },
+  adminRowMeta: { fontSize: 11.5, color: "var(--text-dim)", marginTop: 2 },
   adminActionBtn: {
-    display: "flex", alignItems: "center", gap: 5, border: "1px solid var(--dark-line)", borderRadius: 999,
+    display: "flex", alignItems: "center", gap: 5, border: "1px solid var(--line)", borderRadius: 999,
     padding: "6px 10px", fontSize: 11.5, fontWeight: 600, background: "transparent", flexShrink: 0, whiteSpace: "nowrap",
   },
   adminActionBtnDanger: { color: "var(--warn)", borderColor: "var(--warn)" },
-  adminActionBtnOk: { color: "var(--accent-soft)", borderColor: "var(--accent-soft)" },
+  adminActionBtnOk: { color: "var(--accent)", borderColor: "var(--accent)" },
 
   empty: { display: "flex", alignItems: "center", gap: 8, color: "var(--text-dim)", fontSize: 13.5, padding: "20px 4px" },
   footer: { textAlign: "center", padding: "18px 0 28px", fontSize: 11.5, color: "var(--text-dim)", borderTop: "1px solid var(--line)" },
