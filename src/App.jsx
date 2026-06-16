@@ -5846,4 +5846,27 @@ const roleVideoCss = `
   .dreelio-video-frame { border-radius: 22px 22px 0 0; }
 }
 
+
+/* Gold detail fix: notification badges + Huisregels numbers */
+.dreelio-nav-badge {
+  background: linear-gradient(135deg, #f6d98b 0%, #d6a957 48%, #8f6423 100%) !important;
+  color: #151008 !important;
+  border: 1px solid rgba(246,217,139,.62) !important;
+  box-shadow: 0 0 18px rgba(214,169,87,.42), 0 8px 22px rgba(0,0,0,.28) !important;
+}
+
+.dreelio-side-link.is-active .dreelio-nav-badge {
+  background: linear-gradient(135deg, #fff1b8 0%, #d6a957 55%, #8f6423 100%) !important;
+  color: #140f07 !important;
+  box-shadow: 0 0 22px rgba(214,169,87,.58) !important;
+}
+
+.dreelio-main .ruleNum,
+.dreelio-rules-card [style*="JetBrains Mono"] {
+  color: var(--fcx-gold) !important;
+  background: rgba(214,169,87,.10) !important;
+  border: 1px solid rgba(214,169,87,.32) !important;
+  box-shadow: 0 0 16px rgba(214,169,87,.12) !important;
+}
+
 `;
