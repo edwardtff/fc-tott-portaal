@@ -134,6 +134,11 @@ export default function App() {
   const me = players.find((p) => p.id === sessionId);
   const isAdmin = me?.role === "admin";
 
+  const nextMatch = matches
+    .filter((m) => new Date(m.match_date).getTime() > Date.now())
+    .sort((a, b) => new Date(a.match_date) - new Date(b.match_date))[0];
+  const countdown = useCountdown(nextMatch?.match_date);
+
   const login = (id) => {
     setSessionId(id);
     localStorage.setItem(SESSION_KEY, id);
@@ -200,10 +205,6 @@ export default function App() {
     );
   }
 
-  const nextMatch = matches
-    .filter((m) => new Date(m.match_date).getTime() > Date.now())
-    .sort((a, b) => new Date(a.match_date) - new Date(b.match_date))[0];
-  const countdown = useCountdown(nextMatch?.match_date);
   const myOpenCount = feeTypes.filter((f) => !(feesByPlayer[me.id] || {})[f.id]).length;
   const potTotal = fines.reduce((sum, f) => sum + Number(f.amount), 0);
 
