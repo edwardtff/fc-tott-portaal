@@ -240,7 +240,7 @@ export default function App() {
   if (loading) {
     return (
       <div style={styles.app} className="tott-app dreelio-app">
-        <style>{globalCss + dreelioDashboardCss + appFeelingCss}</style>
+        <style>{globalCss + dreelioDashboardCss + appFeelingCss + fcxMobileDashboardCss}</style>
         <div style={styles.loadingScreen}>Laden…</div>
       </div>
     );
@@ -249,7 +249,7 @@ export default function App() {
   if (loadError) {
     return (
       <div style={styles.app} className="tott-app dreelio-app">
-        <style>{globalCss + dreelioDashboardCss + appFeelingCss}</style>
+        <style>{globalCss + dreelioDashboardCss + appFeelingCss + fcxMobileDashboardCss}</style>
         <div style={styles.loadingScreen}>
           <AlertCircle size={22} style={{ marginBottom: 10, color: "var(--warn)" }} />
           <div>Het clubportaal is tijdelijk niet bereikbaar.</div>
@@ -264,7 +264,7 @@ export default function App() {
   if (!me) {
     return (
       <div style={styles.app} className="tott-app dreelio-app">
-        <style>{globalCss + dreelioDashboardCss + appFeelingCss}</style>
+        <style>{globalCss + dreelioDashboardCss + appFeelingCss + fcxMobileDashboardCss}</style>
         <Header branding={branding} />
         <LoginScreen players={players} onLogin={login} branding={branding} />
         <footer style={styles.footer}>FC TOTT · Sponsored By Nola Marketing (website, branding en marketing)</footer>
@@ -277,7 +277,7 @@ export default function App() {
 
   return (
     <div style={styles.app} className="tott-app dreelio-app">
-      <style>{globalCss + dreelioDashboardCss + appFeelingCss}</style>
+      <style>{globalCss + dreelioDashboardCss + appFeelingCss + fcxMobileDashboardCss}</style>
 
       <div className="dreelio-shell">
         <DreelioSidebar
@@ -312,6 +312,8 @@ export default function App() {
                 posts={clubPosts}
                 branding={branding}
                 statsByPlayer={statsByPlayer}
+                feeTypes={feeTypes}
+                feesByPlayer={feesByPlayer}
               />
             )}
             {tab === "wedstrijden" && (
@@ -517,168 +519,217 @@ function DreelioSidebar({ me, tab, setTab, onLogout, myOpenCount, potTotal, post
   );
 }
 
-function Top3({ nextMatch, countdown, myOpenCount, potTotal, me, players = [], attendanceByMatch = {}, setTab, posts = [], branding = DEFAULT_BRANDING, statsByPlayer = {} }) {
-  const category = nextMatch ? matchTypeInfo(nextMatch.category) : null;
-  const firstName = (me?.name || "speler").split(" ")[0];
+function Top3({ nextMatch, countdown, myOpenCount, potTotal, me, players = [], attendanceByMatch = {}, setTab, posts = [], branding = DEFAULT_BRANDING, statsByPlayer = {}, feeTypes = [], feesByPlayer = {} }) {
+  const logoUrl = branding?.logoUrl || DEFAULT_BRANDING.logoUrl;
   const activePlayers = players.filter((p) => p.active !== false);
   const nextAttendance = nextMatch ? attendanceByMatch[nextMatch.id] || {} : {};
   const presentPlayers = activePlayers.filter((p) => nextAttendance[p.id]?.status === "aanwezig");
   const absentPlayers = activePlayers.filter((p) => nextAttendance[p.id]?.status === "afwezig");
   const unsurePlayers = activePlayers.filter((p) => nextAttendance[p.id]?.status === "twijfel");
   const myNextStatus = nextMatch && me ? nextAttendance[me.id]?.status : null;
-  const myStatusLabel = myNextStatus
-    ? ATTENDANCE_STATUSES.find((s) => s.key === myNextStatus)?.label
-    : "Nog niet ingevuld";
+
+  const openFeeAmount = feeTypes
+    .filter((f) => !(feesByPlayer[me?.id] || {})[f.id])
+    .reduce((sum, f) => sum + Number(f.amount || 0), 0);
 
   const topScorerEntry = Object.entries(statsByPlayer || {})
-    .map(([playerId, stats]) => ({ player: players.find((p) => p.id === playerId), goals: stats?.goals || 0, assists: stats?.assists || 0 }))
+    .map(([playerId, stats]) => ({
+      player: players.find((p) => p.id === playerId),
+      goals: stats?.goals || 0,
+      assists: stats?.assists || 0,
+    }))
     .filter((x) => x.player)
     .sort((a, b) => b.goals - a.goals || b.assists - a.assists)[0];
-  const latestPosts = [...posts].sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).slice(0, 2);
-  const notifications = [
-    ...(myOpenCount > 0 ? [{ icon: Wallet, text: `Je hebt ${myOpenCount} betaling${myOpenCount === 1 ? "" : "en"} open.`, tab: "financien" }] : []),
-    ...(nextMatch && !myNextStatus ? [{ icon: Calendar, text: `Geef je status door voor ${nextMatch.opponent}.`, tab: "wedstrijden" }] : []),
-    ...(latestPosts.length ? [{ icon: Newspaper, text: `Nieuwe update: ${latestPosts[0].title || "clubpost"}.`, tab: "updates" }] : []),
-  ];
-  const [notificationsOpen, setNotificationsOpen] = useState(false);
 
-  const teamPulseText = nextMatch
-    ? `${presentPlayers.length} aanwezig · ${absentPlayers.length} afwezig · ${unsurePlayers.length} twijfel`
-    : "Voeg een wedstrijd toe om de teamstatus live te zien";
+  const latestPosts = [...posts]
+    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+    .slice(0, 2);
+
+  const notificationCount = [
+    myOpenCount > 0,
+    nextMatch && !myNextStatus,
+    latestPosts.length > 0,
+  ].filter(Boolean).length;
+
+  const formatAppDate = (iso) => {
+    if (!iso) return "Nog niet gepland";
+    const d = new Date(iso);
+    const day = d.toLocaleDateString("nl-NL", { weekday: "short" }).replace(".", "");
+    const rest = d.toLocaleDateString("nl-NL", { day: "numeric", month: "short" });
+    return `${day.charAt(0).toUpperCase()}${day.slice(1)} ${rest}`;
+  };
+
+  const formatAppTime = (iso) => iso
+    ? new Date(iso).toLocaleTimeString("nl-NL", { hour: "2-digit", minute: "2-digit" })
+    : "—";
+
+  const topName = topScorerEntry?.player?.name || "Topscorer";
+  const shortTopName = topName.includes(" ")
+    ? `${topName.split(" ")[0].charAt(0)}. ${topName.split(" ").slice(1).join(" ")}`
+    : topName;
+
+  const updatesForUi = latestPosts.length > 0
+    ? latestPosts
+    : [
+        { id: "empty_1", title: "Nog geen updates geplaatst", body: "De eerste clubupdate verschijnt hier.", created_at: new Date().toISOString(), images: [] },
+        { id: "empty_2", title: "Teamnieuws komt hier", body: "Foto's, mededelingen en wedstrijdnieuws.", created_at: new Date().toISOString(), images: [] },
+      ];
+
+  const kpiLocation = nextMatch?.location || "Sporthal Zuid";
+  const nextDate = formatAppDate(nextMatch?.match_date);
+  const nextTime = formatAppTime(nextMatch?.match_date);
+  const opponent = nextMatch?.opponent || "FC Urban";
+
+  const statusRows = [
+    { key: "aanwezig", label: "Aanwezig", count: presentPlayers.length, players: presentPlayers, tone: "green" },
+    { key: "twijfel", label: "Twijfel", count: unsurePlayers.length, players: unsurePlayers, tone: "gold" },
+    { key: "afwezig", label: "Afwezig", count: absentPlayers.length, players: absentPlayers, tone: "red" },
+  ];
 
   return (
-    <>
-      <section className="dreelio-overview" aria-label="Dashboard overzicht">
-        <div className="dreelio-welcome-card">
-          <div className="dreelio-card-topline">
-            <span className="dreelio-chip"><span className="dreelio-live-dot" /> Live app dashboard</span>
-            <span className="dreelio-chip muted">{activePlayers.length} spelers</span>
-            <button type="button" className="dreelio-bell-button" onClick={() => setNotificationsOpen((open) => !open)}>
-              <Bell size={15} />
-              {notifications.length > 0 && <span>{notifications.length}</span>}
-            </button>
-            {notificationsOpen && (
-              <div className="dreelio-notification-popover">
-                <div className="dreelio-popover-title">Notificaties</div>
-                {notifications.length === 0 && <div className="dreelio-popover-empty">Alles is rustig.</div>}
-                {notifications.map((note, i) => {
-                  const Icon = note.icon;
-                  return (
-                    <button key={i} type="button" onClick={() => { setNotificationsOpen(false); setTab?.(note.tab); }}>
-                      <Icon size={15} />
-                      <span>{note.text}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-          {branding.dashboardBannerUrl && (
-            <div className="dreelio-dashboard-banner">
-              <img src={branding.dashboardBannerUrl} alt="Club banner" />
-            </div>
-          )}
-          <div>
-            <div className="dreelio-kicker">Hoi {firstName}</div>
-            <h1>Je live team-app in één overzicht.</h1>
-            <p>Een compact startscherm voor wedstrijden, betalingen, team pulse en updates.</p>
-          </div>
-          <div className="dreelio-quick-row">
-            <button type="button" onClick={() => setTab?.("wedstrijden")} className="dreelio-quick-action">
-              <span>Mijn actie</span>
-              <strong>{myStatusLabel}</strong>
-            </button>
-            <button type="button" onClick={() => setTab?.("financien")} className={`dreelio-quick-action ${myOpenCount > 0 ? "needs-attention" : ""}`}>
-              <span>Betalingen</span>
-              <strong>{myOpenCount > 0 ? `${myOpenCount} open` : "Alles rond"}</strong>
-            </button>
-          </div>
+    <section className="fcx-phone-dashboard" aria-label="FC TOTT live overzicht">
+      <div className="fcx-app-header">
+        <div className="fcx-brand-mark"><img src={logoUrl} alt="FC Talk Of The Town logo" /></div>
+        <div className="fcx-brand-copy">
+          <h1>FC Talk Of The Town</h1>
+          <span>Futsal Club</span>
         </div>
+        <button type="button" className="fcx-bell" onClick={() => setTab?.("updates")} aria-label="Notificaties">
+          <Bell size={21} />
+          {notificationCount > 0 && <b>{notificationCount}</b>}
+        </button>
+      </div>
 
-        <article className="dreelio-kpi-card dreelio-match-card">
-          <div className="dreelio-kpi-icon"><Calendar size={19} /></div>
-          <div className="dreelio-kpi-copy">
-            <div className="dreelio-kpi-label">Volgende wedstrijd</div>
-            <div className="dreelio-kpi-title">
-              {nextMatch ? <>FC TOTT <span>vs</span> {nextMatch.opponent}</> : "Nog niets gepland"}
-            </div>
-            <div className="dreelio-kpi-meta">
-              {nextMatch ? formatDateShort(nextMatch.match_date) : "Voeg een wedstrijd toe"}
-              {category ? ` · ${category.label}` : ""}
-            </div>
-          </div>
-        </article>
-
-        <article className={`dreelio-kpi-card ${myOpenCount > 0 ? "is-warning" : ""}`}>
-          <div className="dreelio-kpi-icon"><AlertCircle size={19} /></div>
-          <div className="dreelio-kpi-copy">
-            <div className="dreelio-kpi-label">Betalingen</div>
-            <div className="dreelio-kpi-number">{myOpenCount}</div>
-            <div className="dreelio-kpi-meta">{myOpenCount === 1 ? "betaling open" : "betalingen open"}</div>
-          </div>
-        </article>
-
-        <article className="dreelio-kpi-card">
-          <div className="dreelio-kpi-icon"><Coins size={19} /></div>
-          <div className="dreelio-kpi-copy">
-            <div className="dreelio-kpi-label">Boetepot</div>
-            <div className="dreelio-kpi-number">€{potTotal}</div>
-            <div className="dreelio-kpi-meta">Teamstand</div>
-          </div>
-        </article>
-
-        <article className="dreelio-kpi-card dreelio-countdown-card">
-          <div className="dreelio-kpi-icon"><Trophy size={19} /></div>
-          <div className="dreelio-kpi-copy">
-            <div className="dreelio-kpi-label">Team highlight</div>
-            <div className="dreelio-kpi-number">{topScorerEntry?.goals > 0 ? topScorerEntry.goals : (nextMatch ? countdown : "—")}</div>
-            <div className="dreelio-kpi-meta">
-              {topScorerEntry?.goals > 0 ? `Topscorer · ${topScorerEntry.player.name}` : "Countdown / clubvorm"}
-            </div>
-          </div>
-        </article>
-      </section>
-
-      <section className="dreelio-activity-strip" aria-label="Live teamstatus">
-        <div className="dreelio-activity-main">
-          <span className="dreelio-live-dot" />
-          <div>
-            <strong>Team pulse</strong>
-            <span>{teamPulseText}</span>
-          </div>
+      <div className="fcx-hero-card">
+        <div className="fcx-hero-watermark"><img src={logoUrl} alt="" /></div>
+        <div className="fcx-hero-copy">
+          <span className="fcx-live-pill"><i /> LIVE</span>
+          <strong>Overzicht</strong>
+          <small>Team dashboard</small>
         </div>
-        <div className="dreelio-activity-avatars">
-          <AvatarStack players={presentPlayers.length ? presentPlayers : activePlayers.slice(0, 6)} />
-        </div>
-        <div className="dreelio-activity-stat"><strong>{presentPlayers.length}</strong><span>Aanwezig</span></div>
-        <div className="dreelio-activity-stat"><strong>{unsurePlayers.length}</strong><span>Twijfel</span></div>
-      </section>
+        <img className="fcx-hero-art" src={logoUrl} alt="" />
+      </div>
 
-      {latestPosts.length > 0 && (
-        <section className="dreelio-home-updates" aria-label="Laatste clubupdates">
-          <div className="dreelio-home-updates-head">
+      <div className="fcx-kpi-row" aria-label="Belangrijkste teaminformatie">
+        <button type="button" className="fcx-kpi-card red" onClick={() => setTab?.("wedstrijden")}>
+          <span>Volgende wedstrijd</span>
+          <i><Calendar size={22} /></i>
+          <strong>{nextDate}</strong>
+          <small><Clock size={13} /> {nextTime}</small>
+          <small><MapPin size={13} /> {kpiLocation}</small>
+        </button>
+
+        <button type="button" className="fcx-kpi-card gold" onClick={() => setTab?.("financien")}>
+          <span>Betalingen</span>
+          <i><Wallet size={22} /></i>
+          <strong>{openFeeAmount > 0 ? `€ ${openFeeAmount.toFixed(2).replace(".", ",")}` : "€ 0,00"}</strong>
+          <small className={myOpenCount > 0 ? "dot-red" : "dot-green"}>{myOpenCount > 0 ? `${myOpenCount} openstaand` : "Alles bijgewerkt"}</small>
+        </button>
+
+        <button type="button" className="fcx-kpi-card red" onClick={() => setTab?.("boetepot")}>
+          <span>Boetepot</span>
+          <i><Coins size={22} /></i>
+          <strong>€ {Number(potTotal || 0).toFixed(2).replace(".", ",")}</strong>
+          <small className="dot-red">Teamstand</small>
+        </button>
+
+        <button type="button" className="fcx-kpi-card gold" onClick={() => setTab?.("wedstrijden")}>
+          <span>Team pulse</span>
+          <i><Activity size={23} /></i>
+          <strong>{activePlayers.length ? Math.round((presentPlayers.length / activePlayers.length) * 100) : 0}%</strong>
+          <small className="dot-green">Team fit</small>
+        </button>
+      </div>
+
+      <div className="fcx-grid-main">
+        <article className="fcx-panel fcx-match-panel">
+          <div className="fcx-panel-head">
+            <h2>Volgende wedstrijd</h2>
+          </div>
+          <div className="fcx-versus">
             <div>
-              <strong>Laatste updates</strong>
-              <span>Rustige preview van de clubfeed</span>
+              <img src={logoUrl} alt="FC TOTT" />
+              <span>FC TOTT</span>
             </div>
-            <button type="button" onClick={() => setTab?.("updates")}>Bekijk alles</button>
+            <strong>VS</strong>
+            <div>
+              <span className="fcx-opponent-logo"><Goal size={25} /><em>FC Urban</em></span>
+              <span>{opponent}</span>
+            </div>
           </div>
-          <div className="dreelio-home-updates-list">
-            {latestPosts.map((post) => (
-              <button type="button" key={post.id} onClick={() => setTab?.("updates")} className="dreelio-home-update-item">
-                {post.images?.[0] ? <img src={post.images[0]} alt="Update" /> : <span><MessageCircle size={15} /></span>}
+          <div className="fcx-match-meta">
+            <span><Calendar size={16} /> {nextMatch ? formatDateNL(nextMatch.match_date).split(" · ")[0] : "Zaterdag 24 mei 2025"}</span>
+            <span><Clock size={16} /> {nextTime}</span>
+            <span><MapPin size={16} /> {kpiLocation}{nextMatch?.location ? "" : ", Rotterdam"}</span>
+          </div>
+          <button type="button" className="fcx-primary" onClick={() => setTab?.("wedstrijden")}>Wedstrijd details <ChevronRight size={20} /></button>
+        </article>
+
+        <article className="fcx-panel fcx-status-panel">
+          <div className="fcx-panel-head">
+            <div>
+              <h2>Jouw status</h2>
+              <p>Laat weten of je erbij bent</p>
+            </div>
+            <Activity size={23} />
+          </div>
+          <div className="fcx-status-list">
+            {statusRows.map((row) => (
+              <div key={row.key} className={`fcx-status-row ${row.tone}`}>
+                <div><strong>{row.label}</strong><span>{row.count}</span></div>
+                <div className="fcx-mini-avatars">
+                  {row.players.slice(0, 4).map((p) => (
+                    <span key={p.id}>{p.photo ? <img src={p.photo} alt={p.name} /> : (p.name || "?").slice(0, 1)}</span>
+                  ))}
+                  {row.players.length > 4 && <span>+{row.players.length - 4}</span>}
+                </div>
+              </div>
+            ))}
+          </div>
+          <button type="button" className="fcx-outline" onClick={() => setTab?.("wedstrijden")}>Geef je status door <ChevronRight size={20} /></button>
+        </article>
+      </div>
+
+      <div className="fcx-grid-bottom">
+        <article className="fcx-panel fcx-updates-panel">
+          <button type="button" className="fcx-panel-title-btn" onClick={() => setTab?.("updates")}>
+            <h2>Laatste updates</h2><ChevronRight size={21} />
+          </button>
+          <div className="fcx-update-list">
+            {updatesForUi.map((post, index) => (
+              <button type="button" key={post.id || index} onClick={() => setTab?.("updates")} className="fcx-update-item">
+                {post.images?.[0] ? <img src={post.images[0]} alt="Update" /> : <span className={`fcx-update-placeholder p${index}`}><Newspaper size={18} /></span>}
                 <div>
                   <strong>{post.title || "Clubupdate"}</strong>
-                  <small>{post.author_name || "Team"}</small>
+                  <p>{post.body || "Bekijk de nieuwste update."}</p>
+                  <small>{index === 0 ? "Net geplaatst" : "Clubfeed"}</small>
                 </div>
               </button>
             ))}
           </div>
-        </section>
-      )}
-    </>
+        </article>
+
+        <article className="fcx-panel fcx-scorer-panel">
+          <button type="button" className="fcx-panel-title-btn" onClick={() => setTab?.("profiel")}>
+            <h2>Topscorer</h2><ChevronRight size={21} />
+          </button>
+          <div className="fcx-scorer-body">
+            <div className="fcx-scorer-photo">
+              {topScorerEntry?.player?.photo ? <img src={topScorerEntry.player.photo} alt={topName} /> : <img src={logoUrl} alt="Topscorer" />}
+            </div>
+            <div>
+              <strong>{shortTopName}</strong>
+              <span>{topScorerEntry?.goals || 0}</span>
+              <small>Doelpunten</small>
+              <em><Star size={13} /> Topscorer</em>
+            </div>
+          </div>
+        </article>
+      </div>
+    </section>
   );
 }
+
 
 // ============================================================
 // Wedstrijden + Aanwezigheid + Opstelling
@@ -3480,6 +3531,817 @@ const dreelioDashboardCss = `
     .dreelio-kpi-icon { width: 38px; height: 38px; border-radius: 13px; }
     .dreelio-activity-main span { max-width: 185px; }
     .tott-main { padding-left: 0 !important; padding-right: 0 !important; }
+  }
+`;
+
+
+const fcxMobileDashboardCss = `
+  :root {
+    --fcx-bg: #050506;
+    --fcx-card: #0c0d0e;
+    --fcx-card-2: #111214;
+    --fcx-line: rgba(255,255,255,.105);
+    --fcx-line-red: rgba(255, 50, 82, .42);
+    --fcx-red: #ff3152;
+    --fcx-red-2: #c9142d;
+    --fcx-gold: #d6a957;
+    --fcx-green: #76e168;
+    --fcx-muted: rgba(255,255,255,.62);
+    --fcx-soft: rgba(255,255,255,.08);
+  }
+
+  .dreelio-app {
+    background: radial-gradient(circle at 50% -10%, rgba(255,49,82,.16), transparent 36%), #030304 !important;
+    color: #fff !important;
+  }
+
+  .dreelio-content {
+    max-width: 1120px;
+  }
+
+  .dreelio-main {
+    max-width: 1000px !important;
+    animation: fcxScreenIn 520ms cubic-bezier(.2,.85,.2,1) both;
+  }
+
+  @keyframes fcxScreenIn {
+    from { opacity: 0; transform: translateY(12px) scale(.985); filter: blur(8px); }
+    to { opacity: 1; transform: none; filter: blur(0); }
+  }
+
+  .fcx-phone-dashboard {
+    position: relative;
+    display: grid;
+    gap: 18px;
+    padding: 4px;
+    color: #fff;
+  }
+
+  .fcx-app-header {
+    display: grid;
+    grid-template-columns: 72px minmax(0, 1fr) 58px;
+    gap: 16px;
+    align-items: center;
+    padding: 6px 2px 2px;
+  }
+
+  .fcx-brand-mark {
+    width: 68px;
+    height: 68px;
+    border-radius: 50%;
+    overflow: hidden;
+    display: grid;
+    place-items: center;
+    background: #0b0b0c;
+    border: 1px solid rgba(255,255,255,.14);
+    box-shadow: 0 16px 34px rgba(0,0,0,.34), 0 0 0 3px rgba(255,49,82,.04);
+  }
+
+  .fcx-brand-mark img,
+  .fcx-versus img,
+  .fcx-scorer-photo img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+  }
+
+  .fcx-brand-copy h1 {
+    margin: 0;
+    color: #fff;
+    font-family: Inter, system-ui, sans-serif;
+    font-size: clamp(24px, 3vw, 34px);
+    line-height: 1.04;
+    font-weight: 780;
+    letter-spacing: -.045em;
+  }
+
+  .fcx-brand-copy span {
+    display: block;
+    margin-top: 5px;
+    color: var(--fcx-gold);
+    font-size: 18px;
+    font-weight: 520;
+  }
+
+  .fcx-bell {
+    position: relative;
+    width: 56px;
+    height: 56px;
+    border-radius: 17px;
+    border: 1px solid rgba(255, 49, 82, .35);
+    background: rgba(255,255,255,.045);
+    color: #fff;
+    display: grid;
+    place-items: center;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.08), 0 12px 30px rgba(0,0,0,.24);
+  }
+
+  .fcx-bell b {
+    position: absolute;
+    top: -9px;
+    right: -8px;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: var(--fcx-red);
+    color: #fff;
+    display: grid;
+    place-items: center;
+    font-size: 14px;
+    font-weight: 850;
+    box-shadow: 0 0 0 3px #08080a;
+  }
+
+  .fcx-hero-card {
+    position: relative;
+    min-height: 230px;
+    overflow: hidden;
+    border-radius: 29px;
+    border: 1px solid rgba(255,49,82,.34);
+    background:
+      radial-gradient(circle at 76% 35%, rgba(255,49,82,.28), transparent 34%),
+      radial-gradient(circle at 17% 100%, rgba(255,49,82,.18), transparent 32%),
+      linear-gradient(135deg, #09090b 0%, #101014 56%, #050506 100%);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.08), 0 24px 70px rgba(0,0,0,.30), 0 0 42px rgba(255,49,82,.10);
+  }
+
+  .fcx-hero-card::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    opacity: .34;
+    background-image: radial-gradient(rgba(255,255,255,.15) 1px, transparent 1px);
+    background-size: 11px 11px;
+    mask-image: linear-gradient(90deg, #000, transparent 70%);
+  }
+
+  .fcx-hero-watermark {
+    position: absolute;
+    right: 16%;
+    top: -28%;
+    width: 300px;
+    height: 300px;
+    opacity: .08;
+    filter: grayscale(1) contrast(1.6);
+  }
+
+  .fcx-hero-watermark img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+
+  .fcx-hero-copy {
+    position: relative;
+    z-index: 2;
+    padding: 44px 34px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .fcx-live-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    height: 36px;
+    padding: 0 15px;
+    border-radius: 999px;
+    border: 1px solid rgba(255,49,82,.72);
+    background: rgba(255,49,82,.08);
+    color: #fff;
+    font-size: 15px;
+    font-weight: 840;
+    letter-spacing: .01em;
+    box-shadow: 0 0 26px rgba(255,49,82,.11);
+  }
+
+  .fcx-live-pill i {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--fcx-red);
+    box-shadow: 0 0 18px rgba(255,49,82,.8);
+    animation: fcxPulse 1.8s ease-in-out infinite;
+  }
+
+  @keyframes fcxPulse {
+    0%, 100% { transform: scale(.9); opacity: .78; }
+    50% { transform: scale(1.25); opacity: 1; }
+  }
+
+  .fcx-hero-copy strong {
+    margin-top: 26px;
+    color: #fff;
+    font-size: clamp(38px, 7vw, 56px);
+    line-height: .94;
+    font-weight: 850;
+    letter-spacing: -.06em;
+  }
+
+  .fcx-hero-copy small {
+    margin-top: 13px;
+    color: rgba(255,255,255,.62);
+    font-size: 20px;
+    font-weight: 500;
+  }
+
+  .fcx-hero-art {
+    position: absolute;
+    right: -16px;
+    bottom: -40px;
+    width: 47%;
+    height: 120%;
+    object-fit: cover;
+    object-position: 50% 40%;
+    transform: scale(1.34);
+    filter: saturate(1.18) contrast(1.18) brightness(.88) drop-shadow(-20px 0 40px rgba(255,49,82,.18));
+    opacity: .92;
+    mix-blend-mode: screen;
+  }
+
+  .fcx-kpi-row {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 14px;
+  }
+
+  .fcx-kpi-card,
+  .fcx-panel {
+    background: linear-gradient(180deg, rgba(255,255,255,.045), rgba(255,255,255,.018)), #0b0c0e;
+    border: 1px solid var(--fcx-line);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.065), 0 18px 42px rgba(0,0,0,.21);
+  }
+
+  .fcx-kpi-card {
+    min-height: 188px;
+    padding: 21px 18px 18px;
+    border-radius: 25px;
+    color: #fff;
+    text-align: left;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 8px;
+    transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease;
+  }
+
+  .fcx-kpi-card:hover,
+  .fcx-panel:hover {
+    transform: translateY(-2px);
+  }
+
+  .fcx-kpi-card.red { border-color: rgba(255,49,82,.34); }
+  .fcx-kpi-card.gold { border-color: rgba(214,169,87,.31); }
+
+  .fcx-kpi-card span {
+    width: 100%;
+    color: var(--fcx-red);
+    font-size: 15px;
+    line-height: 1.2;
+    font-weight: 760;
+    text-align: left;
+  }
+
+  .fcx-kpi-card.gold span { color: var(--fcx-gold); }
+
+  .fcx-kpi-card i {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    margin: 5px auto 8px;
+    font-style: normal;
+    color: var(--fcx-red);
+    background: radial-gradient(circle, rgba(255,49,82,.22), rgba(255,49,82,.07));
+    border: 1px solid rgba(255,49,82,.42);
+    box-shadow: 0 0 28px rgba(255,49,82,.12);
+  }
+
+  .fcx-kpi-card.gold i {
+    color: #fff1c8;
+    background: radial-gradient(circle, rgba(214,169,87,.38), rgba(214,169,87,.09));
+    border-color: rgba(214,169,87,.48);
+    box-shadow: 0 0 28px rgba(214,169,87,.10);
+  }
+
+  .fcx-kpi-card strong {
+    width: 100%;
+    text-align: center;
+    margin-top: 2px;
+    color: #fff;
+    font-size: clamp(22px, 2.7vw, 31px);
+    line-height: 1;
+    font-weight: 620;
+    letter-spacing: -.045em;
+    white-space: nowrap;
+  }
+
+  .fcx-kpi-card small {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    color: rgba(255,255,255,.68);
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 1.15;
+  }
+
+  .fcx-kpi-card small.dot-green::before,
+  .fcx-kpi-card small.dot-red::before {
+    content: "";
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    flex: 0 0 auto;
+  }
+
+  .fcx-kpi-card small.dot-green::before { background: var(--fcx-green); box-shadow: 0 0 13px rgba(118,225,104,.45); }
+  .fcx-kpi-card small.dot-red::before { background: var(--fcx-red); box-shadow: 0 0 13px rgba(255,49,82,.45); }
+
+  .fcx-grid-main,
+  .fcx-grid-bottom {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+  }
+
+  .fcx-panel {
+    position: relative;
+    overflow: hidden;
+    border-radius: 26px;
+    padding: 20px;
+    color: #fff;
+    transition: transform .18s ease;
+  }
+
+  .fcx-panel::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: radial-gradient(circle at 10% 0%, rgba(255,49,82,.10), transparent 34%);
+  }
+
+  .fcx-panel h2 {
+    position: relative;
+    margin: 0;
+    color: var(--fcx-red);
+    font-size: 24px;
+    font-weight: 760;
+    letter-spacing: -.035em;
+  }
+
+  .fcx-panel-head,
+  .fcx-panel-title-btn {
+    position: relative;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .fcx-panel-head p {
+    margin: 5px 0 0;
+    color: rgba(255,255,255,.62);
+    font-size: 14px;
+  }
+
+  .fcx-status-panel .fcx-panel-head svg { color: var(--fcx-red); filter: drop-shadow(0 0 12px rgba(255,49,82,.25)); }
+
+  .fcx-versus {
+    position: relative;
+    margin: 24px 0 19px;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 17px;
+    align-items: center;
+  }
+
+  .fcx-versus > div {
+    display: grid;
+    justify-items: center;
+    gap: 9px;
+    min-width: 0;
+  }
+
+  .fcx-versus img,
+  .fcx-opponent-logo {
+    width: 82px;
+    height: 82px;
+    border-radius: 50%;
+  }
+
+  .fcx-versus > div > span:not(.fcx-opponent-logo) {
+    color: #fff;
+    font-size: 16px;
+    font-weight: 650;
+    text-align: center;
+  }
+
+  .fcx-versus > strong {
+    color: var(--fcx-red);
+    font-size: 31px;
+    font-weight: 850;
+    letter-spacing: -.04em;
+    text-shadow: 0 0 20px rgba(255,49,82,.24);
+  }
+
+  .fcx-opponent-logo {
+    display: grid;
+    place-items: center;
+    position: relative;
+    background: radial-gradient(circle, #1f2024, #050506);
+    border: 2px solid rgba(255,255,255,.72);
+    color: #fff;
+    box-shadow: inset 0 0 0 5px rgba(255,255,255,.06);
+  }
+
+  .fcx-opponent-logo em {
+    position: absolute;
+    top: 13px;
+    font-style: normal;
+    font-size: 8px;
+    font-weight: 800;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,.72);
+  }
+
+  .fcx-match-meta {
+    position: relative;
+    display: grid;
+    gap: 11px;
+    margin-top: 8px;
+  }
+
+  .fcx-match-meta span {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: rgba(255,255,255,.68);
+    font-size: 15px;
+    line-height: 1.2;
+  }
+
+  .fcx-primary,
+  .fcx-outline {
+    position: relative;
+    width: 100%;
+    margin-top: 22px;
+    min-height: 57px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    color: #fff;
+    font-size: 17px;
+    font-weight: 740;
+  }
+
+  .fcx-primary {
+    border: 1px solid rgba(255,255,255,.08);
+    background: linear-gradient(135deg, #ed2745, #bd1028);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.22), 0 18px 36px rgba(255,49,82,.20);
+  }
+
+  .fcx-outline {
+    border: 1px solid rgba(255,49,82,.78);
+    background: linear-gradient(135deg, rgba(255,49,82,.10), rgba(255,255,255,.02));
+  }
+
+  .fcx-status-list {
+    position: relative;
+    display: grid;
+    gap: 12px;
+    margin-top: 20px;
+  }
+
+  .fcx-status-row {
+    min-height: 64px;
+    border-radius: 14px;
+    border: 1px solid rgba(255,255,255,.08);
+    background: linear-gradient(180deg, rgba(255,255,255,.045), rgba(255,255,255,.018));
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 12px 12px 14px;
+  }
+
+  .fcx-status-row div:first-child strong,
+  .fcx-status-row div:first-child span {
+    display: block;
+    line-height: 1.15;
+  }
+
+  .fcx-status-row div:first-child strong { font-size: 14px; }
+  .fcx-status-row div:first-child span { margin-top: 5px; color: #fff; font-size: 19px; font-weight: 670; }
+  .fcx-status-row.green div:first-child strong { color: var(--fcx-green); }
+  .fcx-status-row.gold div:first-child strong { color: var(--fcx-gold); }
+  .fcx-status-row.red div:first-child strong { color: var(--fcx-red); }
+
+  .fcx-mini-avatars {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    min-width: 110px;
+  }
+
+  .fcx-mini-avatars span {
+    width: 34px;
+    height: 34px;
+    margin-left: -9px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    overflow: hidden;
+    background: #232429;
+    color: #fff;
+    border: 2px solid #15161a;
+    font-size: 12px;
+    font-weight: 780;
+  }
+
+  .fcx-mini-avatars img { width: 100%; height: 100%; object-fit: cover; }
+
+  .fcx-panel-title-btn {
+    width: 100%;
+    padding: 0;
+    border: none;
+    background: transparent;
+    color: #fff;
+  }
+
+  .fcx-panel-title-btn svg { color: rgba(255,255,255,.86); }
+  .fcx-scorer-panel { border-color: rgba(214,169,87,.33); }
+  .fcx-scorer-panel h2 { color: var(--fcx-gold); }
+
+  .fcx-update-list {
+    position: relative;
+    display: grid;
+    gap: 13px;
+    margin-top: 21px;
+  }
+
+  .fcx-update-item {
+    display: grid;
+    grid-template-columns: 62px minmax(0,1fr);
+    gap: 14px;
+    padding: 0;
+    border: none;
+    background: transparent;
+    text-align: left;
+    color: #fff;
+  }
+
+  .fcx-update-item img,
+  .fcx-update-placeholder {
+    width: 62px;
+    height: 62px;
+    border-radius: 13px;
+    object-fit: cover;
+    overflow: hidden;
+  }
+
+  .fcx-update-placeholder {
+    display: grid;
+    place-items: center;
+    background: radial-gradient(circle at 30% 20%, #f2cf67, #423015 48%, #111 100%);
+    color: #fff;
+  }
+
+  .fcx-update-placeholder.p1 { background: radial-gradient(circle at 50% 35%, #e4233f, #53101a 50%, #111 100%); }
+
+  .fcx-update-item strong {
+    display: block;
+    color: #fff;
+    font-size: 15px;
+    line-height: 1.2;
+    font-weight: 780;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .fcx-update-item p,
+  .fcx-update-item small {
+    margin: 4px 0 0;
+    color: rgba(255,255,255,.62);
+    font-size: 13px;
+    line-height: 1.2;
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .fcx-update-item small { color: rgba(255,255,255,.45); }
+
+  .fcx-scorer-body {
+    position: relative;
+    display: grid;
+    grid-template-columns: 126px minmax(0,1fr);
+    gap: 18px;
+    align-items: center;
+    margin-top: 23px;
+  }
+
+  .fcx-scorer-photo {
+    width: 126px;
+    height: 126px;
+    border-radius: 50%;
+    padding: 4px;
+    background: linear-gradient(135deg, #f4c36a, #8c6522);
+    box-shadow: 0 0 32px rgba(214,169,87,.16);
+  }
+
+  .fcx-scorer-photo img {
+    border-radius: 50%;
+    background: #09090a;
+    object-fit: cover;
+  }
+
+  .fcx-scorer-body strong,
+  .fcx-scorer-body span,
+  .fcx-scorer-body small,
+  .fcx-scorer-body em {
+    display: block;
+  }
+
+  .fcx-scorer-body strong { color: #fff; font-size: 23px; font-weight: 720; letter-spacing: -.03em; }
+  .fcx-scorer-body span { margin-top: 8px; color: var(--fcx-gold); font-size: 43px; line-height: .92; font-weight: 820; letter-spacing: -.055em; }
+  .fcx-scorer-body small { margin-top: 6px; color: rgba(255,255,255,.65); font-size: 16px; }
+  .fcx-scorer-body em { width: max-content; margin-top: 13px; color: #f0c978; border: 1px solid rgba(214,169,87,.52); border-radius: 999px; padding: 6px 10px; font-size: 13px; font-style: normal; font-weight: 720; }
+
+  @media (min-width: 861px) {
+    .fcx-phone-dashboard {
+      max-width: 940px;
+      margin: 0 auto;
+    }
+  }
+
+  @media (max-width: 860px) {
+    body { background: #030304 !important; }
+    .dreelio-shell { padding: 14px 10px 98px !important; background: #030304 !important; }
+    .dreelio-content { background: transparent !important; }
+    .dreelio-mobile-topbar { display: none !important; }
+    .dreelio-main { padding: 6px 4px 22px !important; max-width: none !important; }
+    .dreelio-footer { display: none; }
+
+    .dreelio-sidebar {
+      position: fixed !important;
+      left: 10px !important;
+      right: 10px !important;
+      bottom: 10px !important;
+      top: auto !important;
+      z-index: 80 !important;
+      height: 82px !important;
+      padding: 8px !important;
+      border-radius: 24px !important;
+      background: rgba(15,16,18,.84) !important;
+      backdrop-filter: blur(24px) saturate(160%) !important;
+      -webkit-backdrop-filter: blur(24px) saturate(160%) !important;
+      border: 1px solid rgba(255,255,255,.10) !important;
+      box-shadow: 0 16px 50px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.08) !important;
+    }
+
+    .dreelio-sidebar-brand,
+    .dreelio-sidebar-card,
+    .dreelio-sidebar-group-label,
+    .dreelio-sidebar-spacer,
+    .dreelio-profile-card { display: none !important; }
+
+    .dreelio-sidebar-nav {
+      display: grid !important;
+      grid-template-columns: repeat(5, 1fr) !important;
+      gap: 2px !important;
+      width: 100% !important;
+      height: 100% !important;
+    }
+
+    .dreelio-side-link:nth-child(5),
+    .dreelio-side-link:nth-child(6) { display: none !important; }
+
+    .dreelio-side-link {
+      min-height: 0 !important;
+      height: 66px !important;
+      padding: 6px 2px 4px !important;
+      border-radius: 18px !important;
+      display: flex !important;
+      flex-direction: column !important;
+      justify-content: center !important;
+      align-items: center !important;
+      gap: 5px !important;
+      background: transparent !important;
+      color: rgba(255,255,255,.65) !important;
+      font-size: 11px !important;
+      line-height: 1 !important;
+      font-weight: 650 !important;
+      border: 0 !important;
+      box-shadow: none !important;
+    }
+
+    .dreelio-side-link.is-active {
+      color: var(--fcx-red) !important;
+      background: radial-gradient(circle at 50% 0%, rgba(255,49,82,.22), transparent 62%) !important;
+      text-shadow: 0 0 22px rgba(255,49,82,.30);
+    }
+
+    .dreelio-side-link.is-active:before {
+      left: 18% !important;
+      right: 18% !important;
+      bottom: -8px !important;
+      top: auto !important;
+      width: auto !important;
+      height: 3px !important;
+      transform: none !important;
+      background: var(--fcx-red) !important;
+      box-shadow: 0 0 24px rgba(255,49,82,.72) !important;
+    }
+
+    .dreelio-side-icon {
+      width: 28px !important;
+      height: 28px !important;
+      border-radius: 0 !important;
+      background: transparent !important;
+      color: currentColor !important;
+    }
+
+    .dreelio-nav-badge {
+      position: absolute !important;
+      top: 7px !important;
+      right: 23px !important;
+      min-width: 9px !important;
+      width: 9px !important;
+      height: 9px !important;
+      padding: 0 !important;
+      overflow: hidden !important;
+      color: transparent !important;
+      background: var(--fcx-red) !important;
+      box-shadow: 0 0 12px rgba(255,49,82,.65) !important;
+    }
+
+    .fcx-phone-dashboard { gap: 15px; padding: 0; }
+    .fcx-app-header { grid-template-columns: 54px minmax(0,1fr) 48px; gap: 12px; padding: 8px 4px 4px; }
+    .fcx-brand-mark { width: 54px; height: 54px; }
+    .fcx-brand-copy h1 { font-size: 25px; }
+    .fcx-brand-copy span { font-size: 17px; margin-top: 3px; }
+    .fcx-bell { width: 46px; height: 46px; border-radius: 15px; }
+    .fcx-bell b { width: 25px; height: 25px; font-size: 12px; }
+
+    .fcx-hero-card { min-height: 181px; border-radius: 22px; }
+    .fcx-hero-copy { padding: 31px 22px; }
+    .fcx-live-pill { height: 31px; font-size: 13px; padding: 0 12px; }
+    .fcx-hero-copy strong { margin-top: 22px; font-size: 43px; }
+    .fcx-hero-copy small { font-size: 18px; }
+    .fcx-hero-art { right: -30px; width: 52%; transform: scale(1.45); opacity: .86; }
+
+    .fcx-kpi-row {
+      display: flex;
+      overflow-x: auto;
+      scroll-snap-type: x mandatory;
+      gap: 10px;
+      padding-bottom: 2px;
+      scrollbar-width: none;
+    }
+    .fcx-kpi-row::-webkit-scrollbar { display: none; }
+    .fcx-kpi-card { flex: 0 0 158px; min-height: 188px; border-radius: 20px; padding: 16px 14px; scroll-snap-align: start; }
+    .fcx-kpi-card span { font-size: 14px; }
+    .fcx-kpi-card i { width: 54px; height: 54px; margin-top: 4px; }
+    .fcx-kpi-card strong { font-size: 25px; }
+    .fcx-kpi-card small { font-size: 12.5px; }
+
+    .fcx-grid-main,
+    .fcx-grid-bottom {
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+
+    .fcx-panel { border-radius: 21px; padding: 16px; }
+    .fcx-panel h2 { font-size: 21px; }
+    .fcx-versus { gap: 12px; margin-top: 21px; }
+    .fcx-versus img, .fcx-opponent-logo { width: 72px; height: 72px; }
+    .fcx-versus > strong { font-size: 29px; }
+    .fcx-primary, .fcx-outline { min-height: 52px; font-size: 16px; margin-top: 18px; }
+    .fcx-status-row { min-height: 58px; }
+    .fcx-mini-avatars span { width: 30px; height: 30px; }
+    .fcx-scorer-body { grid-template-columns: 106px minmax(0,1fr); gap: 16px; }
+    .fcx-scorer-photo { width: 106px; height: 106px; }
+    .fcx-scorer-body span { font-size: 38px; }
+  }
+
+  @media (max-width: 380px) {
+    .fcx-brand-copy h1 { font-size: 22px; }
+    .fcx-brand-copy span { font-size: 15px; }
+    .fcx-kpi-card { flex-basis: 146px; }
+    .fcx-hero-copy strong { font-size: 38px; }
   }
 `;
 
