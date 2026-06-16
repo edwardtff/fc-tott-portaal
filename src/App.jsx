@@ -4,7 +4,7 @@ import {
   Check, X, Plus, Trash2, ChevronRight, Users, AlertCircle, HelpCircle,
   ChevronDown, ChevronUp, Lock, LogOut, UserCog, UserPlus, UserMinus,
   Goal, Handshake, Star, Shield, Camera, Eye, EyeOff, Coins, Gavel,
-  Repeat, Trophy, Flag, Award,
+  Repeat, Trophy, Flag, Award, Bell, Newspaper, MessageCircle, Pin, Settings,
 } from "lucide-react";
 import * as db from "./lib/db";
 
@@ -74,12 +74,56 @@ function deadlineLabel(match) {
 }
 
 const SESSION_KEY = "tott_session_player_id";
+const LOCAL_POSTS_KEY = "tott_local_club_posts_v1";
+const LOCAL_BRANDING_KEY = "tott_local_branding_v1";
+
+const DEFAULT_BRANDING = {
+  logoUrl: "",
+  loginBannerUrl: "",
+  dashboardBannerUrl: "",
+  sponsorImageUrl: "",
+  clubShortName: "FC TOTT",
+};
+
+function readLocalJson(key, fallback) {
+  if (typeof window === "undefined") return fallback;
+  try {
+    const raw = window.localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function useLocalJsonState(key, fallback) {
+  const [value, setValue] = useState(() => readLocalJson(key, fallback));
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      window.localStorage.setItem(key, JSON.stringify(value));
+    } catch (error) {
+      console.warn("Kon lokale clubdata niet opslaan", error);
+    }
+  }, [key, value]);
+
+  return [value, setValue];
+}
+
+function normalizeImages(images = []) {
+  return images.map((img) => String(img || "").trim()).filter(Boolean).slice(0, 6);
+}
+
+function makePostId() {
+  return `post_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+}
 
 // ============================================================
 // App shell
 // ============================================================
 const NAV = [
   { key: "wedstrijden", label: "Wedstrijden", icon: Calendar },
+  { key: "updates", label: "Updates", icon: Newspaper },
   { key: "profiel", label: "Profiel", icon: UserCog },
   { key: "boetepot", label: "Boetepot", icon: Coins },
   { key: "huisregels", label: "Huisregels", icon: ShieldCheck },
@@ -103,6 +147,8 @@ export default function App() {
   const [fines, setFines] = useState([]);
 
   const [sessionId, setSessionId] = useState(null);
+  const [clubPosts, setClubPosts] = useLocalJsonState(LOCAL_POSTS_KEY, []);
+  const [branding, setBranding] = useLocalJsonState(LOCAL_BRANDING_KEY, DEFAULT_BRANDING);
 
   const reloadAll = async () => {
     const [p, m, r, ft, fp, att, lu, gl, fr, fn] = await Promise.all([
@@ -219,8 +265,8 @@ export default function App() {
     return (
       <div style={styles.app} className="tott-app dreelio-app">
         <style>{globalCss + dreelioDashboardCss}</style>
-        <Header />
-        <LoginScreen players={players} onLogin={login} />
+        <Header branding={branding} />
+        <LoginScreen players={players} onLogin={login} branding={branding} />
         <footer style={styles.footer}>FC TOTT · Sponsored By Nola Marketing (website, branding en marketing)</footer>
       </div>
     );
@@ -241,11 +287,15 @@ export default function App() {
           onLogout={logout}
           myOpenCount={myOpenCount}
           potTotal={potTotal}
+          postsCount={clubPosts.length}
+          nextMatch={nextMatch}
+          attendanceByMatch={attendanceByMatch}
+          branding={branding}
         />
 
         <div className="dreelio-content">
           <div className="dreelio-mobile-topbar">
-            <Header me={me} onLogout={logout} />
+            <Header me={me} onLogout={logout} branding={branding} />
           </div>
 
           <Top3
@@ -257,6 +307,9 @@ export default function App() {
             players={players}
             attendanceByMatch={attendanceByMatch}
             setTab={changeTab}
+            posts={clubPosts}
+            branding={branding}
+            statsByPlayer={statsByPlayer}
           />
 
           <main style={styles.main} className="tott-main dreelio-main">
@@ -266,6 +319,15 @@ export default function App() {
                 attendanceByMatch={attendanceByMatch} lineupsByMatch={lineupsByMatch}
                 goalsByMatch={goalsByMatch}
                 me={me} isAdmin={isAdmin} reloadAll={reloadAll}
+              />
+            )}
+            {tab === "updates" && (
+              <UpdatesTab
+                posts={clubPosts}
+                setPosts={setClubPosts}
+                me={me}
+                players={players}
+                isAdmin={isAdmin}
               />
             )}
             {tab === "profiel" && (
@@ -284,7 +346,7 @@ export default function App() {
             {tab === "financien" && (
               <FinanceTab players={players} feeTypes={feeTypes} feesByPlayer={feesByPlayer} me={me} isAdmin={isAdmin} reloadAll={reloadAll} />
             )}
-            {isAdmin && <AdminPanel players={players} reloadAll={reloadAll} />}
+            {isAdmin && <AdminPanel players={players} reloadAll={reloadAll} branding={branding} setBranding={setBranding} />}
           </main>
 
           <footer style={styles.footer} className="dreelio-footer">FC TOTT · Sponsored By Nola Marketing (website, branding en marketing)</footer>
@@ -297,7 +359,7 @@ export default function App() {
 // ============================================================
 // Login
 // ============================================================
-function LoginScreen({ players, onLogin }) {
+function LoginScreen({ players, onLogin, branding = DEFAULT_BRANDING }) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPw, setShowPw] = useState(false);
@@ -329,6 +391,9 @@ function LoginScreen({ players, onLogin }) {
   return (
     <div style={styles.loginWrap}>
       <form style={styles.loginCard} className="dreelio-login-card" onSubmit={submit}>
+        {branding.loginBannerUrl && (
+          <img src={branding.loginBannerUrl} alt="Clubbeeld" className="dreelio-login-banner" />
+        )}
         <div style={styles.loginIcon}><Lock size={20} /></div>
         <div style={styles.loginTitle}>Inloggen bij FC TOTT</div>
         <div style={styles.loginSub}>Gebruik de inloggegevens die je van het bestuur hebt gekregen.</div>
@@ -360,10 +425,12 @@ function LoginScreen({ players, onLogin }) {
 // ============================================================
 // Header / Top bar
 // ============================================================
-function Header({ me, onLogout }) {
+function Header({ me, onLogout, branding = DEFAULT_BRANDING }) {
   return (
     <header style={styles.header} className="tott-header">
-      <div style={styles.crest} className="tott-crest">TOTT</div>
+      <div style={styles.crest} className="tott-crest">
+        {branding.logoUrl ? <img src={branding.logoUrl} alt="Clublogo" className="tott-crest-img" /> : "TOTT"}
+      </div>
       <div style={{ flex: 1 }}>
         <div style={styles.clubName} className="tott-clubname">FC Talk Of The Town</div>
         <div style={styles.clubSub} className="tott-clubsub">Zaalvoetbal · Clubportaal</div>
@@ -378,11 +445,18 @@ function Header({ me, onLogout }) {
 }
 
 
-function DreelioSidebar({ me, tab, setTab, onLogout, myOpenCount, potTotal }) {
+function DreelioSidebar({ me, tab, setTab, onLogout, myOpenCount, potTotal, postsCount = 0, nextMatch, attendanceByMatch = {}, branding = DEFAULT_BRANDING }) {
+  const needsMatchResponse = !!(nextMatch && me && !attendanceByMatch[nextMatch.id]?.[me.id]?.status);
+  const badgeFor = (key) => {
+    if (key === "financien" && myOpenCount > 0) return myOpenCount;
+    if (key === "updates" && postsCount > 0) return Math.min(postsCount, 9);
+    if (key === "wedstrijden" && needsMatchResponse) return "!";
+    return null;
+  };
   return (
     <aside className="dreelio-sidebar" aria-label="Hoofdnavigatie">
       <div className="dreelio-sidebar-brand">
-        <div className="dreelio-sidebar-logo">T</div>
+        <div className="dreelio-sidebar-logo">{branding.logoUrl ? <img src={branding.logoUrl} alt="Clublogo" /> : "T"}</div>
         <div>
           <div className="dreelio-sidebar-title">FC TOTT</div>
           <div className="dreelio-sidebar-sub">Clubportaal</div>
@@ -403,6 +477,7 @@ function DreelioSidebar({ me, tab, setTab, onLogout, myOpenCount, potTotal }) {
             >
               <span className="dreelio-side-icon"><Icon size={17} /></span>
               <span>{n.label}</span>
+              {badgeFor(n.key) && <span className="dreelio-nav-badge">{badgeFor(n.key)}</span>}
             </button>
           );
         })}
@@ -438,7 +513,7 @@ function DreelioSidebar({ me, tab, setTab, onLogout, myOpenCount, potTotal }) {
   );
 }
 
-function Top3({ nextMatch, countdown, myOpenCount, potTotal, me, players = [], attendanceByMatch = {}, setTab }) {
+function Top3({ nextMatch, countdown, myOpenCount, potTotal, me, players = [], attendanceByMatch = {}, setTab, posts = [], branding = DEFAULT_BRANDING, statsByPlayer = {} }) {
   const category = nextMatch ? matchTypeInfo(nextMatch.category) : null;
   const firstName = (me?.name || "speler").split(" ")[0];
   const activePlayers = players.filter((p) => p.active !== false);
@@ -451,6 +526,18 @@ function Top3({ nextMatch, countdown, myOpenCount, potTotal, me, players = [], a
     ? ATTENDANCE_STATUSES.find((s) => s.key === myNextStatus)?.label
     : "Nog niet ingevuld";
 
+  const topScorerEntry = Object.entries(statsByPlayer || {})
+    .map(([playerId, stats]) => ({ player: players.find((p) => p.id === playerId), goals: stats?.goals || 0, assists: stats?.assists || 0 }))
+    .filter((x) => x.player)
+    .sort((a, b) => b.goals - a.goals || b.assists - a.assists)[0];
+  const latestPosts = [...posts].sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).slice(0, 2);
+  const notifications = [
+    ...(myOpenCount > 0 ? [{ icon: Wallet, text: `Je hebt ${myOpenCount} betaling${myOpenCount === 1 ? "" : "en"} open.`, tab: "financien" }] : []),
+    ...(nextMatch && !myNextStatus ? [{ icon: Calendar, text: `Geef je status door voor ${nextMatch.opponent}.`, tab: "wedstrijden" }] : []),
+    ...(latestPosts.length ? [{ icon: Newspaper, text: `Nieuwe update: ${latestPosts[0].title || "clubpost"}.`, tab: "updates" }] : []),
+  ];
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+
   const teamPulseText = nextMatch
     ? `${presentPlayers.length} aanwezig · ${absentPlayers.length} afwezig · ${unsurePlayers.length} twijfel`
     : "Voeg een wedstrijd toe om de teamstatus live te zien";
@@ -462,7 +549,31 @@ function Top3({ nextMatch, countdown, myOpenCount, potTotal, me, players = [], a
           <div className="dreelio-card-topline">
             <span className="dreelio-chip"><span className="dreelio-live-dot" /> Live clubdashboard</span>
             <span className="dreelio-chip muted">{activePlayers.length} spelers</span>
+            <button type="button" className="dreelio-bell-button" onClick={() => setNotificationsOpen((open) => !open)}>
+              <Bell size={15} />
+              {notifications.length > 0 && <span>{notifications.length}</span>}
+            </button>
+            {notificationsOpen && (
+              <div className="dreelio-notification-popover">
+                <div className="dreelio-popover-title">Notificaties</div>
+                {notifications.length === 0 && <div className="dreelio-popover-empty">Alles is rustig.</div>}
+                {notifications.map((note, i) => {
+                  const Icon = note.icon;
+                  return (
+                    <button key={i} type="button" onClick={() => { setNotificationsOpen(false); setTab?.(note.tab); }}>
+                      <Icon size={15} />
+                      <span>{note.text}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </div>
+          {branding.dashboardBannerUrl && (
+            <div className="dreelio-dashboard-banner">
+              <img src={branding.dashboardBannerUrl} alt="Club banner" />
+            </div>
+          )}
           <div>
             <div className="dreelio-kicker">Hoi {firstName}</div>
             <h1>Je teamstatus in één levend overzicht.</h1>
@@ -513,11 +624,13 @@ function Top3({ nextMatch, countdown, myOpenCount, potTotal, me, players = [], a
         </article>
 
         <article className="dreelio-kpi-card dreelio-countdown-card">
-          <div className="dreelio-kpi-icon"><Clock size={19} /></div>
+          <div className="dreelio-kpi-icon"><Trophy size={19} /></div>
           <div className="dreelio-kpi-copy">
-            <div className="dreelio-kpi-label">Countdown</div>
-            <div className="dreelio-kpi-number">{nextMatch ? countdown : "—"}</div>
-            <div className="dreelio-kpi-meta">Tot de volgende afspraak</div>
+            <div className="dreelio-kpi-label">Team highlight</div>
+            <div className="dreelio-kpi-number">{topScorerEntry?.goals > 0 ? topScorerEntry.goals : (nextMatch ? countdown : "—")}</div>
+            <div className="dreelio-kpi-meta">
+              {topScorerEntry?.goals > 0 ? `Topscorer · ${topScorerEntry.player.name}` : "Countdown / clubvorm"}
+            </div>
           </div>
         </article>
       </section>
@@ -536,6 +649,29 @@ function Top3({ nextMatch, countdown, myOpenCount, potTotal, me, players = [], a
         <div className="dreelio-activity-stat"><strong>{presentPlayers.length}</strong><span>Aanwezig</span></div>
         <div className="dreelio-activity-stat"><strong>{unsurePlayers.length}</strong><span>Twijfel</span></div>
       </section>
+
+      {latestPosts.length > 0 && (
+        <section className="dreelio-home-updates" aria-label="Laatste clubupdates">
+          <div className="dreelio-home-updates-head">
+            <div>
+              <strong>Laatste updates</strong>
+              <span>Rustige preview van de clubfeed</span>
+            </div>
+            <button type="button" onClick={() => setTab?.("updates")}>Bekijk alles</button>
+          </div>
+          <div className="dreelio-home-updates-list">
+            {latestPosts.map((post) => (
+              <button type="button" key={post.id} onClick={() => setTab?.("updates")} className="dreelio-home-update-item">
+                {post.images?.[0] ? <img src={post.images[0]} alt="Update" /> : <span><MessageCircle size={15} /></span>}
+                <div>
+                  <strong>{post.title || "Clubupdate"}</strong>
+                  <small>{post.author_name || "Team"}</small>
+                </div>
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
     </>
   );
 }
@@ -741,6 +877,14 @@ function MatchesTab({ matches, players, attendanceByMatch, lineupsByMatch, goals
                   <div style={styles.matchMeta} className="tott-matchmeta">
                     <span style={styles.metaItem}><Clock size={13} /> {formatDateNL(m.match_date)}</span>
                     {m.location && <span style={styles.metaItem}><MapPin size={13} /> {m.location}</span>}
+                    {m.location && (
+                      <a
+                        href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(m.location)}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="dreelio-route-link"
+                      >Route</a>
+                    )}
                   </div>
                 </div>
                 {hasScore && (
@@ -1010,6 +1154,205 @@ function MatchResultEditor({ match, players, goals, reloadAll }) {
   );
 }
 
+
+// ============================================================
+// Updates / clubfeed zonder Supabase-wijzigingen
+// ============================================================
+function UpdatesTab({ posts, setPosts, me, players, isAdmin }) {
+  const [showComposer, setShowComposer] = useState(posts.length === 0);
+  const [draft, setDraft] = useState({ category: "Team", title: "", body: "", imageUrls: "", pinned: false });
+  const [localImages, setLocalImages] = useState([]);
+  const [previewImage, setPreviewImage] = useState(null);
+
+  const sortedPosts = [...posts].sort((a, b) => {
+    if (!!b.pinned !== !!a.pinned) return Number(b.pinned) - Number(a.pinned);
+    return new Date(b.created_at) - new Date(a.created_at);
+  });
+
+  const readFiles = (files) => {
+    const selected = Array.from(files || []).slice(0, 6 - localImages.length);
+    selected.forEach((file) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        setLocalImages((cur) => normalizeImages([...cur, reader.result]));
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const addPost = () => {
+    const title = draft.title.trim();
+    const body = draft.body.trim();
+    const urls = draft.imageUrls.split(/[\n,]/).map((url) => url.trim()).filter(Boolean);
+    const images = normalizeImages([...localImages, ...urls]);
+    if (!title && !body && images.length === 0) return;
+
+    const post = {
+      id: makePostId(),
+      author_id: me.id,
+      author_name: me.name,
+      author_photo: me.photo || "",
+      category: draft.category || "Team",
+      title: title || "Clubupdate",
+      body,
+      images,
+      pinned: isAdmin ? !!draft.pinned : false,
+      created_at: new Date().toISOString(),
+    };
+
+    setPosts([post, ...posts]);
+    setDraft({ category: "Team", title: "", body: "", imageUrls: "", pinned: false });
+    setLocalImages([]);
+    setShowComposer(false);
+  };
+
+  const removePost = (postId) => {
+    setPosts(posts.filter((post) => post.id !== postId));
+  };
+
+  const togglePinned = (postId) => {
+    if (!isAdmin) return;
+    setPosts(posts.map((post) => post.id === postId ? { ...post, pinned: !post.pinned } : post));
+  };
+
+  return (
+    <section className="dreelio-updates-page">
+      <div style={styles.sectionHead} className="tott-sectionhead">
+        <div>
+          <div style={styles.eyebrow}>Clubfeed</div>
+          <h2 style={styles.h2} className="tott-h2">Updates</h2>
+        </div>
+        <button style={styles.addBtn} onClick={() => setShowComposer((open) => !open)} type="button">
+          <Plus size={15} /> {showComposer ? "Sluiten" : "Post maken"}
+        </button>
+      </div>
+
+      <div className="dreelio-muted-note dreelio-updates-note">
+        Zonder Supabase-aanpassing worden posts en geüploade afbeeldingen lokaal in deze browser opgeslagen. Afbeelding-URL's werken het lichtst.
+      </div>
+
+      {showComposer && (
+        <div className="dreelio-panel dreelio-post-composer">
+          <div className="dreelio-composer-head">
+            <div className="dreelio-post-avatar">
+              {me.photo ? <img src={me.photo} alt={me.name} /> : me.name.slice(0, 2).toUpperCase()}
+            </div>
+            <div>
+              <strong>{me.name}</strong>
+              <span>Deel iets met het team</span>
+            </div>
+          </div>
+
+          <div style={styles.formRow} className="tott-formrow">
+            <select style={styles.input} value={draft.category} onChange={(e) => setDraft({ ...draft, category: e.target.value })}>
+              <option>Team</option>
+              <option>Wedstrijd</option>
+              <option>Foto's</option>
+              <option>Mededeling</option>
+              <option>Betaling</option>
+            </select>
+            <input style={styles.input} placeholder="Titel" value={draft.title} onChange={(e) => setDraft({ ...draft, title: e.target.value })} />
+          </div>
+
+          <textarea
+            style={styles.textarea}
+            rows={4}
+            placeholder="Schrijf een korte update…"
+            value={draft.body}
+            onChange={(e) => setDraft({ ...draft, body: e.target.value })}
+          />
+
+          <textarea
+            style={styles.textarea}
+            rows={2}
+            placeholder="Afbeelding URL's, gescheiden door komma of nieuwe regel"
+            value={draft.imageUrls}
+            onChange={(e) => setDraft({ ...draft, imageUrls: e.target.value })}
+          />
+
+          <div className="dreelio-upload-row">
+            <label className="dreelio-file-button">
+              <Camera size={15} /> Afbeeldingen kiezen
+              <input type="file" accept="image/*" multiple onChange={(e) => readFiles(e.target.files)} />
+            </label>
+            <span>Maximaal 6 afbeeldingen per post</span>
+          </div>
+
+          {localImages.length > 0 && (
+            <div className="dreelio-image-preview-row">
+              {localImages.map((img, i) => (
+                <button key={i} type="button" onClick={() => setLocalImages(localImages.filter((_, idx) => idx !== i))} title="Verwijderen">
+                  <img src={img} alt={`Preview ${i + 1}`} />
+                  <X size={13} />
+                </button>
+              ))}
+            </div>
+          )}
+
+          {isAdmin && (
+            <label className="dreelio-pin-toggle">
+              <input type="checkbox" checked={draft.pinned} onChange={(e) => setDraft({ ...draft, pinned: e.target.checked })} />
+              Vastzetten bovenaan
+            </label>
+          )}
+
+          <button style={styles.primaryBtn} onClick={addPost} type="button"><Plus size={15} /> Publiceren</button>
+        </div>
+      )}
+
+      <div className="dreelio-post-list">
+        {sortedPosts.length === 0 && <EmptyState text="Nog geen updates. Maak de eerste post voor het team." />}
+        {sortedPosts.map((post) => {
+          const author = players.find((p) => p.id === post.author_id);
+          const canRemove = isAdmin || post.author_id === me.id;
+          return (
+            <article key={post.id} className={`dreelio-post-card ${post.pinned ? "is-pinned" : ""}`}>
+              <div className="dreelio-post-head">
+                <div className="dreelio-post-avatar">
+                  {(author?.photo || post.author_photo) ? <img src={author?.photo || post.author_photo} alt={author?.name || post.author_name} /> : (post.author_name || "?").slice(0, 2).toUpperCase()}
+                </div>
+                <div className="dreelio-post-meta">
+                  <strong>{author?.name || post.author_name || "Team"}</strong>
+                  <span>{new Date(post.created_at).toLocaleDateString("nl-NL", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</span>
+                </div>
+                <span className="dreelio-post-category">{post.category}</span>
+                {post.pinned && <span className="dreelio-post-category pinned"><Pin size={11} /> Vast</span>}
+              </div>
+
+              <div className="dreelio-post-body">
+                <h3>{post.title}</h3>
+                {post.body && <p>{post.body}</p>}
+              </div>
+
+              {post.images?.length > 0 && (
+                <div className={`dreelio-post-images count-${Math.min(post.images.length, 4)}`}>
+                  {post.images.map((img, i) => (
+                    <button key={`${post.id}-${i}`} type="button" onClick={() => setPreviewImage(img)}>
+                      <img src={img} alt={`${post.title || "Update"} afbeelding ${i + 1}`} />
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              <div className="dreelio-post-actions">
+                {isAdmin && <button type="button" onClick={() => togglePinned(post.id)}><Pin size={13} /> {post.pinned ? "Losmaken" : "Vastzetten"}</button>}
+                {canRemove && <button type="button" onClick={() => removePost(post.id)}><Trash2 size={13} /> Verwijderen</button>}
+              </div>
+            </article>
+          );
+        })}
+      </div>
+
+      {previewImage && (
+        <div className="dreelio-lightbox" onClick={() => setPreviewImage(null)}>
+          <button type="button" aria-label="Sluiten"><X size={18} /></button>
+          <img src={previewImage} alt="Vergrote update" />
+        </div>
+      )}
+    </section>
+  );
+}
+
 // ============================================================
 // Profiel
 // ============================================================
@@ -1072,9 +1415,13 @@ function ProfileTab({ me, players, attendanceByMatch, matches, statsByPlayer, is
               #{me.number || "—"} · {me.position || "Onbekend"} · Lid sinds {me.member_since ? formatDateShort(me.member_since) : "—"}
             </div>
           </div>
-          <button style={styles.editBtn} onClick={() => setEditing((e) => !e)}>
-            <Camera size={14} /> {editing ? "Sluiten" : "Bewerken"}
-          </button>
+          {isAdmin ? (
+            <button style={styles.editBtn} onClick={() => setEditing((e) => !e)}>
+              <Camera size={14} /> {editing ? "Sluiten" : "Bewerken"}
+            </button>
+          ) : (
+            <span className="dreelio-admin-only-note">Foto via admin</span>
+          )}
         </div>
 
         {editing && (
@@ -1420,10 +1767,16 @@ function FinanceTab({ players, feeTypes, feesByPlayer, me, isAdmin, reloadAll })
 // ============================================================
 // Admin panel: user management
 // ============================================================
-function AdminPanel({ players, reloadAll }) {
+function AdminPanel({ players, reloadAll, branding = DEFAULT_BRANDING, setBranding }) {
   const [open, setOpen] = useState(false);
   const [newPlayer, setNewPlayer] = useState({ name: "", username: "", password: "", role: "speler" });
+  const [photoEdits, setPhotoEdits] = useState({});
+  const [brandingDraft, setBrandingDraft] = useState(branding);
   const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    setBrandingDraft(branding);
+  }, [branding]);
 
   const toggleActive = async (id, active) => {
     setBusy(true);
@@ -1433,6 +1786,18 @@ function AdminPanel({ players, reloadAll }) {
   const removePlayer = async (id) => {
     setBusy(true);
     try { await db.deletePlayer(id); await reloadAll(); } finally { setBusy(false); }
+  };
+
+  const savePlayerPhoto = async (player) => {
+    setBusy(true);
+    try {
+      await db.updatePlayer(player.id, { photo: photoEdits[player.id] ?? player.photo ?? "" });
+      await reloadAll();
+    } finally { setBusy(false); }
+  };
+
+  const saveBranding = () => {
+    setBranding?.({ ...DEFAULT_BRANDING, ...brandingDraft });
   };
 
   const addPlayer = async () => {
@@ -2336,6 +2701,531 @@ const dreelioDashboardCss = `
     }
   }
 
+
+
+  /* Club branding, badges and calm social layer */
+  .tott-crest-img,
+  .dreelio-sidebar-logo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    border-radius: inherit;
+  }
+
+  .dreelio-sidebar-logo {
+    overflow: hidden;
+  }
+
+  .dreelio-nav-badge {
+    position: absolute;
+    right: 10px;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: #f3c86b;
+    color: #17140b;
+    font-size: 10px;
+    font-weight: 850;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.20);
+  }
+
+  .dreelio-bell-button {
+    position: relative;
+    margin-left: auto;
+    height: 34px;
+    border: 1px solid var(--dreelio-border);
+    background: #fff;
+    color: var(--dreelio-text);
+    border-radius: 999px;
+    padding: 0 11px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    box-shadow: 0 8px 22px rgba(16,21,17,0.06);
+  }
+
+  .dreelio-bell-button span {
+    min-width: 17px;
+    height: 17px;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--dreelio-warning);
+    color: #fff;
+    font-size: 10px;
+    font-weight: 850;
+  }
+
+  .dreelio-notification-popover {
+    position: absolute;
+    top: 48px;
+    right: 18px;
+    z-index: 15;
+    width: min(310px, calc(100vw - 40px));
+    padding: 10px;
+    border-radius: 20px;
+    background: rgba(255,255,255,0.96);
+    border: 1px solid var(--dreelio-border);
+    box-shadow: 0 22px 60px rgba(16,21,17,0.15);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+  }
+
+  .dreelio-popover-title {
+    padding: 6px 8px 10px;
+    font-size: 12px;
+    font-weight: 850;
+    color: var(--dreelio-text);
+  }
+
+  .dreelio-popover-empty,
+  .dreelio-notification-popover button {
+    width: 100%;
+    display: flex;
+    align-items: flex-start;
+    gap: 9px;
+    padding: 10px;
+    border-radius: 14px;
+    border: 0;
+    background: transparent;
+    color: var(--dreelio-muted);
+    font-size: 12.5px;
+    line-height: 1.35;
+    text-align: left;
+  }
+
+  .dreelio-notification-popover button:hover {
+    background: var(--dreelio-soft);
+    color: var(--dreelio-text);
+  }
+
+  .dreelio-dashboard-banner {
+    height: 112px;
+    border-radius: 22px;
+    overflow: hidden;
+    border: 1px solid rgba(255,255,255,0.62);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.65);
+  }
+
+  .dreelio-dashboard-banner img,
+  .dreelio-login-banner {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .dreelio-login-banner {
+    height: 116px;
+    margin: -8px -8px 16px;
+    border-radius: 22px;
+    border: 1px solid var(--dreelio-border);
+  }
+
+  .dreelio-home-updates {
+    margin: 0 0 16px;
+    padding: 14px;
+    border-radius: 24px;
+    background: #fff;
+    border: 1px solid var(--dreelio-border);
+    box-shadow: var(--dreelio-shadow);
+  }
+
+  .dreelio-home-updates-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 10px;
+  }
+
+  .dreelio-home-updates-head strong,
+  .dreelio-home-update-item strong {
+    display: block;
+    color: var(--dreelio-text);
+    font-size: 13.5px;
+  }
+
+  .dreelio-home-updates-head span,
+  .dreelio-home-update-item small {
+    display: block;
+    color: var(--dreelio-muted);
+    font-size: 11.5px;
+    margin-top: 2px;
+  }
+
+  .dreelio-home-updates-head button,
+  .dreelio-post-actions button {
+    border: 1px solid var(--dreelio-border);
+    background: var(--dreelio-soft);
+    color: var(--dreelio-text);
+    border-radius: 999px;
+    padding: 7px 11px;
+    font-size: 11.5px;
+    font-weight: 760;
+  }
+
+  .dreelio-home-updates-list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .dreelio-home-update-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px;
+    border-radius: 16px;
+    border: 1px solid var(--dreelio-border);
+    background: #fbfbf8;
+    text-align: left;
+    min-width: 0;
+  }
+
+  .dreelio-home-update-item img,
+  .dreelio-home-update-item > span {
+    width: 42px;
+    height: 42px;
+    border-radius: 13px;
+    object-fit: cover;
+    flex: 0 0 auto;
+  }
+
+  .dreelio-home-update-item > span {
+    display: grid;
+    place-items: center;
+    background: var(--dreelio-accent-soft);
+    color: var(--dreelio-accent);
+  }
+
+  .dreelio-updates-note {
+    margin: -6px 0 14px;
+  }
+
+  .dreelio-muted-note {
+    color: var(--dreelio-muted);
+    font-size: 12px;
+    line-height: 1.45;
+  }
+
+  .dreelio-post-composer {
+    margin-bottom: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .dreelio-composer-head,
+  .dreelio-post-head,
+  .dreelio-photo-admin-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .dreelio-composer-head span,
+  .dreelio-post-meta span {
+    display: block;
+    color: var(--dreelio-muted);
+    font-size: 12px;
+    margin-top: 2px;
+  }
+
+  .dreelio-post-avatar,
+  .dreelio-photo-admin-avatar {
+    width: 42px;
+    height: 42px;
+    flex: 0 0 auto;
+    border-radius: 15px;
+    overflow: hidden;
+    display: grid;
+    place-items: center;
+    background: var(--dreelio-soft);
+    color: var(--dreelio-accent);
+    border: 1px solid var(--dreelio-border);
+    font-size: 12px;
+    font-weight: 850;
+  }
+
+  .dreelio-post-avatar img,
+  .dreelio-photo-admin-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .dreelio-upload-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .dreelio-upload-row span {
+    color: var(--dreelio-muted);
+    font-size: 12px;
+  }
+
+  .dreelio-file-button {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 9px 12px;
+    border-radius: 999px;
+    border: 1px solid var(--dreelio-border);
+    background: var(--dreelio-soft);
+    color: var(--dreelio-text);
+    font-size: 12px;
+    font-weight: 780;
+    cursor: pointer;
+  }
+
+  .dreelio-file-button input {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+  }
+
+  .dreelio-image-preview-row {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .dreelio-image-preview-row button {
+    position: relative;
+    width: 78px;
+    height: 64px;
+    border-radius: 14px;
+    overflow: hidden;
+    border: 1px solid var(--dreelio-border);
+    padding: 0;
+    background: var(--dreelio-soft);
+  }
+
+  .dreelio-image-preview-row img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .dreelio-image-preview-row svg {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background: rgba(0,0,0,0.64);
+    color: #fff;
+    border-radius: 999px;
+    padding: 2px;
+  }
+
+  .dreelio-pin-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--dreelio-muted);
+    font-size: 12.5px;
+    font-weight: 650;
+  }
+
+  .dreelio-post-list {
+    display: grid;
+    gap: 14px;
+  }
+
+  .dreelio-post-card {
+    background: #fff;
+    border: 1px solid var(--dreelio-border);
+    border-radius: 24px;
+    padding: 16px;
+    box-shadow: var(--dreelio-shadow);
+  }
+
+  .dreelio-post-card.is-pinned {
+    border-color: rgba(54,90,49,0.24);
+    background: linear-gradient(180deg, #fff 0%, #f8fbf5 100%);
+  }
+
+  .dreelio-post-meta {
+    min-width: 0;
+    flex: 1;
+  }
+
+  .dreelio-post-category {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    border-radius: 999px;
+    padding: 6px 9px;
+    color: var(--dreelio-accent);
+    background: var(--dreelio-accent-soft);
+    font-size: 11px;
+    font-weight: 780;
+    white-space: nowrap;
+  }
+
+  .dreelio-post-category.pinned {
+    color: #7a5411;
+    background: #fff2cc;
+  }
+
+  .dreelio-post-body h3 {
+    margin: 14px 0 5px;
+    color: var(--dreelio-text);
+    font-size: 18px;
+    letter-spacing: -0.03em;
+  }
+
+  .dreelio-post-body p {
+    margin: 0;
+    color: var(--dreelio-muted);
+    font-size: 14px;
+    line-height: 1.55;
+    white-space: pre-wrap;
+  }
+
+  .dreelio-post-images {
+    display: grid;
+    gap: 8px;
+    margin-top: 14px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .dreelio-post-images.count-1 {
+    grid-template-columns: 1fr;
+  }
+
+  .dreelio-post-images button {
+    min-height: 170px;
+    border: 0;
+    border-radius: 18px;
+    overflow: hidden;
+    padding: 0;
+    background: var(--dreelio-soft);
+  }
+
+  .dreelio-post-images img {
+    width: 100%;
+    height: 100%;
+    min-height: inherit;
+    object-fit: cover;
+    display: block;
+    transition: transform 180ms ease;
+  }
+
+  .dreelio-post-images button:hover img {
+    transform: scale(1.025);
+  }
+
+  .dreelio-post-actions {
+    margin-top: 12px;
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+  }
+
+  .dreelio-post-actions button {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .dreelio-lightbox {
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    display: grid;
+    place-items: center;
+    padding: 24px;
+    background: rgba(16,21,17,0.78);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+
+  .dreelio-lightbox img {
+    max-width: min(980px, 94vw);
+    max-height: 88vh;
+    border-radius: 24px;
+    box-shadow: 0 30px 90px rgba(0,0,0,0.36);
+  }
+
+  .dreelio-lightbox button {
+    position: fixed;
+    top: 18px;
+    right: 18px;
+    width: 40px;
+    height: 40px;
+    border-radius: 999px;
+    border: 1px solid rgba(255,255,255,0.25);
+    background: rgba(255,255,255,0.16);
+    color: #fff;
+  }
+
+  .dreelio-route-link {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 999px;
+    padding: 3px 9px;
+    color: var(--dreelio-accent);
+    background: var(--dreelio-accent-soft);
+    text-decoration: none;
+    font-size: 11.5px;
+    font-weight: 760;
+  }
+
+  .dreelio-admin-only-note {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 999px;
+    padding: 7px 10px;
+    color: var(--dreelio-muted);
+    background: var(--dreelio-soft);
+    font-size: 11.5px;
+    font-weight: 720;
+    white-space: nowrap;
+  }
+
+  .dreelio-branding-admin,
+  .dreelio-photo-admin-list {
+    margin-bottom: 16px;
+  }
+
+  .dreelio-photo-admin-list {
+    padding: 8px !important;
+  }
+
+  .dreelio-photo-admin-row {
+    padding: 10px;
+    border-bottom: 1px solid var(--dreelio-border);
+  }
+
+  .dreelio-photo-admin-row:last-child {
+    border-bottom: 0;
+  }
+
+  .dreelio-photo-admin-main {
+    min-width: 0;
+    flex: 1;
+    display: grid;
+    gap: 7px;
+  }
+
+  .dreelio-photo-admin-main strong {
+    font-size: 13px;
+    color: var(--dreelio-text);
+  }
+
   @media (max-width: 1080px) {
     .dreelio-shell {
       grid-template-columns: 232px minmax(0, 1fr);
@@ -2383,7 +3273,7 @@ const dreelioDashboardCss = `
     .dreelio-sidebar-nav {
       height: 100%;
       display: grid;
-      grid-template-columns: repeat(5, minmax(0, 1fr));
+      grid-template-columns: repeat(6, minmax(0, 1fr));
       gap: 5px;
       overflow: visible;
       padding: 0;
@@ -2451,7 +3341,22 @@ const dreelioDashboardCss = `
     }
 
     .dreelio-card-topline {
+      display: flex;
+      gap: 6px;
+    }
+
+    .dreelio-card-topline .dreelio-chip.muted {
       display: none;
+    }
+
+    .dreelio-bell-button {
+      height: 31px;
+      padding: 0 9px;
+    }
+
+    .dreelio-dashboard-banner {
+      height: 86px;
+      border-radius: 17px;
     }
 
     .dreelio-welcome-card h1 {
@@ -2508,6 +3413,41 @@ const dreelioDashboardCss = `
 
     .dreelio-main {
       scroll-margin-top: 88px;
+    }
+
+    .dreelio-home-updates-list,
+    .dreelio-post-images {
+      grid-template-columns: 1fr;
+    }
+
+    .dreelio-post-images button {
+      min-height: 190px;
+    }
+
+    .dreelio-post-card,
+    .dreelio-post-composer,
+    .dreelio-home-updates {
+      border-radius: 19px;
+      padding: 14px;
+    }
+
+    .dreelio-post-head {
+      gap: 9px;
+    }
+
+    .dreelio-post-category {
+      max-width: 90px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .dreelio-photo-admin-row {
+      align-items: flex-start;
+      flex-wrap: wrap;
+    }
+
+    .dreelio-photo-admin-row button {
+      margin-left: 54px;
     }
   }
 
