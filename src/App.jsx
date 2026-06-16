@@ -179,9 +179,9 @@ function getYouTubeEmbedUrl(url = "") {
 const NAV = [
   { key: "overzicht", label: "Overzicht", icon: LayoutDashboard },
   { key: "wedstrijden", label: "Wedstrijden", icon: Calendar },
+  { key: "profiel", label: "Profiel", icon: UserCog },
   { key: "updates", label: "Updates", icon: Newspaper },
   { key: "videos", label: "Video's", icon: Video },
-  { key: "profiel", label: "Profiel", icon: UserCog },
   { key: "boetepot", label: "Boetepot", icon: Coins },
   { key: "huisregels", label: "Huisregels", icon: ShieldCheck },
   { key: "financien", label: "Financiën", icon: Wallet },
@@ -5968,4 +5968,34 @@ const mobileZoomLockCss = `
     max-width: 100vw !important;
     overflow-x: hidden !important;
   }
+
+
+/* Profile visibility fix: keep Profiel early and make the mobile/admin nav clearly swipeable */
+@media (max-width: 860px) {
+  .dreelio-sidebar {
+    overflow: hidden !important;
+  }
+
+  .dreelio-sidebar-nav {
+    display: flex !important;
+    grid-template-columns: none !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    gap: 6px !important;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    padding: 0 4px !important;
+  }
+
+  .dreelio-sidebar-nav::-webkit-scrollbar {
+    display: none;
+  }
+
+  .dreelio-side-link {
+    min-width: 72px !important;
+    width: 72px !important;
+    flex: 0 0 72px !important;
+  }
+}
+
 `;
