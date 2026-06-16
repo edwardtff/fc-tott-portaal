@@ -182,8 +182,8 @@ export default function App() {
 
   if (loading) {
     return (
-      <div style={styles.app} className="tott-app">
-        <style>{globalCss + appleDashboardCss}</style>
+      <div style={styles.app} className="tott-app dreelio-app">
+        <style>{globalCss + dreelioDashboardCss}</style>
         <div style={styles.loadingScreen}>Laden…</div>
       </div>
     );
@@ -191,8 +191,8 @@ export default function App() {
 
   if (loadError) {
     return (
-      <div style={styles.app} className="tott-app">
-        <style>{globalCss + appleDashboardCss}</style>
+      <div style={styles.app} className="tott-app dreelio-app">
+        <style>{globalCss + dreelioDashboardCss}</style>
         <div style={styles.loadingScreen}>
           <AlertCircle size={22} style={{ marginBottom: 10, color: "var(--warn)" }} />
           <div>Kon geen verbinding maken met de database.</div>
@@ -207,8 +207,8 @@ export default function App() {
 
   if (!me) {
     return (
-      <div style={styles.app} className="tott-app">
-        <style>{globalCss + appleDashboardCss}</style>
+      <div style={styles.app} className="tott-app dreelio-app">
+        <style>{globalCss + dreelioDashboardCss}</style>
         <Header />
         <LoginScreen players={players} onLogin={login} />
         <footer style={styles.footer}>FC TOTT · Sponsored By Nola Marketing (website, branding en marketing)</footer>
@@ -220,54 +220,57 @@ export default function App() {
   const potTotal = fines.reduce((sum, f) => sum + Number(f.amount), 0);
 
   return (
-    <div style={styles.app} className="tott-app">
-      <style>{globalCss + appleDashboardCss}</style>
-      <Header me={me} onLogout={logout} />
-      <Top3 nextMatch={nextMatch} countdown={countdown} myOpenCount={myOpenCount} potTotal={potTotal} />
+    <div style={styles.app} className="tott-app dreelio-app">
+      <style>{globalCss + dreelioDashboardCss}</style>
 
-      <nav style={styles.nav} className="tott-nav">
-        {NAV.map((n) => {
-          const Icon = n.icon;
-          const active = tab === n.key;
-          return (
-            <button key={n.key} onClick={() => setTab(n.key)}
-              style={{ ...styles.navBtn, ...(active ? styles.navBtnActive : {}) }} className="tott-navbtn">
-              <Icon size={18} strokeWidth={2.25} />
-              {n.label}
-            </button>
-          );
-        })}
-      </nav>
+      <div className="dreelio-shell">
+        <DreelioSidebar
+          me={me}
+          tab={tab}
+          setTab={setTab}
+          onLogout={logout}
+          myOpenCount={myOpenCount}
+          potTotal={potTotal}
+        />
 
-      <main style={styles.main} className="tott-main">
-        {tab === "wedstrijden" && (
-          <MatchesTab
-            matches={matches} players={players}
-            attendanceByMatch={attendanceByMatch} lineupsByMatch={lineupsByMatch}
-            goalsByMatch={goalsByMatch}
-            me={me} isAdmin={isAdmin} reloadAll={reloadAll}
-          />
-        )}
-        {tab === "profiel" && (
-          <ProfileTab
-            me={me} players={players}
-            attendanceByMatch={attendanceByMatch} matches={matches}
-            statsByPlayer={statsByPlayer} isAdmin={isAdmin} reloadAll={reloadAll}
-          />
-        )}
-        {tab === "boetepot" && (
-          <FinePotTab fineRules={fineRules} fines={fines} players={players} isAdmin={isAdmin} reloadAll={reloadAll} />
-        )}
-        {tab === "huisregels" && (
-          <RulesTab rules={rules} isAdmin={isAdmin} reloadAll={reloadAll} />
-        )}
-        {tab === "financien" && (
-          <FinanceTab players={players} feeTypes={feeTypes} feesByPlayer={feesByPlayer} me={me} isAdmin={isAdmin} reloadAll={reloadAll} />
-        )}
-        {isAdmin && <AdminPanel players={players} reloadAll={reloadAll} />}
-      </main>
+        <div className="dreelio-content">
+          <div className="dreelio-mobile-topbar">
+            <Header me={me} onLogout={logout} />
+          </div>
 
-      <footer style={styles.footer}>FC TOTT · Sponsored By Nola Marketing (website, branding en marketing)</footer>
+          <Top3 nextMatch={nextMatch} countdown={countdown} myOpenCount={myOpenCount} potTotal={potTotal} />
+
+          <main style={styles.main} className="tott-main dreelio-main">
+            {tab === "wedstrijden" && (
+              <MatchesTab
+                matches={matches} players={players}
+                attendanceByMatch={attendanceByMatch} lineupsByMatch={lineupsByMatch}
+                goalsByMatch={goalsByMatch}
+                me={me} isAdmin={isAdmin} reloadAll={reloadAll}
+              />
+            )}
+            {tab === "profiel" && (
+              <ProfileTab
+                me={me} players={players}
+                attendanceByMatch={attendanceByMatch} matches={matches}
+                statsByPlayer={statsByPlayer} isAdmin={isAdmin} reloadAll={reloadAll}
+              />
+            )}
+            {tab === "boetepot" && (
+              <FinePotTab fineRules={fineRules} fines={fines} players={players} isAdmin={isAdmin} reloadAll={reloadAll} />
+            )}
+            {tab === "huisregels" && (
+              <RulesTab rules={rules} isAdmin={isAdmin} reloadAll={reloadAll} />
+            )}
+            {tab === "financien" && (
+              <FinanceTab players={players} feeTypes={feeTypes} feesByPlayer={feesByPlayer} me={me} isAdmin={isAdmin} reloadAll={reloadAll} />
+            )}
+            {isAdmin && <AdminPanel players={players} reloadAll={reloadAll} />}
+          </main>
+
+          <footer style={styles.footer} className="dreelio-footer">FC TOTT · Sponsored By Nola Marketing (website, branding en marketing)</footer>
+        </div>
+      </div>
     </div>
   );
 }
@@ -306,7 +309,7 @@ function LoginScreen({ players, onLogin }) {
 
   return (
     <div style={styles.loginWrap}>
-      <form style={styles.loginCard} className="tott-login-card" onSubmit={submit}>
+      <form style={styles.loginCard} className="dreelio-login-card" onSubmit={submit}>
         <div style={styles.loginIcon}><Lock size={20} /></div>
         <div style={styles.loginTitle}>Inloggen bij FC TOTT</div>
         <div style={styles.loginSub}>Gebruik de inloggegevens die je van het bestuur hebt gekregen.</div>
@@ -355,85 +358,135 @@ function Header({ me, onLogout }) {
   );
 }
 
+
+function DreelioSidebar({ me, tab, setTab, onLogout, myOpenCount, potTotal }) {
+  return (
+    <aside className="dreelio-sidebar" aria-label="Hoofdnavigatie">
+      <div className="dreelio-sidebar-brand">
+        <div className="dreelio-sidebar-logo">T</div>
+        <div>
+          <div className="dreelio-sidebar-title">FC TOTT</div>
+          <div className="dreelio-sidebar-sub">Clubportaal</div>
+        </div>
+      </div>
+
+      <div className="dreelio-sidebar-group-label">Menu</div>
+      <nav className="dreelio-sidebar-nav">
+        {NAV.map((n) => {
+          const Icon = n.icon;
+          const active = tab === n.key;
+          return (
+            <button
+              key={n.key}
+              type="button"
+              onClick={() => setTab(n.key)}
+              className={`dreelio-side-link ${active ? "is-active" : ""}`}
+            >
+              <span className="dreelio-side-icon"><Icon size={17} /></span>
+              <span>{n.label}</span>
+            </button>
+          );
+        })}
+      </nav>
+
+      <div className="dreelio-sidebar-card">
+        <div className="dreelio-mini-label">Vandaag</div>
+        <div className="dreelio-mini-row">
+          <span>Open betalingen</span>
+          <strong>{myOpenCount}</strong>
+        </div>
+        <div className="dreelio-mini-row">
+          <span>Boetepot</span>
+          <strong>€{potTotal}</strong>
+        </div>
+      </div>
+
+      <div className="dreelio-sidebar-spacer" />
+
+      <div className="dreelio-profile-card">
+        <div className="dreelio-profile-avatar">
+          {me?.photo ? <img src={me.photo} alt={me.name} /> : (me?.name || "?").slice(0, 2).toUpperCase()}
+        </div>
+        <div className="dreelio-profile-copy">
+          <div className="dreelio-profile-name">{me?.name}</div>
+          <div className="dreelio-profile-role">{me?.role === "admin" ? "Admin" : "Speler"}</div>
+        </div>
+        <button className="dreelio-logout" type="button" onClick={onLogout} aria-label="Uitloggen">
+          <LogOut size={16} />
+        </button>
+      </div>
+    </aside>
+  );
+}
+
 function Top3({ nextMatch, countdown, myOpenCount, potTotal }) {
   const category = nextMatch ? matchTypeInfo(nextMatch.category) : null;
 
   return (
-    <div className="tott-dashboard-hero">
-      <section className="tott-next-card">
-        <div className="tott-next-card-inner">
-          <div className="tott-hero-topline">
-            <span className="tott-soft-pill">
-              <Calendar size={14} />
-              {nextMatch ? formatDateShort(nextMatch.match_date) : "Nog niet gepland"}
-            </span>
-
-            {category && (
-              <span className="tott-soft-pill tott-soft-pill-muted">
-                {category.label}
-              </span>
-            )}
-          </div>
-
-          <div className="tott-hero-maincopy">
-            <div className="tott-hero-label">Volgende wedstrijd</div>
-
-            <div className={`tott-hero-title ${!nextMatch ? "tott-hero-empty" : ""}`}>
-              {nextMatch ? (
-                <>
-                  FC TOTT <span className="tott-hero-vs">vs</span> {nextMatch.opponent}
-                </>
-              ) : (
-                "Nog niets gepland"
-              )}
-            </div>
-          </div>
-
-          <div className="tott-hero-bottom">
-            {nextMatch ? (
-              <div className="tott-countdown-pill">
-                <Clock size={15} />
-                {countdown}
-              </div>
-            ) : (
-              <div className="tott-hero-note">
-                Zodra er een wedstrijd is toegevoegd, verschijnt hij hier als primaire dashboardkaart.
-              </div>
-            )}
-
-            <div className="tott-hero-note">
-              Wedstrijden, aanwezigheid, boetepot en betalingen in één rustig overzicht.
-            </div>
-          </div>
+    <section className="dreelio-overview" aria-label="Dashboard overzicht">
+      <div className="dreelio-welcome-card">
+        <div className="dreelio-card-topline">
+          <span className="dreelio-chip">Club dashboard</span>
+          <span className="dreelio-chip muted">Seizoen 2025/26</span>
         </div>
-      </section>
-
-      <aside className="tott-kpi-grid">
-        <div className={`tott-kpi-card ${myOpenCount > 0 ? "warn" : ""}`}>
-          <div className="tott-kpi-icon">
-            <AlertCircle size={19} />
-          </div>
-
+        <div>
+          <div className="dreelio-kicker">Welkom terug</div>
+          <h1>Alles voor FC TOTT in één strak overzicht.</h1>
+          <p>Wedstrijden, aanwezigheid, betalingen en de boetepot blijven functioneel hetzelfde — alleen nu in een rustig Dreelio-achtig dashboard.</p>
+        </div>
+        <div className="dreelio-quick-row">
           <div>
-            <div className="tott-kpi-value">{myOpenCount}</div>
-            <div className="tott-kpi-label">
-              {myOpenCount === 1 ? "betaling open" : "betalingen open"}
-            </div>
+            <span>Open betalingen</span>
+            <strong>{myOpenCount}</strong>
           </div>
-        </div>
-
-        <div className="tott-kpi-card">
-          <div className="tott-kpi-icon">
-            <Coins size={19} />
-          </div>
-
           <div>
-            <div className="tott-kpi-value">€{potTotal}</div>
-            <div className="tott-kpi-label">In de boetepot</div>
+            <span>Boetepot</span>
+            <strong>€{potTotal}</strong>
           </div>
         </div>
-      </aside>
-    </div>
+      </div>
+
+      <article className="dreelio-kpi-card dreelio-match-card">
+        <div className="dreelio-kpi-icon"><Calendar size={19} /></div>
+        <div className="dreelio-kpi-copy">
+          <div className="dreelio-kpi-label">Volgende wedstrijd</div>
+          <div className="dreelio-kpi-title">
+            {nextMatch ? <>FC TOTT <span>vs</span> {nextMatch.opponent}</> : "Nog niets gepland"}
+          </div>
+          <div className="dreelio-kpi-meta">
+            {nextMatch ? formatDateShort(nextMatch.match_date) : "Voeg een wedstrijd toe"}
+            {category ? ` · ${category.label}` : ""}
+          </div>
+        </div>
+      </article>
+
+      <article className={`dreelio-kpi-card ${myOpenCount > 0 ? "is-warning" : ""}`}>
+        <div className="dreelio-kpi-icon"><AlertCircle size={19} /></div>
+        <div className="dreelio-kpi-copy">
+          <div className="dreelio-kpi-label">Betalingen</div>
+          <div className="dreelio-kpi-number">{myOpenCount}</div>
+          <div className="dreelio-kpi-meta">{myOpenCount === 1 ? "betaling open" : "betalingen open"}</div>
+        </div>
+      </article>
+
+      <article className="dreelio-kpi-card">
+        <div className="dreelio-kpi-icon"><Coins size={19} /></div>
+        <div className="dreelio-kpi-copy">
+          <div className="dreelio-kpi-label">Boetepot</div>
+          <div className="dreelio-kpi-number">€{potTotal}</div>
+          <div className="dreelio-kpi-meta">Teamstand</div>
+        </div>
+      </article>
+
+      <article className="dreelio-kpi-card dreelio-countdown-card">
+        <div className="dreelio-kpi-icon"><Clock size={19} /></div>
+        <div className="dreelio-kpi-copy">
+          <div className="dreelio-kpi-label">Countdown</div>
+          <div className="dreelio-kpi-number">{nextMatch ? countdown : "—"}</div>
+          <div className="dreelio-kpi-meta">Tot de volgende afspraak</div>
+        </div>
+      </article>
+    </section>
   );
 }
 
@@ -520,7 +573,7 @@ function MatchesTab({ matches, players, attendanceByMatch, lineupsByMatch, goals
   return (
     <section>
       {me && nextMatch && (
-        <div style={styles.meCard} className="tott-card tott-me-card">
+        <div style={styles.meCard} className="dreelio-panel dreelio-me-card">
           <div style={styles.meCardHead}>
             <div style={styles.meCardTitle}>Kom jij naar de volgende wedstrijd?</div>
             <span style={styles.catTag}>{matchTypeInfo(nextMatch.category).label}</span>
@@ -559,7 +612,7 @@ function MatchesTab({ matches, players, attendanceByMatch, lineupsByMatch, goals
 
       {reasonPrompt && (
         <div style={styles.modalOverlay} onClick={() => setReasonPrompt(null)}>
-          <div style={styles.modalCard} className="tott-modal-card" onClick={(e) => e.stopPropagation()}>
+          <div style={styles.modalCard} onClick={(e) => e.stopPropagation()}>
             <div style={styles.modalTitle}>
               Reden voor "{ATTENDANCE_STATUSES.find((s) => s.key === reasonPrompt.status)?.label}"
             </div>
@@ -587,7 +640,7 @@ function MatchesTab({ matches, players, attendanceByMatch, lineupsByMatch, goals
       </div>
 
       {isAdmin && showForm && (
-        <div style={styles.formCard} className="tott-card tott-form-card">
+        <div style={styles.formCard} className="dreelio-panel dreelio-form-card">
           <div style={styles.formRow} className="tott-formrow">
             <select style={styles.input} value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })}>
               {MATCH_TYPES.map((t) => <option key={t.key} value={t.key}>{t.label}</option>)}
@@ -605,7 +658,7 @@ function MatchesTab({ matches, players, attendanceByMatch, lineupsByMatch, goals
         </div>
       )}
 
-      <div style={styles.matchList} className="tott-match-list">
+      <div style={styles.matchList} className="dreelio-match-list">
         {sorted.length === 0 && <EmptyState text="Nog geen wedstrijden gepland." />}
         {sorted.map((m) => {
           const past = new Date(m.match_date).getTime() < Date.now();
@@ -622,7 +675,7 @@ function MatchesTab({ matches, players, attendanceByMatch, lineupsByMatch, goals
           const hasUnsure = counts.twijfel > 0;
 
           return (
-            <div key={m.id} className="tott-card tott-match-card" style={{ ...styles.matchCard, ...styles.matchCardCol, opacity: past ? 0.55 : 1 }}>
+            <div key={m.id} className="dreelio-panel dreelio-match-card-row" style={{ ...styles.matchCard, ...styles.matchCardCol, opacity: past ? 0.55 : 1 }}>
               <div style={styles.matchCardTop} className="tott-matchtop">
                 {(() => {
                   const info = matchTypeInfo(m.category);
@@ -790,7 +843,7 @@ function LineupEditor({ players, attendance, lineup, onSave }) {
   }
 
   return (
-    <div style={styles.lineupEditor} className="tott-lineup-editor">
+    <div style={styles.lineupEditor}>
       <div style={styles.lineupLabel}>Keeper (1)</div>
       <div style={styles.lineupGrid}>
         {available.map((p) => (
@@ -855,7 +908,7 @@ function MatchResultEditor({ match, players, goals, reloadAll }) {
   };
 
   return (
-    <div style={styles.lineupEditor} className="tott-lineup-editor">
+    <div style={styles.lineupEditor}>
       <div style={styles.lineupLabel}>Eindstand</div>
       <div style={styles.scoreInputRow}>
         <span style={styles.scoreInputTeam}>FC TOTT</span>
@@ -958,7 +1011,7 @@ function ProfileTab({ me, players, attendanceByMatch, matches, statsByPlayer, is
 
   return (
     <section>
-      <div style={styles.profileCard} className="tott-card tott-profile-card">
+      <div style={styles.profileCard} className="dreelio-panel dreelio-profile-main">
         <div style={styles.profileTop}>
           <div style={styles.profilePhoto}>
             {me.photo ? <img src={me.photo} alt={me.name} style={styles.profilePhotoImg} /> : <Users size={28} />}
@@ -1010,7 +1063,7 @@ function ProfileTab({ me, players, attendanceByMatch, matches, statsByPlayer, is
       </div>
 
       {isAdmin && (
-        <div style={styles.teamStatsCard} className="tott-card tott-team-stats-card">
+        <div style={styles.teamStatsCard} className="dreelio-panel dreelio-team-stats">
           <div style={{ ...styles.h2, marginBottom: 12, color: "var(--text)" }}>Hele team — statistieken</div>
           {players.map((p) => {
             const pStats = statsByPlayer[p.id] || { goals: 0, assists: 0 };
@@ -1087,7 +1140,7 @@ function FinePotTab({ fineRules, fines, players, isAdmin, reloadAll }) {
         </div>
       </div>
 
-      <div style={styles.potCard} className="tott-pot-card">
+      <div style={styles.potCard} className="dreelio-panel dreelio-pot-card">
         <Coins size={26} style={{ opacity: 0.85 }} />
         <div>
           <div style={styles.potAmount}>€{potTotal}</div>
@@ -1096,7 +1149,7 @@ function FinePotTab({ fineRules, fines, players, isAdmin, reloadAll }) {
       </div>
 
       <div style={styles.h3}>Regels &amp; bedragen</div>
-      <div style={styles.rulesCard} className="tott-card tott-rules-card">
+      <div style={styles.rulesCard} className="dreelio-panel dreelio-rules-card">
         {fineRules.map((r) => (
           <div key={r.id} style={styles.ruleRow}>
             <Gavel size={14} style={{ color: "var(--accent)", flexShrink: 0 }} />
@@ -1112,7 +1165,7 @@ function FinePotTab({ fineRules, fines, players, isAdmin, reloadAll }) {
 
       {isAdmin && (
         <>
-          <div style={styles.formCard} className="tott-card tott-form-card">
+          <div style={styles.formCard} className="dreelio-panel dreelio-form-card">
             <div style={styles.formRow} className="tott-formrow">
               <input style={styles.input} placeholder="Omschrijving regel" value={newRule.label}
                 onChange={(e) => setNewRule({ ...newRule, label: e.target.value })} />
@@ -1123,7 +1176,7 @@ function FinePotTab({ fineRules, fines, players, isAdmin, reloadAll }) {
           </div>
 
           <div style={styles.h3}>Boete toekennen</div>
-          <div style={styles.formCard} className="tott-card tott-form-card">
+          <div style={styles.formCard} className="dreelio-panel dreelio-form-card">
             <div style={styles.formRow} className="tott-formrow">
               <select style={styles.input} value={assign.playerId} onChange={(e) => setAssign({ ...assign, playerId: e.target.value })}>
                 <option value="">Kies speler…</option>
@@ -1142,7 +1195,7 @@ function FinePotTab({ fineRules, fines, players, isAdmin, reloadAll }) {
       {totalsByPlayer.length > 0 && (
         <>
           <div style={styles.h3}>Boetes per speler</div>
-          <div style={styles.rulesCard} className="tott-card tott-rules-card">
+          <div style={styles.rulesCard} className="dreelio-panel dreelio-rules-card">
             {totalsByPlayer.map(({ player, total }) => (
               <div key={player.id} style={styles.ruleRow}>
                 <span style={styles.ruleText}>{player.name}</span>
@@ -1156,7 +1209,7 @@ function FinePotTab({ fineRules, fines, players, isAdmin, reloadAll }) {
       {isAdmin && fines.length > 0 && (
         <>
           <div style={styles.h3}>Boetegeschiedenis</div>
-          <div style={styles.rulesCard} className="tott-card tott-rules-card">
+          <div style={styles.rulesCard} className="dreelio-panel dreelio-rules-card">
             {fines.map((f) => {
               const p = players.find((pl) => pl.id === f.player_id);
               return (
@@ -1203,7 +1256,7 @@ function RulesTab({ rules, isAdmin, reloadAll }) {
           <h2 style={styles.h2} className="tott-h2">Huisregels</h2>
         </div>
       </div>
-      <div style={styles.rulesCard} className="tott-card tott-rules-card">
+      <div style={styles.rulesCard} className="dreelio-panel dreelio-rules-card">
         {rules.map((r, i) => (
           <div key={r.id} style={styles.ruleRow}>
             <span style={styles.ruleNum}>{String(i + 1).padStart(2, "0")}</span>
@@ -1216,7 +1269,7 @@ function RulesTab({ rules, isAdmin, reloadAll }) {
         {rules.length === 0 && <EmptyState text="Nog geen huisregels toegevoegd." dark />}
       </div>
       {isAdmin && (
-        <div style={styles.addRuleRow} className="tott-addrow">
+        <div style={styles.addRuleRow} className="tott-addrow dreelio-panel dreelio-add-row">
           <input style={styles.input} placeholder="Nieuwe huisregel toevoegen…" value={newRule}
             onChange={(e) => setNewRule(e.target.value)} onKeyDown={(e) => e.key === "Enter" && addRule()} />
           <button style={styles.primaryBtn} onClick={addRule} disabled={busy}><Plus size={15} /> Toevoegen</button>
@@ -1241,7 +1294,7 @@ function FinanceTab({ players, feeTypes, feesByPlayer, me, isAdmin, reloadAll })
 
   return (
     <section>
-      <div style={styles.meCard} className="tott-card tott-me-card">
+      <div style={styles.meCard} className="dreelio-panel dreelio-me-card">
         <div style={styles.meCardTitle}>Jouw betalingen, {me.name.split(" ")[0]}</div>
         <div style={styles.myFeeList}>
           {feeTypes.map((f) => {
@@ -1272,7 +1325,7 @@ function FinanceTab({ players, feeTypes, feesByPlayer, me, isAdmin, reloadAll })
       </button>
 
       {showAll && (
-        <div style={styles.tableWrap} className="tott-table-wrap">
+        <div style={styles.tableWrap} className="dreelio-panel dreelio-table-wrap">
           <table style={styles.table} className="tott-finance-table">
             <thead>
               <tr>
@@ -1348,7 +1401,7 @@ function AdminPanel({ players, reloadAll }) {
   };
 
   return (
-    <div style={styles.adminPanel} className="tott-card tott-admin-panel">
+    <div style={styles.adminPanel} className="dreelio-panel dreelio-admin-panel">
       <button style={styles.beheerToggle} onClick={() => setOpen((o) => !o)}>
         <UserCog size={14} style={{ marginRight: 6, verticalAlign: "-2px" }} />
         {open ? "Sluit beheerderspaneel" : "Beheerderspaneel — spelers, accounts & toegang"}
@@ -1357,7 +1410,7 @@ function AdminPanel({ players, reloadAll }) {
       {open && (
         <div style={styles.adminBody}>
           <div style={styles.h3}>Spelers &amp; accounts</div>
-          <div style={styles.rulesCard} className="tott-card tott-rules-card">
+          <div style={styles.rulesCard} className="dreelio-panel dreelio-rules-card">
             {players.map((p) => (
               <div key={p.id} style={styles.adminRow}>
                 <div style={{ flex: 1, minWidth: 0 }}>
@@ -1379,7 +1432,7 @@ function AdminPanel({ players, reloadAll }) {
           </div>
 
           <div style={styles.h3}>Nieuw account aanmaken</div>
-          <div style={styles.formCard} className="tott-card tott-form-card">
+          <div style={styles.formCard} className="dreelio-panel dreelio-form-card">
             <div style={styles.formRow} className="tott-formrow">
               <input style={styles.input} placeholder="Volledige naam" value={newPlayer.name}
                 onChange={(e) => setNewPlayer({ ...newPlayer, name: e.target.value })} />
@@ -1528,622 +1581,639 @@ const globalCss = `
   }
 `;
 
-const appleDashboardCss = `
+
+const dreelioDashboardCss = `
   :root {
-    --bg: transparent;
-    --bg-soft: #f5f4ef;
-    --card: rgba(255, 255, 255, 0.76);
-    --line: rgba(20, 23, 17, 0.08);
-    --accent: #4A5D23;
-    --accent-soft: #E8EDDD;
-    --warn: #C44A2E;
-    --warn-soft: #FFF0EA;
-    --success: #4A5D23;
-    --text: #141711;
-    --text-dim: #6F7268;
-    --shadow-sm: 0 1px 2px rgba(20,20,18,0.04);
-    --shadow: 0 18px 48px rgba(19,21,15,0.07), 0 5px 16px rgba(19,21,15,0.04);
-    --shadow-lg: 0 26px 80px rgba(19,21,15,0.10), 0 8px 24px rgba(19,21,15,0.06);
-    --apple-radius-xl: 34px;
-    --apple-radius-lg: 26px;
-    --apple-radius-md: 18px;
-    --apple-glass: rgba(255,255,255,0.72);
-    --apple-border: rgba(20, 23, 17, 0.08);
-    --apple-border-strong: rgba(20, 23, 17, 0.14);
+    --dreelio-bg: #f6f6f3;
+    --dreelio-canvas: #fbfbf8;
+    --dreelio-card: #ffffff;
+    --dreelio-border: #e8e6df;
+    --dreelio-border-strong: #dedbd2;
+    --dreelio-text: #121410;
+    --dreelio-muted: #76796f;
+    --dreelio-soft: #f0efea;
+    --dreelio-dark: #101511;
+    --dreelio-dark-2: #171d18;
+    --dreelio-accent: #365a31;
+    --dreelio-accent-soft: #e6efe2;
+    --dreelio-warning: #b85b2b;
+    --dreelio-warning-soft: #fff1e8;
+    --dreelio-radius: 22px;
+    --dreelio-radius-lg: 30px;
+    --dreelio-shadow: 0 1px 1px rgba(16, 21, 17, 0.03), 0 18px 45px rgba(16, 21, 17, 0.06);
   }
 
-  html,
-  body,
-  #root {
-    min-height: 100%;
-  }
-
+  html, body, #root { min-height: 100%; }
   body {
     margin: 0 !important;
-    background:
-      radial-gradient(circle at 10% -8%, rgba(201,217,160,0.48), transparent 33%),
-      radial-gradient(circle at 92% 0%, rgba(255,255,255,0.95), transparent 36%),
-      linear-gradient(180deg, #fbfaf7 0%, #f6f5f1 52%, #efeee8 100%) !important;
-    color: var(--text) !important;
+    background: var(--dreelio-bg) !important;
+    color: var(--dreelio-text) !important;
     -webkit-font-smoothing: antialiased;
     text-rendering: geometricPrecision;
   }
 
-  .tott-app {
-    background: transparent !important;
-    color: var(--text) !important;
-  }
-
-  * {
-    box-sizing: border-box;
-  }
-
-  button,
-  input,
-  select,
-  textarea {
-    font: inherit;
-  }
-
-  button {
-    transition:
-      transform 160ms ease,
-      box-shadow 160ms ease,
-      background 160ms ease,
-      border-color 160ms ease,
-      opacity 160ms ease;
-  }
-
-  button:hover:not(:disabled) {
-    transform: translateY(-1px);
-  }
-
-  button:active:not(:disabled) {
-    transform: translateY(0);
-  }
-
-  input:focus,
-  select:focus,
-  textarea:focus,
-  button:focus-visible {
-    outline: none !important;
-    box-shadow:
-      0 0 0 4px rgba(74,93,35,0.10),
-      inset 0 1px 0 rgba(255,255,255,0.9) !important;
-  }
-
-  /* Header */
-
-  .tott-header {
-    width: min(1220px, calc(100% - 44px)) !important;
-    max-width: 1220px !important;
-    margin: 18px auto 14px !important;
-    padding: 14px 18px !important;
-    border-radius: 28px !important;
-    background: rgba(255,255,255,0.72) !important;
-    border: 1px solid rgba(255,255,255,0.72) !important;
-    box-shadow: 0 12px 40px rgba(19,21,15,0.06) !important;
-    backdrop-filter: blur(24px) saturate(160%);
-    -webkit-backdrop-filter: blur(24px) saturate(160%);
-  }
-
-  .tott-crest {
-    width: 48px !important;
-    height: 48px !important;
-    border-radius: 17px !important;
-    background: linear-gradient(145deg, #1b1f16 0%, #0e110d 100%) !important;
-    box-shadow:
-      inset 0 1px 0 rgba(255,255,255,0.14),
-      0 12px 24px rgba(19,21,15,0.18) !important;
-    letter-spacing: -0.4px !important;
-  }
-
-  .tott-clubname {
-    font-size: 20px !important;
-    letter-spacing: -0.6px !important;
-    color: var(--text) !important;
-  }
-
-  .tott-clubsub {
-    color: var(--text-dim) !important;
-    font-size: 13px !important;
-  }
-
-  .tott-header button {
-    border-radius: 999px !important;
-    background: rgba(20,23,17,0.06) !important;
-    color: var(--text) !important;
-    border: 1px solid rgba(20,23,17,0.08) !important;
-  }
-
-  /* Apple/SaaS dashboard top */
-
-  .tott-dashboard-hero {
-    width: min(1220px, calc(100% - 44px));
-    margin: 22px auto 18px;
-    display: grid;
-    grid-template-columns: minmax(0, 1.45fr) minmax(300px, 0.75fr);
-    gap: 18px;
-    align-items: stretch;
-  }
-
-  .tott-next-card,
-  .tott-kpi-card {
-    position: relative;
-    overflow: hidden;
-    border: 1px solid var(--apple-border);
-    box-shadow: var(--shadow-lg);
-    backdrop-filter: blur(26px) saturate(160%);
-    -webkit-backdrop-filter: blur(26px) saturate(160%);
-  }
-
-  .tott-next-card {
-    min-height: 232px;
-    padding: 30px;
-    border-radius: var(--apple-radius-xl);
+  .dreelio-app {
     background:
-      linear-gradient(135deg, rgba(255,255,255,0.90) 0%, rgba(246,246,241,0.83) 52%, rgba(232,237,221,0.92) 100%);
+      radial-gradient(circle at 100% 0%, rgba(54,90,49,0.08), transparent 30%),
+      linear-gradient(180deg, #fbfbf8 0%, #f6f6f3 100%) !important;
+    color: var(--dreelio-text) !important;
   }
 
-  .tott-next-card::before {
-    content: "";
-    position: absolute;
-    inset: auto -90px -128px auto;
-    width: 310px;
-    height: 310px;
-    border-radius: 999px;
-    background: radial-gradient(circle, rgba(74,93,35,0.20), transparent 63%);
-    pointer-events: none;
+  .dreelio-shell {
+    width: 100%;
+    min-height: 100vh;
+    padding: 18px;
+    display: grid;
+    grid-template-columns: 270px minmax(0, 1fr);
+    gap: 18px;
   }
 
-  .tott-next-card::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    border-radius: inherit;
-    background: linear-gradient(180deg, rgba(255,255,255,0.66), transparent 48%);
-    pointer-events: none;
-  }
-
-  .tott-next-card-inner {
-    position: relative;
-    z-index: 1;
-    min-height: 172px;
-    height: 100%;
+  .dreelio-sidebar {
+    position: sticky;
+    top: 18px;
+    height: calc(100vh - 36px);
+    border-radius: 28px;
+    padding: 18px;
+    background:
+      linear-gradient(180deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.02) 100%),
+      var(--dreelio-dark);
+    border: 1px solid rgba(255,255,255,0.08);
+    box-shadow: 0 22px 70px rgba(16,21,17,0.18);
+    color: #fff;
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
-    gap: 28px;
+    overflow: hidden;
   }
 
-  .tott-hero-topline {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 10px;
-  }
-
-  .tott-soft-pill {
-    display: inline-flex;
-    align-items: center;
-    gap: 7px;
-    padding: 8px 12px;
-    border-radius: 999px;
-    background: rgba(255,255,255,0.74);
-    border: 1px solid rgba(20,23,17,0.08);
-    color: var(--text);
-    font-size: 12px;
-    font-weight: 750;
-    box-shadow: 0 6px 18px rgba(19,21,15,0.04);
-  }
-
-  .tott-soft-pill-muted {
-    color: var(--accent);
-    background: rgba(232,237,221,0.84);
-  }
-
-  .tott-hero-label {
-    color: var(--accent);
-    font-size: 12px;
-    font-weight: 850;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    margin-bottom: 9px;
-  }
-
-  .tott-hero-title {
-    max-width: 820px;
-    color: var(--text);
-    font-size: clamp(34px, 4.4vw, 62px);
-    line-height: 0.98;
-    letter-spacing: -0.065em;
-    font-weight: 850;
-  }
-
-  .tott-hero-vs {
-    color: rgba(20,23,17,0.38);
-    font-weight: 650;
-  }
-
-  .tott-hero-empty {
-    max-width: 620px;
-  }
-
-  .tott-hero-bottom {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 18px;
-    flex-wrap: wrap;
-  }
-
-  .tott-countdown-pill {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 10px 14px;
-    border-radius: 999px;
-    color: #fff;
-    background: #141711;
-    font-size: 13px;
-    font-weight: 760;
-    box-shadow: 0 14px 26px rgba(20,23,17,0.18);
-  }
-
-  .tott-hero-note {
-    max-width: 380px;
-    color: var(--text-dim);
-    font-size: 13px;
-    line-height: 1.45;
-  }
-
-  .tott-kpi-grid {
-    display: grid;
-    gap: 18px;
-  }
-
-  .tott-kpi-card {
-    min-height: 107px;
-    padding: 22px;
-    border-radius: var(--apple-radius-lg);
-    background: rgba(255,255,255,0.78);
-    display: flex;
-    align-items: center;
-    gap: 15px;
-  }
-
-  .tott-kpi-card.warn {
-    background:
-      linear-gradient(135deg, rgba(255,255,255,0.88), rgba(255,240,234,0.94));
-    border-color: rgba(196,74,46,0.16);
-  }
-
-  .tott-kpi-icon {
-    width: 44px;
-    height: 44px;
-    flex: 0 0 auto;
-    display: grid;
-    place-items: center;
-    border-radius: 17px;
-    background: #f0f0eb;
-    color: var(--accent);
-    box-shadow: inset 0 1px 0 rgba(255,255,255,0.85);
-  }
-
-  .tott-kpi-card.warn .tott-kpi-icon {
-    color: var(--warn);
-    background: rgba(255,230,220,0.88);
-  }
-
-  .tott-kpi-value {
-    color: var(--text);
-    font-size: 28px;
-    font-weight: 850;
-    letter-spacing: -0.055em;
-    line-height: 1;
-  }
-
-  .tott-kpi-label {
-    color: var(--text-dim);
-    font-size: 13px;
-    font-weight: 650;
-    margin-top: 6px;
-  }
-
-  /* Navigation */
-
-  .tott-nav {
-    width: min(1220px, calc(100% - 44px)) !important;
-    max-width: 1220px !important;
-    margin: 0 auto 20px !important;
-    padding: 7px !important;
-    border-radius: 24px !important;
-    background: rgba(255,255,255,0.68) !important;
-    border: 1px solid rgba(255,255,255,0.72) !important;
-    box-shadow: 0 12px 34px rgba(19,21,15,0.055) !important;
-    backdrop-filter: blur(22px) saturate(160%);
-    -webkit-backdrop-filter: blur(22px) saturate(160%);
-    overflow-x: auto;
-    scrollbar-width: none;
-  }
-
-  .tott-nav::-webkit-scrollbar {
-    display: none;
-  }
-
-  .tott-navbtn {
-    min-height: 43px !important;
-    padding: 10px 16px !important;
-    border-radius: 18px !important;
-    border: 1px solid transparent !important;
-    color: var(--text-dim) !important;
-    font-size: 14px !important;
-    font-weight: 740 !important;
-    white-space: nowrap !important;
-  }
-
-  .tott-navbtn:hover {
-    background: rgba(20,23,17,0.045) !important;
-    color: var(--text) !important;
-  }
-
-  .tott-navbtn[style*="background"] {
-    box-shadow: 0 9px 24px rgba(19,21,15,0.08) !important;
-  }
-
-  .tott-main {
-    width: min(1220px, calc(100% - 44px)) !important;
-    max-width: 1220px !important;
-    margin: 0 auto !important;
-    padding: 18px 0 54px !important;
-  }
-
-  .tott-sectionhead {
-    margin: 26px 0 16px !important;
-    padding: 0 2px !important;
-  }
-
-  .tott-h2 {
-    color: var(--text) !important;
-    font-size: 31px !important;
-    line-height: 1.06 !important;
-    letter-spacing: -0.045em !important;
-  }
-
-  /* Cards and surfaces */
-
-  .tott-card,
-  .tott-me-card,
-  .tott-form-card,
-  .tott-rules-card,
-  .tott-profile-card,
-  .tott-team-stats-card,
-  .tott-admin-panel,
-  .tott-modal-card,
-  .tott-login-card,
-  .tott-table-wrap,
-  .tott-lineup-editor,
-  .tott-match-card {
-    border-radius: var(--apple-radius-lg) !important;
-    background: rgba(255,255,255,0.74) !important;
-    border: 1px solid var(--apple-border) !important;
-    box-shadow: var(--shadow) !important;
-    backdrop-filter: blur(22px) saturate(155%);
-    -webkit-backdrop-filter: blur(22px) saturate(155%);
-  }
-
-  .tott-login-card {
-    box-shadow: var(--shadow-lg) !important;
-  }
-
-  .tott-me-card {
-    padding: 24px !important;
-  }
-
-  .tott-form-card {
-    padding: 20px !important;
-  }
-
-  .tott-rules-card,
-  .tott-table-wrap {
-    overflow: hidden !important;
-  }
-
-  .tott-profile-card {
-    padding: 28px !important;
-  }
-
-  .tott-team-stats-card,
-  .tott-admin-panel {
-    padding: 20px !important;
-  }
-
-  .tott-pot-card {
-    position: relative !important;
-    border-radius: var(--apple-radius-xl) !important;
-    background:
-      linear-gradient(135deg, #171a13 0%, #252c17 100%) !important;
-    border: 1px solid rgba(255,255,255,0.10) !important;
-    box-shadow: var(--shadow-lg) !important;
-    overflow: hidden !important;
-  }
-
-  .tott-pot-card * {
-    color: rgba(255,255,255,0.92) !important;
-  }
-
-  .tott-pot-card::after {
+  .dreelio-sidebar::after {
     content: "";
     position: absolute;
-    right: -80px;
+    left: -70px;
     bottom: -90px;
     width: 220px;
     height: 220px;
-    background: radial-gradient(circle, rgba(201,217,160,0.32), transparent 68%);
     border-radius: 999px;
+    background: radial-gradient(circle, rgba(87,118,65,0.32), transparent 65%);
     pointer-events: none;
   }
 
-  .tott-match-list {
+  .dreelio-sidebar-brand,
+  .dreelio-profile-card,
+  .dreelio-sidebar-card,
+  .dreelio-sidebar-nav,
+  .dreelio-sidebar-group-label {
+    position: relative;
+    z-index: 1;
+  }
+
+  .dreelio-sidebar-brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 6px 4px 20px;
+  }
+
+  .dreelio-sidebar-logo {
+    width: 42px;
+    height: 42px;
+    border-radius: 14px;
+    display: grid;
+    place-items: center;
+    background: #fff;
+    color: var(--dreelio-dark);
+    font-family: 'Space Grotesk', Inter, system-ui, sans-serif;
+    font-weight: 800;
+    box-shadow: inset 0 -8px 18px rgba(16,21,17,0.06);
+  }
+
+  .dreelio-sidebar-title {
+    font-family: 'Space Grotesk', Inter, system-ui, sans-serif;
+    font-size: 17px;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+  }
+
+  .dreelio-sidebar-sub {
+    margin-top: 2px;
+    color: rgba(255,255,255,0.56);
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  .dreelio-sidebar-group-label {
+    padding: 14px 10px 9px;
+    color: rgba(255,255,255,0.42);
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .dreelio-sidebar-nav {
+    display: grid;
+    gap: 6px;
+  }
+
+  .dreelio-side-link {
+    width: 100%;
+    min-height: 44px;
+    padding: 8px 10px;
+    border-radius: 15px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: transparent;
+    border: 1px solid transparent;
+    color: rgba(255,255,255,0.68);
+    font-size: 13.5px;
+    font-weight: 720;
+    text-align: left;
+  }
+
+  .dreelio-side-link:hover {
+    background: rgba(255,255,255,0.06);
+    color: #fff;
+  }
+
+  .dreelio-side-link.is-active {
+    background: #fff;
+    color: var(--dreelio-dark);
+    border-color: rgba(255,255,255,0.14);
+    box-shadow: 0 12px 32px rgba(0,0,0,0.18);
+  }
+
+  .dreelio-side-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 10px;
+    display: grid;
+    place-items: center;
+    background: rgba(255,255,255,0.08);
+    color: currentColor;
+    flex: 0 0 auto;
+  }
+
+  .dreelio-side-link.is-active .dreelio-side-icon {
+    background: var(--dreelio-soft);
+    color: var(--dreelio-accent);
+  }
+
+  .dreelio-sidebar-card {
+    margin-top: 18px;
+    padding: 14px;
+    border-radius: 18px;
+    background: rgba(255,255,255,0.07);
+    border: 1px solid rgba(255,255,255,0.08);
+  }
+
+  .dreelio-mini-label {
+    color: rgba(255,255,255,0.45);
+    font-size: 11px;
+    font-weight: 780;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 10px;
+  }
+
+  .dreelio-mini-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 7px 0;
+    color: rgba(255,255,255,0.64);
+    font-size: 12.5px;
+    font-weight: 650;
+  }
+
+  .dreelio-mini-row strong {
+    color: #fff;
+    font-size: 13px;
+  }
+
+  .dreelio-sidebar-spacer { flex: 1; }
+
+  .dreelio-profile-card {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px;
+    border-radius: 18px;
+    background: rgba(255,255,255,0.07);
+    border: 1px solid rgba(255,255,255,0.08);
+  }
+
+  .dreelio-profile-avatar {
+    width: 38px;
+    height: 38px;
+    border-radius: 13px;
+    display: grid;
+    place-items: center;
+    background: #fff;
+    color: var(--dreelio-dark);
+    font-size: 12px;
+    font-weight: 850;
+    overflow: hidden;
+    flex: 0 0 auto;
+  }
+
+  .dreelio-profile-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .dreelio-profile-copy { min-width: 0; flex: 1; }
+  .dreelio-profile-name { font-size: 13px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .dreelio-profile-role { margin-top: 2px; color: rgba(255,255,255,0.5); font-size: 11.5px; font-weight: 650; }
+
+  .dreelio-logout {
+    width: 34px;
+    height: 34px;
+    border-radius: 12px;
+    display: grid;
+    place-items: center;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.08);
+    color: rgba(255,255,255,0.7);
+  }
+
+  .dreelio-content {
+    min-width: 0;
+    padding: 4px 2px 0;
+  }
+
+  .dreelio-mobile-topbar { display: none; }
+
+  .dreelio-overview {
+    display: grid;
+    grid-template-columns: minmax(0, 1.65fr) repeat(2, minmax(210px, 0.7fr));
+    gap: 16px;
+    margin: 0 0 18px;
+  }
+
+  .dreelio-welcome-card,
+  .dreelio-kpi-card,
+  .dreelio-panel {
+    background: var(--dreelio-card) !important;
+    border: 1px solid var(--dreelio-border) !important;
+    border-radius: var(--dreelio-radius-lg) !important;
+    box-shadow: var(--dreelio-shadow) !important;
+  }
+
+  .dreelio-welcome-card {
+    position: relative;
+    overflow: hidden;
+    min-height: 272px;
+    grid-row: span 2;
+    padding: 26px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 30px;
+    background:
+      radial-gradient(circle at 88% 16%, rgba(54,90,49,0.13), transparent 31%),
+      linear-gradient(135deg, #ffffff 0%, #f8f8f4 100%) !important;
+  }
+
+  .dreelio-card-topline {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .dreelio-chip {
+    display: inline-flex;
+    align-items: center;
+    min-height: 28px;
+    padding: 0 10px;
+    border-radius: 999px;
+    background: var(--dreelio-dark);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 760;
+  }
+
+  .dreelio-chip.muted {
+    background: var(--dreelio-accent-soft);
+    color: var(--dreelio-accent);
+  }
+
+  .dreelio-kicker,
+  .dreelio-kpi-label {
+    color: var(--dreelio-muted);
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .dreelio-welcome-card h1 {
+    max-width: 560px;
+    margin: 8px 0 12px;
+    color: var(--dreelio-text);
+    font-family: 'Space Grotesk', Inter, system-ui, sans-serif;
+    font-size: clamp(32px, 4vw, 58px);
+    line-height: 0.96;
+    letter-spacing: -0.06em;
+  }
+
+  .dreelio-welcome-card p {
+    max-width: 580px;
+    margin: 0;
+    color: var(--dreelio-muted);
+    font-size: 14.5px;
+    line-height: 1.6;
+    font-weight: 550;
+  }
+
+  .dreelio-quick-row {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .dreelio-quick-row > div {
+    padding: 14px;
+    border-radius: 18px;
+    background: #f5f5f1;
+    border: 1px solid var(--dreelio-border);
+  }
+
+  .dreelio-quick-row span {
+    display: block;
+    color: var(--dreelio-muted);
+    font-size: 12px;
+    font-weight: 720;
+  }
+
+  .dreelio-quick-row strong {
+    display: block;
+    margin-top: 4px;
+    font-family: 'Space Grotesk', Inter, system-ui, sans-serif;
+    color: var(--dreelio-text);
+    font-size: 24px;
+    letter-spacing: -0.04em;
+  }
+
+  .dreelio-kpi-card {
+    min-height: 128px;
+    padding: 18px;
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+  }
+
+  .dreelio-kpi-card.is-warning {
+    background: linear-gradient(135deg, #ffffff 0%, var(--dreelio-warning-soft) 100%) !important;
+    border-color: rgba(184,91,43,0.18) !important;
+  }
+
+  .dreelio-kpi-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 15px;
+    display: grid;
+    place-items: center;
+    flex: 0 0 auto;
+    background: var(--dreelio-soft);
+    color: var(--dreelio-accent);
+    border: 1px solid var(--dreelio-border);
+  }
+
+  .dreelio-kpi-card.is-warning .dreelio-kpi-icon {
+    color: var(--dreelio-warning);
+    background: var(--dreelio-warning-soft);
+  }
+
+  .dreelio-kpi-copy { min-width: 0; }
+  .dreelio-kpi-title {
+    margin-top: 8px;
+    color: var(--dreelio-text);
+    font-family: 'Space Grotesk', Inter, system-ui, sans-serif;
+    font-size: 20px;
+    font-weight: 800;
+    line-height: 1.08;
+    letter-spacing: -0.04em;
+  }
+  .dreelio-kpi-title span { color: #a8aaa2; font-weight: 700; }
+  .dreelio-kpi-number {
+    margin-top: 8px;
+    color: var(--dreelio-text);
+    font-family: 'Space Grotesk', Inter, system-ui, sans-serif;
+    font-size: 34px;
+    line-height: 1;
+    font-weight: 850;
+    letter-spacing: -0.06em;
+  }
+  .dreelio-kpi-meta {
+    margin-top: 7px;
+    color: var(--dreelio-muted);
+    font-size: 12.5px;
+    font-weight: 650;
+    line-height: 1.35;
+  }
+
+  .dreelio-main {
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 0 40px !important;
+  }
+
+  .dreelio-main section {
+    display: block;
+  }
+
+  .dreelio-main .tott-sectionhead {
+    margin: 24px 0 12px !important;
+    padding: 0 2px !important;
+  }
+
+  .dreelio-main .tott-h2,
+  .tott-h2 {
+    color: var(--dreelio-text) !important;
+    font-family: 'Space Grotesk', Inter, system-ui, sans-serif !important;
+    font-size: 25px !important;
+    line-height: 1.08 !important;
+    letter-spacing: -0.045em !important;
+  }
+
+  .dreelio-panel,
+  .dreelio-login-card {
+    overflow: hidden;
+  }
+
+  .dreelio-panel {
+    padding: 22px !important;
+    margin-bottom: 16px !important;
+  }
+
+  .dreelio-me-card {
+    background:
+      linear-gradient(135deg, #ffffff 0%, #f8f8f4 100%) !important;
+  }
+
+  .dreelio-match-list {
     display: grid !important;
     gap: 14px !important;
   }
 
-  .tott-match-card {
-    overflow: hidden !important;
+  .dreelio-match-card-row {
+    border-radius: var(--dreelio-radius) !important;
     padding: 18px !important;
+    margin: 0 !important;
   }
 
-  .tott-matchtop {
-    align-items: center !important;
+  .dreelio-table-wrap,
+  .dreelio-rules-card,
+  .dreelio-form-card,
+  .dreelio-admin-panel,
+  .dreelio-profile-main,
+  .dreelio-team-stats {
+    border-radius: var(--dreelio-radius) !important;
   }
 
-  .tott-matchmeta {
-    color: var(--text-dim) !important;
+  .dreelio-pot-card {
+    color: var(--dreelio-text) !important;
+    background:
+      radial-gradient(circle at 86% 20%, rgba(54,90,49,0.12), transparent 38%),
+      #ffffff !important;
   }
 
-  .tott-main input,
-  .tott-main select,
-  .tott-main textarea,
-  .tott-login-card input {
-    border-radius: 16px !important;
-    background: rgba(255,255,255,0.78) !important;
-    border: 1px solid var(--apple-border) !important;
-    color: var(--text) !important;
-    box-shadow: inset 0 1px 0 rgba(255,255,255,0.9) !important;
+  .dreelio-pot-card * { color: inherit; }
+
+  .dreelio-main input,
+  .dreelio-main select,
+  .dreelio-main textarea,
+  .dreelio-login-card input,
+  .dreelio-login-card select,
+  .dreelio-login-card textarea {
+    min-height: 44px;
+    border-radius: 14px !important;
+    background: #fbfbf8 !important;
+    border: 1px solid var(--dreelio-border) !important;
+    color: var(--dreelio-text) !important;
+    box-shadow: none !important;
   }
 
-  .tott-main button,
-  .tott-login-card button {
+  .dreelio-main input:focus,
+  .dreelio-main select:focus,
+  .dreelio-main textarea:focus,
+  .dreelio-login-card input:focus {
+    border-color: rgba(54,90,49,0.42) !important;
+    outline: 3px solid rgba(54,90,49,0.10) !important;
+    outline-offset: 0 !important;
+  }
+
+  .dreelio-main button,
+  .dreelio-login-card button {
     border-radius: 999px !important;
   }
 
-  .tott-formrow {
+  .dreelio-main button[style*="var(--text)"],
+  .dreelio-login-card button[type="submit"] {
+    background: var(--dreelio-dark) !important;
+    border-color: var(--dreelio-dark) !important;
+    color: #fff !important;
+  }
+
+  .dreelio-main .tott-formrow {
     gap: 12px !important;
   }
 
-  .tott-me-btnrow button {
-    border-radius: 20px !important;
+  .dreelio-footer {
+    padding: 8px 0 22px !important;
+    color: #989b91 !important;
   }
 
-  .tott-finance-table tr {
-    border-color: var(--apple-border) !important;
-  }
+  .dreelio-mobile-topbar .tott-header { display: none; }
 
-  .tott-finance-table th,
-  .tott-finance-table td {
-    border-color: var(--apple-border) !important;
-  }
-
-  .tott-pill,
-  [style*="Voldaan"],
-  [style*="Open"] {
-    border-radius: 999px !important;
-  }
-
-  .tott-admin-panel {
-    margin-top: 36px !important;
-  }
-
-  footer {
-    width: min(1220px, calc(100% - 44px));
-    margin: 0 auto;
-    color: rgba(20,23,17,0.42) !important;
-    border-top: 1px solid rgba(20,23,17,0.08) !important;
-  }
-
-  @media (max-width: 860px) {
-    .tott-header,
-    .tott-dashboard-hero,
-    .tott-nav,
-    .tott-main,
-    footer {
-      width: min(100% - 28px, 1220px) !important;
-    }
-
-    .tott-dashboard-hero {
-      grid-template-columns: 1fr;
+  @media (max-width: 1080px) {
+    .dreelio-shell {
+      grid-template-columns: 232px minmax(0, 1fr);
       gap: 14px;
-      margin-top: 14px;
+      padding: 14px;
     }
+    .dreelio-sidebar { top: 14px; height: calc(100vh - 28px); padding: 14px; }
+    .dreelio-overview { grid-template-columns: 1fr 1fr; }
+    .dreelio-welcome-card { grid-column: 1 / -1; grid-row: auto; min-height: auto; }
+  }
 
-    .tott-next-card {
-      min-height: auto;
-      padding: 22px;
+  @media (max-width: 820px) {
+    .dreelio-shell {
+      display: block;
+      padding: 12px;
     }
-
-    .tott-hero-title {
-      font-size: clamp(30px, 10vw, 44px);
+    .dreelio-sidebar {
+      position: relative;
+      top: auto;
+      height: auto;
+      margin-bottom: 12px;
+      border-radius: 24px;
     }
-
-    .tott-kpi-grid {
-      grid-template-columns: 1fr 1fr;
+    .dreelio-sidebar-brand,
+    .dreelio-sidebar-card,
+    .dreelio-sidebar-spacer,
+    .dreelio-profile-card {
+      display: none;
+    }
+    .dreelio-sidebar-group-label {
+      display: none;
+    }
+    .dreelio-sidebar-nav {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 2px;
+      scrollbar-width: none;
+    }
+    .dreelio-sidebar-nav::-webkit-scrollbar { display: none; }
+    .dreelio-side-link {
+      width: auto;
+      min-width: max-content;
+      min-height: 40px;
+      padding: 7px 12px;
+      border-radius: 14px;
+      white-space: nowrap;
+    }
+    .dreelio-side-icon { width: 26px; height: 26px; }
+    .dreelio-mobile-topbar { display: block; }
+    .dreelio-mobile-topbar .tott-header {
+      display: flex;
+      margin-bottom: 12px;
+      border-radius: 22px !important;
+      background: #fff !important;
+      border: 1px solid var(--dreelio-border) !important;
+      box-shadow: var(--dreelio-shadow) !important;
+    }
+    .dreelio-overview {
+      grid-template-columns: 1fr;
       gap: 12px;
     }
-
-    .tott-kpi-card {
-      min-height: 92px;
-      padding: 16px;
+    .dreelio-welcome-card {
+      padding: 22px;
+      border-radius: 24px !important;
     }
-
-    .tott-kpi-value {
-      font-size: 23px;
+    .dreelio-welcome-card h1 {
+      font-size: clamp(30px, 10vw, 42px);
     }
-
-    .tott-nav {
-      justify-content: flex-start !important;
-      margin-bottom: 14px !important;
-    }
-
-    .tott-navbtn {
-      padding: 10px 13px !important;
-      font-size: 13px !important;
-    }
-
-    .tott-main {
-      padding-bottom: 40px !important;
-    }
+    .dreelio-quick-row { grid-template-columns: 1fr; }
+    .dreelio-kpi-card { min-height: auto; }
   }
 
   @media (max-width: 560px) {
-    .tott-header {
-      margin-top: 12px !important;
-      border-radius: 22px !important;
+    .dreelio-shell { padding: 10px; }
+    .dreelio-sidebar { border-radius: 20px; padding: 10px; }
+    .dreelio-welcome-card,
+    .dreelio-kpi-card,
+    .dreelio-panel {
+      border-radius: 20px !important;
     }
-
-    .tott-crest {
-      width: 42px !important;
-      height: 42px !important;
-      border-radius: 15px !important;
-    }
-
-    .tott-clubname {
-      font-size: 17px !important;
-    }
-
-    .tott-kpi-grid {
-      grid-template-columns: 1fr;
-    }
-
-    .tott-hero-bottom {
-      align-items: flex-start;
-      flex-direction: column;
-    }
-
-    .tott-h2 {
-      font-size: 26px !important;
-    }
-
-    .tott-me-card,
-    .tott-profile-card,
-    .tott-form-card,
-    .tott-team-stats-card,
-    .tott-admin-panel {
-      padding: 18px !important;
-    }
+    .dreelio-panel { padding: 18px !important; }
+    .dreelio-main .tott-h2, .tott-h2 { font-size: 22px !important; }
   }
 `;
-
 
 const styles = {
   app: {
