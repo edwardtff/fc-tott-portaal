@@ -78,7 +78,7 @@ const LOCAL_POSTS_KEY = "tott_local_club_posts_v1";
 const LOCAL_BRANDING_KEY = "tott_local_branding_v1";
 
 const DEFAULT_BRANDING = {
-  logoUrl: "",
+  logoUrl: "/fc-tott-logo.svg",
   loginBannerUrl: "",
   dashboardBannerUrl: "",
   sponsorImageUrl: "",
@@ -426,10 +426,11 @@ function LoginScreen({ players, onLogin, branding = DEFAULT_BRANDING }) {
 // Header / Top bar
 // ============================================================
 function Header({ me, onLogout, branding = DEFAULT_BRANDING }) {
+  const logoUrl = branding?.logoUrl || DEFAULT_BRANDING.logoUrl;
   return (
     <header style={styles.header} className="tott-header">
       <div style={styles.crest} className="tott-crest">
-        {branding.logoUrl ? <img src={branding.logoUrl} alt="Clublogo" className="tott-crest-img" /> : "TOTT"}
+        {logoUrl ? <img src={logoUrl} alt="Clublogo" className="tott-crest-img" /> : "TOTT"}
       </div>
       <div style={{ flex: 1 }}>
         <div style={styles.clubName} className="tott-clubname">FC Talk Of The Town</div>
@@ -446,6 +447,7 @@ function Header({ me, onLogout, branding = DEFAULT_BRANDING }) {
 
 
 function DreelioSidebar({ me, tab, setTab, onLogout, myOpenCount, potTotal, postsCount = 0, nextMatch, attendanceByMatch = {}, branding = DEFAULT_BRANDING }) {
+  const logoUrl = branding?.logoUrl || DEFAULT_BRANDING.logoUrl;
   const needsMatchResponse = !!(nextMatch && me && !attendanceByMatch[nextMatch.id]?.[me.id]?.status);
   const badgeFor = (key) => {
     if (key === "financien" && myOpenCount > 0) return myOpenCount;
@@ -456,7 +458,7 @@ function DreelioSidebar({ me, tab, setTab, onLogout, myOpenCount, potTotal, post
   return (
     <aside className="dreelio-sidebar" aria-label="Hoofdnavigatie">
       <div className="dreelio-sidebar-brand">
-        <div className="dreelio-sidebar-logo">{branding.logoUrl ? <img src={branding.logoUrl} alt="Clublogo" /> : "T"}</div>
+        <div className="dreelio-sidebar-logo">{logoUrl ? <img src={logoUrl} alt="Clublogo" /> : "T"}</div>
         <div>
           <div className="dreelio-sidebar-title">FC TOTT</div>
           <div className="dreelio-sidebar-sub">Clubportaal</div>
@@ -2708,9 +2710,11 @@ const dreelioDashboardCss = `
   .dreelio-sidebar-logo img {
     width: 100%;
     height: 100%;
-    object-fit: cover;
+    object-fit: contain;
     display: block;
     border-radius: inherit;
+    padding: 3px;
+    background: #fff;
   }
 
   .dreelio-sidebar-logo {
