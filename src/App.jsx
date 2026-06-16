@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Calendar, MapPin, Clock, ShieldCheck, Wallet, ShirtIcon, GlassWater, Swords,
   Check, X, Plus, Trash2, ChevronRight, Users, AlertCircle, HelpCircle,
@@ -164,6 +164,7 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(null);
   const [tab, setTab] = useState("overzicht");
+  const swipeStartRef = useRef(null);
 
   const [players, setPlayers] = useState([]);
   const [matches, setMatches] = useState([]);
@@ -236,8 +237,35 @@ export default function App() {
     if (typeof window !== "undefined" && window.matchMedia("(max-width: 820px)").matches) {
       window.setTimeout(() => {
         document.querySelector(".dreelio-main")?.scrollIntoView({ behavior: "smooth", block: "start" });
+        document.querySelector(`[data-nav-key="${nextTab}"]`)?.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
       }, 80);
     }
+  };
+
+  const moveTab = (direction) => {
+    const currentIndex = NAV.findIndex((item) => item.key === tab);
+    if (currentIndex < 0) return;
+    const nextIndex = Math.min(Math.max(currentIndex + direction, 0), NAV.length - 1);
+    if (nextIndex !== currentIndex) changeTab(NAV[nextIndex].key);
+  };
+
+  const handleSwipeStart = (event) => {
+    if (!window.matchMedia("(max-width: 860px)").matches) return;
+    const touch = event.touches?.[0];
+    if (!touch) return;
+    swipeStartRef.current = { x: touch.clientX, y: touch.clientY };
+  };
+
+  const handleSwipeEnd = (event) => {
+    if (!swipeStartRef.current) return;
+    const touch = event.changedTouches?.[0];
+    if (!touch) return;
+    const deltaX = touch.clientX - swipeStartRef.current.x;
+    const deltaY = touch.clientY - swipeStartRef.current.y;
+    swipeStartRef.current = null;
+
+    if (Math.abs(deltaX) < 70 || Math.abs(deltaX) < Math.abs(deltaY) * 1.35) return;
+    moveTab(deltaX < 0 ? 1 : -1);
   };
 
   // helper maps for attendance/lineups grouped by match
@@ -330,7 +358,7 @@ export default function App() {
             <Header me={me} onLogout={logout} branding={branding} />
           </div>
 
-          <main style={styles.main} className="tott-main dreelio-main">
+          <main style={styles.main} className="tott-main dreelio-main" onTouchStart={handleSwipeStart} onTouchEnd={handleSwipeEnd}>
             {tab === "overzicht" && (
               <Top3
                 nextMatch={nextMatch}
@@ -521,6 +549,7 @@ function DreelioSidebar({ me, tab, setTab, onLogout, myOpenCount, potTotal, post
             <button
               key={n.key}
               type="button"
+              data-nav-key={n.key}
               onClick={() => setTab(n.key)}
               className={`dreelio-side-link ${active ? "is-active" : ""}`}
             >
@@ -5787,8 +5816,32 @@ const roleVideoCss = `
 .dreelio-video-empty p { margin: 0; max-width: 460px; color: rgba(255,255,255,.58); line-height: 1.5; }
 @media (max-width: 980px) { .dreelio-video-layout { grid-template-columns: 1fr; } }
 @media (max-width: 860px) {
-  .dreelio-sidebar-nav { grid-template-columns: repeat(6,minmax(0,1fr)) !important; }
-  .dreelio-side-link:nth-child(6), .dreelio-side-link:nth-child(7) { display: none !important; }
+  .dreelio-sidebar { overflow: hidden !important; }
+  .dreelio-sidebar-nav {
+    display: flex !important;
+    grid-template-columns: none !important;
+    gap: 6px !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding: 0 4px 3px !important;
+  }
+  .dreelio-sidebar-nav::-webkit-scrollbar { display: none; }
+  .dreelio-side-link {
+    min-width: 74px !important;
+    width: 74px !important;
+    flex: 0 0 74px !important;
+    scroll-snap-align: center;
+  }
+  .dreelio-side-link span:last-child {
+    display: block;
+    max-width: 68px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
   .dreelio-video-player-copy h3 { font-size: 19px; }
   .dreelio-video-frame { border-radius: 22px 22px 0 0; }
 }
