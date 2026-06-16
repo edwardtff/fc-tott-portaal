@@ -185,6 +185,7 @@ const NAV = [
   { key: "boetepot", label: "Boetepot", icon: Coins },
   { key: "huisregels", label: "Huisregels", icon: ShieldCheck },
   { key: "financien", label: "Financiën", icon: Wallet },
+  { key: "beheer", label: "Beheer", icon: Settings },
 ];
 
 export default function App() {
@@ -243,6 +244,16 @@ export default function App() {
   const isAdmin = me?.role === "admin";
   const isBegeleider = me?.role === "begeleider";
   const canManageContent = isAdmin || isBegeleider;
+  const navItems = NAV.filter((item) => {
+    if (item.key === "beheer") return isAdmin;
+    if (item.key === "financien") return !isBegeleider || isAdmin;
+    return true;
+  });
+
+  useEffect(() => {
+    if (!me) return;
+    if (!navItems.some((item) => item.key === tab)) setTab("overzicht");
+  }, [me?.id, isAdmin, isBegeleider, tab]);
 
   const nextMatch = matches
     .filter((m) => new Date(m.match_date).getTime() > Date.now())
@@ -271,10 +282,10 @@ export default function App() {
   };
 
   const moveTab = (direction) => {
-    const currentIndex = NAV.findIndex((item) => item.key === tab);
+    const currentIndex = navItems.findIndex((item) => item.key === tab);
     if (currentIndex < 0) return;
-    const nextIndex = Math.min(Math.max(currentIndex + direction, 0), NAV.length - 1);
-    if (nextIndex !== currentIndex) changeTab(NAV[nextIndex].key);
+    const nextIndex = Math.min(Math.max(currentIndex + direction, 0), navItems.length - 1);
+    if (nextIndex !== currentIndex) changeTab(navItems[nextIndex].key);
   };
 
   const handleSwipeStart = (event) => {
@@ -328,7 +339,7 @@ export default function App() {
   if (loading) {
     return (
       <div style={styles.app} className="tott-app dreelio-app">
-        <style>{globalCss + dreelioDashboardCss + appFeelingCss + fcxMobileDashboardCss + kpiRectangleHardFixCss + spacingPolishCss + fullAppFcxThemeCss + readabilityFixCss + roleVideoCss + mobileZoomLockCss}</style>
+        <style>{globalCss + dreelioDashboardCss + appFeelingCss + fcxMobileDashboardCss + kpiRectangleHardFixCss + spacingPolishCss + fullAppFcxThemeCss + readabilityFixCss + roleVideoCss + adminBeheerPolishCss + mobileZoomLockCss}</style>
         <div style={styles.loadingScreen}>Laden…</div>
       </div>
     );
@@ -337,7 +348,7 @@ export default function App() {
   if (loadError) {
     return (
       <div style={styles.app} className="tott-app dreelio-app">
-        <style>{globalCss + dreelioDashboardCss + appFeelingCss + fcxMobileDashboardCss + kpiRectangleHardFixCss + spacingPolishCss + fullAppFcxThemeCss + readabilityFixCss + roleVideoCss + mobileZoomLockCss}</style>
+        <style>{globalCss + dreelioDashboardCss + appFeelingCss + fcxMobileDashboardCss + kpiRectangleHardFixCss + spacingPolishCss + fullAppFcxThemeCss + readabilityFixCss + roleVideoCss + adminBeheerPolishCss + mobileZoomLockCss}</style>
         <div style={styles.loadingScreen}>
           <AlertCircle size={22} style={{ marginBottom: 10, color: "var(--warn)" }} />
           <div>Het clubportaal is tijdelijk niet bereikbaar.</div>
@@ -352,7 +363,7 @@ export default function App() {
   if (!me) {
     return (
       <div style={styles.app} className="tott-app dreelio-app">
-        <style>{globalCss + dreelioDashboardCss + appFeelingCss + fcxMobileDashboardCss + kpiRectangleHardFixCss + spacingPolishCss + fullAppFcxThemeCss + readabilityFixCss + roleVideoCss + mobileZoomLockCss}</style>
+        <style>{globalCss + dreelioDashboardCss + appFeelingCss + fcxMobileDashboardCss + kpiRectangleHardFixCss + spacingPolishCss + fullAppFcxThemeCss + readabilityFixCss + roleVideoCss + adminBeheerPolishCss + mobileZoomLockCss}</style>
         <Header branding={branding} />
         <LoginScreen players={players} onLogin={login} branding={branding} />
         <footer style={styles.footer}>FC TOTT · Sponsored By Nola Marketing (website, branding en marketing)</footer>
@@ -365,7 +376,7 @@ export default function App() {
 
   return (
     <div style={styles.app} className="tott-app dreelio-app">
-      <style>{globalCss + dreelioDashboardCss + appFeelingCss + fcxMobileDashboardCss + kpiRectangleHardFixCss + spacingPolishCss + fullAppFcxThemeCss + readabilityFixCss + roleVideoCss + mobileZoomLockCss}</style>
+      <style>{globalCss + dreelioDashboardCss + appFeelingCss + fcxMobileDashboardCss + kpiRectangleHardFixCss + spacingPolishCss + fullAppFcxThemeCss + readabilityFixCss + roleVideoCss + adminBeheerPolishCss + mobileZoomLockCss}</style>
 
       <div className="dreelio-shell">
         <DreelioSidebar
@@ -379,6 +390,7 @@ export default function App() {
           nextMatch={nextMatch}
           attendanceByMatch={attendanceByMatch}
           branding={branding}
+          navItems={navItems}
         />
 
         <div className="dreelio-content">
@@ -448,7 +460,9 @@ export default function App() {
             {tab === "financien" && (
               <FinanceTab players={players} feeTypes={feeTypes} feesByPlayer={feesByPlayer} me={me} isAdmin={isAdmin} reloadAll={reloadAll} />
             )}
-            {isAdmin && <AdminPanel players={players} reloadAll={reloadAll} branding={branding} setBranding={setBranding} />}
+            {tab === "beheer" && isAdmin && (
+              <AdminPanel players={players} posts={clubPosts} setPosts={setClubPosts} videos={matchVideos} setVideos={setMatchVideos} reloadAll={reloadAll} branding={branding} setBranding={setBranding} />
+            )}
           </main>
 
           <footer style={styles.footer} className="dreelio-footer">FC TOTT · Sponsored By Nola Marketing (website, branding en marketing)</footer>
@@ -548,7 +562,7 @@ function Header({ me, onLogout, branding = DEFAULT_BRANDING }) {
 }
 
 
-function DreelioSidebar({ me, tab, setTab, onLogout, myOpenCount, potTotal, postsCount = 0, nextMatch, attendanceByMatch = {}, branding = DEFAULT_BRANDING }) {
+function DreelioSidebar({ me, tab, setTab, onLogout, myOpenCount, potTotal, postsCount = 0, nextMatch, attendanceByMatch = {}, branding = DEFAULT_BRANDING, navItems = NAV }) {
   const logoUrl = branding?.logoUrl || DEFAULT_BRANDING.logoUrl;
   const needsMatchResponse = !!(nextMatch && me && !attendanceByMatch[nextMatch.id]?.[me.id]?.status);
   const badgeFor = (key) => {
@@ -570,7 +584,7 @@ function DreelioSidebar({ me, tab, setTab, onLogout, myOpenCount, potTotal, post
 
       <div className="dreelio-sidebar-group-label">Menu</div>
       <nav className="dreelio-sidebar-nav">
-        {NAV.map((n) => {
+        {navItems.map((n) => {
           const Icon = n.icon;
           const active = tab === n.key;
           return (
@@ -1853,6 +1867,7 @@ function VideosTab({ videos, setVideos, matches = [], me, isAdmin, canManageCont
   const [showForm, setShowForm] = useState(videos.length === 0 && canManageContent);
   const [draft, setDraft] = useState({ title: "", youtubeUrl: "", matchId: "", description: "" });
   const [activeVideoId, setActiveVideoId] = useState(videos[0]?.id || null);
+  const [videoError, setVideoError] = useState("");
 
   const sortedVideos = [...videos].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
   const activeVideo = sortedVideos.find((video) => video.id === activeVideoId) || sortedVideos[0];
@@ -1861,7 +1876,11 @@ function VideosTab({ videos, setVideos, matches = [], me, isAdmin, canManageCont
     if (!canManageContent) return;
     const youtubeUrl = draft.youtubeUrl.trim();
     const embedUrl = getYouTubeEmbedUrl(youtubeUrl);
-    if (!embedUrl) return;
+    if (!embedUrl) {
+      setVideoError("Plak een geldige YouTube-link, bijvoorbeeld een youtu.be of youtube.com link.");
+      return;
+    }
+    setVideoError("");
     const match = matches.find((m) => m.id === draft.matchId);
     const video = {
       id: makeVideoId(),
@@ -1883,6 +1902,7 @@ function VideosTab({ videos, setVideos, matches = [], me, isAdmin, canManageCont
 
   const removeVideo = (id) => {
     if (!isAdmin) return;
+    if (!window.confirm("Weet je zeker dat je deze video wilt verwijderen?")) return;
     const next = videos.filter((video) => video.id !== id);
     setVideos(next);
     if (activeVideoId === id) setActiveVideoId(next[0]?.id || null);
@@ -1917,6 +1937,7 @@ function VideosTab({ videos, setVideos, matches = [], me, isAdmin, canManageCont
           </div>
           <input style={styles.input} placeholder="YouTube-link, bijvoorbeeld https://youtu.be/..." value={draft.youtubeUrl} onChange={(e) => setDraft({ ...draft, youtubeUrl: e.target.value })} />
           <textarea style={styles.textarea} rows={3} placeholder="Korte beschrijving of aandachtspunten…" value={draft.description} onChange={(e) => setDraft({ ...draft, description: e.target.value })} />
+          {videoError && <div className="dreelio-admin-error"><AlertCircle size={14} /> {videoError}</div>}
           <button style={styles.primaryBtn} onClick={addVideo} type="button"><PlayCircle size={15} /> Video opslaan</button>
         </div>
       )}
@@ -2056,120 +2077,299 @@ function FinanceTab({ players, feeTypes, feesByPlayer, me, isAdmin, reloadAll })
 // ============================================================
 // Admin panel: user management
 // ============================================================
-function AdminPanel({ players, reloadAll, branding = DEFAULT_BRANDING, setBranding }) {
-  const [open, setOpen] = useState(false);
+function AdminPanel({ players, posts = [], setPosts, videos = [], setVideos, reloadAll, branding = DEFAULT_BRANDING, setBranding }) {
+  const [section, setSection] = useState("spelers");
+  const [query, setQuery] = useState("");
+  const [filter, setFilter] = useState("iedereen");
   const [newPlayer, setNewPlayer] = useState({ name: "", username: "", password: "", role: "speler" });
-  const [photoEdits, setPhotoEdits] = useState({});
+  const [playerEdits, setPlayerEdits] = useState({});
   const [brandingDraft, setBrandingDraft] = useState(branding);
   const [busy, setBusy] = useState(false);
+  const [adminError, setAdminError] = useState("");
+  const [adminSuccess, setAdminSuccess] = useState("");
 
   useEffect(() => {
     setBrandingDraft(branding);
   }, [branding]);
 
-  const toggleActive = async (id, active) => {
-    setBusy(true);
-    try { await db.setPlayerActive(id, !active); await reloadAll(); } finally { setBusy(false); }
+  const getEdit = (player) => playerEdits[player.id] || {
+    name: player.name || "",
+    username: player.username || "",
+    photo: player.photo || "",
+    position: player.position || "Allround",
+    number: player.number || "",
+    role: player.role || "speler",
+    password: "",
   };
 
-  const removePlayer = async (id) => {
-    setBusy(true);
-    try { await db.deletePlayer(id); await reloadAll(); } finally { setBusy(false); }
+  const updateEdit = (player, patch) => {
+    setPlayerEdits((cur) => ({ ...cur, [player.id]: { ...getEdit(player), ...patch } }));
   };
 
-  const savePlayerPhoto = async (player) => {
+  const runAdminAction = async (action, successText) => {
     setBusy(true);
+    setAdminError("");
+    setAdminSuccess("");
     try {
-      await db.updatePlayer(player.id, { photo: photoEdits[player.id] ?? player.photo ?? "" });
-      await reloadAll();
-    } finally { setBusy(false); }
+      await action();
+      if (successText) setAdminSuccess(successText);
+    } catch (err) {
+      console.error(err);
+      setAdminError("Actie kon niet worden uitgevoerd. Controleer de gegevens en probeer opnieuw.");
+    } finally {
+      setBusy(false);
+    }
   };
 
-  const savePlayerRole = async (player, role) => {
-    setBusy(true);
-    try {
-      await db.updatePlayer(player.id, { role });
+  const toggleActive = async (player) => {
+    const nextActive = !player.active;
+    if (!nextActive && !window.confirm(`Weet je zeker dat je ${player.name} wilt blokkeren?`)) return;
+    await runAdminAction(async () => {
+      await db.setPlayerActive(player.id, nextActive);
       await reloadAll();
-    } finally { setBusy(false); }
+    }, nextActive ? "Account is weer actief." : "Account is geblokkeerd.");
+  };
+
+  const removePlayer = async (player) => {
+    if (!window.confirm(`Weet je zeker dat je ${player.name} definitief wilt verwijderen? Gebruik liever blokkeren als je twijfelt.`)) return;
+    await runAdminAction(async () => {
+      await db.deletePlayer(player.id);
+      await reloadAll();
+    }, "Speler is verwijderd.");
+  };
+
+  const savePlayer = async (player) => {
+    const edit = getEdit(player);
+    await runAdminAction(async () => {
+      const payload = {
+        name: edit.name.trim(),
+        username: edit.username.trim(),
+        photo: edit.photo.trim(),
+        position: edit.position,
+        number: Number(edit.number) || null,
+        role: edit.role,
+      };
+      if (edit.password.trim()) payload.password = edit.password.trim();
+      await db.updatePlayer(player.id, payload);
+      await reloadAll();
+      setPlayerEdits((cur) => {
+        const next = { ...cur };
+        delete next[player.id];
+        return next;
+      });
+    }, "Speler is bijgewerkt.");
   };
 
   const saveBranding = () => {
     setBranding?.({ ...DEFAULT_BRANDING, ...brandingDraft });
+    setAdminSuccess("Branding is lokaal opgeslagen.");
   };
 
   const addPlayer = async () => {
-    if (!newPlayer.name.trim() || !newPlayer.username.trim() || !newPlayer.password.trim()) return;
-    setBusy(true);
-    try {
-      const exists = await db.usernameExists(newPlayer.username);
-      if (exists) { alert("Die gebruikersnaam bestaat al."); return; }
+    if (!newPlayer.name.trim() || !newPlayer.username.trim() || !newPlayer.password.trim()) {
+      setAdminError("Vul naam, gebruikersnaam en wachtwoord in.");
+      return;
+    }
+    await runAdminAction(async () => {
+      const exists = await db.usernameExists(newPlayer.username.trim());
+      if (exists) throw new Error("username_exists");
       await db.createPlayer({
-        name: newPlayer.name.trim(), username: newPlayer.username.trim(),
-        password: newPlayer.password, role: newPlayer.role,
+        name: newPlayer.name.trim(),
+        username: newPlayer.username.trim(),
+        password: newPlayer.password,
+        role: newPlayer.role,
       });
       await reloadAll();
       setNewPlayer({ name: "", username: "", password: "", role: "speler" });
-    } finally { setBusy(false); }
+    }, "Account is aangemaakt.");
   };
 
-  return (
-    <div style={styles.adminPanel} className="dreelio-panel dreelio-admin-panel">
-      <button style={styles.beheerToggle} onClick={() => setOpen((o) => !o)}>
-        <UserCog size={14} style={{ marginRight: 6, verticalAlign: "-2px" }} />
-        {open ? "Sluit beheerderspaneel" : "Beheerderspaneel — spelers, accounts & toegang"}
-      </button>
+  const filteredPlayers = players.filter((player) => {
+    const q = query.trim().toLowerCase();
+    const matchesQuery = !q || `${player.name || ""} ${player.username || ""}`.toLowerCase().includes(q);
+    const matchesFilter =
+      filter === "iedereen" ||
+      (filter === "admins" && player.role === "admin") ||
+      (filter === "begeleiders" && player.role === "begeleider") ||
+      (filter === "spelers" && (!player.role || player.role === "speler")) ||
+      (filter === "actief" && player.active !== false) ||
+      (filter === "geblokkeerd" && player.active === false);
+    return matchesQuery && matchesFilter;
+  });
 
-      {open && (
-        <div style={styles.adminBody}>
-          <div style={styles.h3}>Spelers &amp; accounts</div>
-          <div style={styles.rulesCard} className="dreelio-panel dreelio-rules-card">
-            {players.map((p) => (
-              <div key={p.id} style={styles.adminRow}>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={styles.adminRowName}>
-                    {p.name} {p.role === "admin" && <Star size={11} style={{ color: "var(--accent)", marginLeft: 4 }} />} {p.role === "begeleider" && <ShieldCheck size={11} style={{ color: "var(--accent)", marginLeft: 4 }} />}
-                  </div>
-                  <div style={styles.adminRowMeta}>@{p.username} · {roleLabel(p.role)} · {p.active ? "Actief" : "Geblokkeerd"}</div>
-                  <select style={{ ...styles.input, marginTop: 8, maxWidth: 180 }} value={p.role || "speler"} onChange={(e) => savePlayerRole(p, e.target.value)} disabled={busy}>
-                    <option value="speler">Speler</option>
-                    <option value="begeleider">Begeleider</option>
-                    <option value="admin">Admin</option>
-                  </select>
-                </div>
-                <button disabled={busy}
-                  style={{ ...styles.adminActionBtn, ...(p.active ? styles.adminActionBtnDanger : styles.adminActionBtnOk) }}
-                  onClick={() => toggleActive(p.id, p.active)}>
-                  {p.active ? <><UserMinus size={13} /> Eruit gooien</> : <><UserPlus size={13} /> Weer toelaten</>}
-                </button>
-                <button style={styles.iconBtnGhost} onClick={() => removePlayer(p.id)} aria-label="Verwijderen" disabled={busy}>
-                  <Trash2 size={14} />
-                </button>
-              </div>
-            ))}
+  const removeAdminPost = (post) => {
+    if (!window.confirm("Weet je zeker dat je deze update wilt verwijderen?")) return;
+    setPosts?.(posts.filter((item) => item.id !== post.id));
+  };
+
+  const toggleAdminPostPin = (post) => {
+    setPosts?.(posts.map((item) => item.id === post.id ? { ...item, pinned: !item.pinned } : item));
+  };
+
+  const removeAdminVideo = (video) => {
+    if (!window.confirm("Weet je zeker dat je deze video wilt verwijderen?")) return;
+    setVideos?.(videos.filter((item) => item.id !== video.id));
+  };
+
+  const sections = [
+    { key: "spelers", label: "Spelers", icon: Users },
+    { key: "accounts", label: "Accounts", icon: UserPlus },
+    { key: "branding", label: "Branding", icon: Camera },
+    { key: "updates", label: "Updates", icon: Newspaper },
+    { key: "videos", label: "Video's", icon: Video },
+  ];
+
+  return (
+    <section className="dreelio-admin-page">
+      <div style={styles.sectionHead} className="tott-sectionhead">
+        <div>
+          <div style={styles.eyebrow}>Bestuur</div>
+          <h2 style={styles.h2} className="tott-h2">Beheer</h2>
+        </div>
+      </div>
+
+      <div className="dreelio-admin-stats">
+        <div className="dreelio-admin-stat"><span>Spelers</span><strong>{players.length}</strong></div>
+        <div className="dreelio-admin-stat"><span>Admins</span><strong>{players.filter((p) => p.role === "admin").length}</strong></div>
+        <div className="dreelio-admin-stat"><span>Begeleiders</span><strong>{players.filter((p) => p.role === "begeleider").length}</strong></div>
+        <div className="dreelio-admin-stat"><span>Geblokkeerd</span><strong>{players.filter((p) => p.active === false).length}</strong></div>
+      </div>
+
+      <div className="dreelio-admin-tabs">
+        {sections.map((item) => {
+          const Icon = item.icon;
+          return (
+            <button key={item.key} type="button" onClick={() => setSection(item.key)} className={section === item.key ? "is-active" : ""}>
+              <Icon size={15} /> {item.label}
+            </button>
+          );
+        })}
+      </div>
+
+      {adminError && <div className="dreelio-admin-error"><AlertCircle size={14} /> {adminError}</div>}
+      {adminSuccess && <div className="dreelio-admin-success"><Check size={14} /> {adminSuccess}</div>}
+
+      {section === "spelers" && (
+        <div className="dreelio-panel dreelio-admin-block">
+          <div className="dreelio-admin-tools">
+            <input style={styles.input} placeholder="Zoek speler of gebruikersnaam…" value={query} onChange={(e) => setQuery(e.target.value)} />
+            <select style={styles.input} value={filter} onChange={(e) => setFilter(e.target.value)}>
+              <option value="iedereen">Iedereen</option>
+              <option value="spelers">Spelers</option>
+              <option value="begeleiders">Begeleiders</option>
+              <option value="admins">Admins</option>
+              <option value="actief">Actief</option>
+              <option value="geblokkeerd">Geblokkeerd</option>
+            </select>
           </div>
 
-          <div style={styles.h3}>Nieuw account aanmaken</div>
-          <div style={styles.formCard} className="dreelio-panel dreelio-form-card">
-            <div style={styles.formRow} className="tott-formrow">
-              <input style={styles.input} placeholder="Volledige naam" value={newPlayer.name}
-                onChange={(e) => setNewPlayer({ ...newPlayer, name: e.target.value })} />
-              <input style={styles.input} placeholder="Gebruikersnaam" value={newPlayer.username}
-                onChange={(e) => setNewPlayer({ ...newPlayer, username: e.target.value })} />
-            </div>
-            <div style={styles.formRow} className="tott-formrow">
-              <input style={styles.input} placeholder="Wachtwoord" value={newPlayer.password}
-                onChange={(e) => setNewPlayer({ ...newPlayer, password: e.target.value })} />
-              <select style={styles.input} value={newPlayer.role} onChange={(e) => setNewPlayer({ ...newPlayer, role: e.target.value })}>
-                <option value="speler">Speler</option>
-                <option value="begeleider">Begeleider</option>
-                <option value="admin">Admin</option>
-              </select>
-            </div>
-            <button style={styles.primaryBtn} onClick={addPlayer} disabled={busy}><UserPlus size={15} /> Account aanmaken</button>
+          <div className="dreelio-admin-player-list">
+            {filteredPlayers.map((player) => {
+              const edit = getEdit(player);
+              return (
+                <div key={player.id} className="dreelio-admin-player-card">
+                  <div className="dreelio-admin-player-head">
+                    <div className="dreelio-admin-player-avatar">{edit.photo ? <img src={edit.photo} alt={edit.name} /> : (edit.name || "?").slice(0, 2).toUpperCase()}</div>
+                    <div>
+                      <strong>{player.name}</strong>
+                      <span>@{player.username} · {roleLabel(player.role)} · {player.active === false ? "Geblokkeerd" : "Actief"}</span>
+                    </div>
+                  </div>
+
+                  <div className="dreelio-admin-edit-grid">
+                    <input style={styles.input} value={edit.name} onChange={(e) => updateEdit(player, { name: e.target.value })} placeholder="Naam" />
+                    <input style={styles.input} value={edit.username} onChange={(e) => updateEdit(player, { username: e.target.value })} placeholder="Gebruikersnaam" />
+                    <select style={styles.input} value={edit.role} onChange={(e) => updateEdit(player, { role: e.target.value })}>
+                      <option value="speler">Speler</option>
+                      <option value="begeleider">Begeleider</option>
+                      <option value="admin">Admin</option>
+                    </select>
+                    <select style={styles.input} value={edit.position} onChange={(e) => updateEdit(player, { position: e.target.value })}>
+                      {POSITIONS.map((pos) => <option key={pos} value={pos}>{pos}</option>)}
+                    </select>
+                    <input style={styles.input} type="number" min="1" max="99" value={edit.number || ""} onChange={(e) => updateEdit(player, { number: e.target.value })} placeholder="Rugnummer" />
+                    <input style={styles.input} value={edit.photo} onChange={(e) => updateEdit(player, { photo: e.target.value })} placeholder="Profielfoto URL" />
+                    <input style={styles.input} value={edit.password} onChange={(e) => updateEdit(player, { password: e.target.value })} placeholder="Nieuw wachtwoord optioneel" />
+                  </div>
+
+                  <div className="dreelio-admin-actions">
+                    <button type="button" style={styles.primaryBtn} onClick={() => savePlayer(player)} disabled={busy}><Check size={14} /> Opslaan</button>
+                    <button type="button" style={styles.secondaryBtn} onClick={() => toggleActive(player)} disabled={busy}>{player.active === false ? <><UserPlus size={14} /> Activeren</> : <><UserMinus size={14} /> Blokkeren</>}</button>
+                    <button type="button" className="dreelio-danger-button" onClick={() => removePlayer(player)} disabled={busy}><Trash2 size={14} /> Verwijderen</button>
+                  </div>
+                </div>
+              );
+            })}
+            {filteredPlayers.length === 0 && <EmptyState text="Geen spelers gevonden." />}
           </div>
         </div>
       )}
-    </div>
+
+      {section === "accounts" && (
+        <div className="dreelio-panel dreelio-admin-block">
+          <div style={styles.h3}>Nieuw account aanmaken</div>
+          <div style={styles.formRow} className="tott-formrow">
+            <input style={styles.input} placeholder="Volledige naam" value={newPlayer.name} onChange={(e) => setNewPlayer({ ...newPlayer, name: e.target.value })} />
+            <input style={styles.input} placeholder="Gebruikersnaam" value={newPlayer.username} onChange={(e) => setNewPlayer({ ...newPlayer, username: e.target.value })} />
+          </div>
+          <div style={styles.formRow} className="tott-formrow">
+            <input style={styles.input} placeholder="Wachtwoord" value={newPlayer.password} onChange={(e) => setNewPlayer({ ...newPlayer, password: e.target.value })} />
+            <select style={styles.input} value={newPlayer.role} onChange={(e) => setNewPlayer({ ...newPlayer, role: e.target.value })}>
+              <option value="speler">Speler</option>
+              <option value="begeleider">Begeleider</option>
+              <option value="admin">Admin</option>
+            </select>
+          </div>
+          <div className="dreelio-muted-note">Begeleiders kunnen updates en video's plaatsen, maar tellen niet mee bij spelersbetalingen.</div>
+          <button style={styles.primaryBtn} onClick={addPlayer} disabled={busy}><UserPlus size={15} /> Account aanmaken</button>
+        </div>
+      )}
+
+      {section === "branding" && (
+        <div className="dreelio-panel dreelio-admin-block">
+          <div style={styles.h3}>Clubbranding</div>
+          <label style={styles.loginLabel}>Clublogo URL</label>
+          <input style={styles.input} value={brandingDraft.logoUrl || ""} onChange={(e) => setBrandingDraft({ ...brandingDraft, logoUrl: e.target.value })} placeholder="Logo URL of data image" />
+          <label style={styles.loginLabel}>Dashboard banner URL</label>
+          <input style={styles.input} value={brandingDraft.bannerUrl || ""} onChange={(e) => setBrandingDraft({ ...brandingDraft, bannerUrl: e.target.value })} placeholder="Optionele bannerafbeelding" />
+          <label style={styles.loginLabel}>Sponsorregel</label>
+          <input style={styles.input} value={brandingDraft.sponsorText || ""} onChange={(e) => setBrandingDraft({ ...brandingDraft, sponsorText: e.target.value })} placeholder="Sponsorregel" />
+          <button style={styles.primaryBtn} onClick={saveBranding} type="button"><Check size={15} /> Branding opslaan</button>
+        </div>
+      )}
+
+      {section === "updates" && (
+        <div className="dreelio-panel dreelio-admin-block">
+          <div style={styles.h3}>Updates beheren</div>
+          <div className="dreelio-admin-list">
+            {posts.length === 0 && <EmptyState text="Nog geen updates." />}
+            {posts.map((post) => (
+              <div key={post.id} className="dreelio-admin-list-row">
+                <div><strong>{post.title}</strong><span>{post.category} · {post.author_name || "Team"}</span></div>
+                <button type="button" style={styles.secondaryBtn} onClick={() => toggleAdminPostPin(post)}>{post.pinned ? "Losmaken" : "Vastzetten"}</button>
+                <button type="button" className="dreelio-danger-button" onClick={() => removeAdminPost(post)}><Trash2 size={14} /> Verwijderen</button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {section === "videos" && (
+        <div className="dreelio-panel dreelio-admin-block">
+          <div style={styles.h3}>Video's beheren</div>
+          <div className="dreelio-admin-list">
+            {videos.length === 0 && <EmptyState text="Nog geen video's." />}
+            {videos.map((video) => (
+              <div key={video.id} className="dreelio-admin-list-row">
+                <div><strong>{video.title}</strong><span>{video.match_label}</span></div>
+                <a href={video.youtubeUrl} target="_blank" rel="noreferrer" className="dreelio-admin-link"><ExternalLink size={14} /> Openen</a>
+                <button type="button" className="dreelio-danger-button" onClick={() => removeAdminVideo(video)}><Trash2 size={14} /> Verwijderen</button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </section>
   );
 }
 
@@ -5941,6 +6141,45 @@ const roleVideoCss = `
 
 `;
 
+
+
+const adminBeheerPolishCss = `
+/* Admin beheer polish */
+.dreelio-admin-page { display: grid; gap: 16px; }
+.dreelio-admin-stats { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 12px; }
+.dreelio-admin-stat { border: 1px solid rgba(255,255,255,.09); background: rgba(255,255,255,.045); border-radius: 20px; padding: 14px; box-shadow: 0 12px 32px rgba(0,0,0,.22); }
+.dreelio-admin-stat span { display: block; color: rgba(255,255,255,.56); font-size: 12px; font-weight: 800; }
+.dreelio-admin-stat strong { display: block; margin-top: 6px; color: var(--fcx-gold); font-size: 24px; letter-spacing: -.04em; }
+.dreelio-admin-tabs { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 2px; -webkit-overflow-scrolling: touch; }
+.dreelio-admin-tabs::-webkit-scrollbar { display:none; }
+.dreelio-admin-tabs button { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 7px; border: 1px solid rgba(255,255,255,.10); background: rgba(255,255,255,.05); color: rgba(255,255,255,.70); border-radius: 999px; padding: 10px 13px; font-weight: 850; }
+.dreelio-admin-tabs button.is-active { background: linear-gradient(135deg, rgba(205,43,31,.95), rgba(184,135,55,.82)); color: #fff; border-color: rgba(255,255,255,.18); box-shadow: 0 14px 30px rgba(205,43,31,.20); }
+.dreelio-admin-block { display: grid; gap: 14px; }
+.dreelio-admin-tools { display: grid; grid-template-columns: minmax(0,1fr) 180px; gap: 10px; }
+.dreelio-admin-player-list { display: grid; gap: 12px; }
+.dreelio-admin-player-card { border: 1px solid rgba(255,255,255,.09); background: rgba(255,255,255,.035); border-radius: 22px; padding: 14px; display: grid; gap: 12px; }
+.dreelio-admin-player-head { display: flex; align-items: center; gap: 12px; }
+.dreelio-admin-player-head strong { color: #fff; display: block; font-size: 15px; }
+.dreelio-admin-player-head span { color: rgba(255,255,255,.56); display: block; margin-top: 3px; font-size: 12px; font-weight: 700; }
+.dreelio-admin-player-avatar { width: 44px; height: 44px; border-radius: 16px; display: grid; place-items: center; background: rgba(184,135,55,.16); color: var(--fcx-gold); font-weight: 900; overflow: hidden; }
+.dreelio-admin-player-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.dreelio-admin-edit-grid { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 10px; }
+.dreelio-admin-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.dreelio-danger-button { display: inline-flex; align-items: center; justify-content: center; gap: 7px; border-radius: 999px !important; border: 1px solid rgba(255,82,72,.28); background: rgba(205,43,31,.12); color: #ffb6ae; padding: 10px 14px; font-weight: 850; }
+.dreelio-admin-error, .dreelio-admin-success { display: flex; align-items: center; gap: 8px; border-radius: 16px; padding: 11px 13px; font-size: 13px; font-weight: 800; }
+.dreelio-admin-error { color: #ffd1ca; background: rgba(205,43,31,.16); border: 1px solid rgba(205,43,31,.28); }
+.dreelio-admin-success { color: #ffe7b8; background: rgba(184,135,55,.14); border: 1px solid rgba(184,135,55,.25); }
+.dreelio-admin-list { display: grid; gap: 10px; }
+.dreelio-admin-list-row { display: grid; grid-template-columns: minmax(0,1fr) auto auto; gap: 8px; align-items: center; padding: 12px; border-radius: 18px; background: rgba(255,255,255,.035); border: 1px solid rgba(255,255,255,.08); }
+.dreelio-admin-list-row strong { color: #fff; display: block; }
+.dreelio-admin-list-row span { color: rgba(255,255,255,.56); font-size: 12px; font-weight: 700; }
+.dreelio-admin-link { display: inline-flex; align-items: center; gap: 6px; color: var(--fcx-gold); text-decoration: none; font-weight: 850; }
+@media (max-width: 760px) {
+  .dreelio-admin-stats { grid-template-columns: repeat(2, minmax(0,1fr)); }
+  .dreelio-admin-tools, .dreelio-admin-edit-grid, .dreelio-admin-list-row { grid-template-columns: 1fr; }
+  .dreelio-admin-actions > button { width: 100%; }
+}
+`;
 
 const mobileZoomLockCss = `
   html {
