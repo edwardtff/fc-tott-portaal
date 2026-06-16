@@ -21,8 +21,8 @@ const matchTypeInfo = (key) => MATCH_TYPES.find((t) => t.key === key) || MATCH_T
 
 const ATTENDANCE_STATUSES = [
   { key: "aanwezig", label: "Aanwezig", icon: Check, color: "var(--success)", needsReason: false },
-  { key: "afwezig", label: "Afwezig", icon: X, color: "var(--accent)", needsReason: true },
-  { key: "twijfel", label: "Weet ik nog niet", icon: HelpCircle, color: "#E8B339", needsReason: true },
+  { key: "afwezig", label: "Afwezig", icon: X, color: "var(--warn)", needsReason: true },
+  { key: "twijfel", label: "Weet ik nog niet", icon: HelpCircle, color: "#A6790A", needsReason: true },
 ];
 
 const FEE_ICONS = { inschrijving: Users, kleding: ShirtIcon, drinken: GlassWater, oefenwedstrijden: Swords };
@@ -96,20 +96,20 @@ export default function App() {
   const [feePayments, setFeePayments] = useState([]);
   const [attendance, setAttendance] = useState([]);
   const [lineups, setLineups] = useState([]);
-  const [stats, setStats] = useState([]);
+  const [goals, setGoals] = useState([]);
   const [fineRules, setFineRules] = useState([]);
   const [fines, setFines] = useState([]);
 
   const [sessionId, setSessionId] = useState(null);
 
   const reloadAll = async () => {
-    const [p, m, r, ft, fp, att, lu, st, fr, fn] = await Promise.all([
+    const [p, m, r, ft, fp, att, lu, gl, fr, fn] = await Promise.all([
       db.fetchPlayers(), db.fetchMatches(), db.fetchRules(), db.fetchFeeTypes(),
-      db.fetchFeePayments(), db.fetchAttendance(), db.fetchLineups(), db.fetchStats(),
+      db.fetchFeePayments(), db.fetchAttendance(), db.fetchLineups(), db.fetchGoals(),
       db.fetchFineRules(), db.fetchFines(),
     ]);
     setPlayers(p); setMatches(m); setRules(r); setFeeTypes(ft);
-    setFeePayments(fp); setAttendance(att); setLineups(lu); setStats(st);
+    setFeePayments(fp); setAttendance(att); setLineups(lu); setGoals(gl);
     setFineRules(fr); setFines(fn);
     return p;
   };
@@ -167,7 +167,16 @@ export default function App() {
     feesByPlayer[f.player_id][f.fee_type_id] = f.paid;
   });
   const statsByPlayer = {};
-  stats.forEach((s) => { statsByPlayer[s.player_id] = { goals: s.goals, assists: s.assists }; });
+  players.forEach((p) => { statsByPlayer[p.id] = { goals: 0, assists: 0 }; });
+  goals.forEach((g) => {
+    if (statsByPlayer[g.scorer_id]) statsByPlayer[g.scorer_id].goals += 1;
+    if (g.assist_id && statsByPlayer[g.assist_id]) statsByPlayer[g.assist_id].assists += 1;
+  });
+  const goalsByMatch = {};
+  goals.forEach((g) => {
+    goalsByMatch[g.match_id] = goalsByMatch[g.match_id] || [];
+    goalsByMatch[g.match_id].push(g);
+  });
 
   if (loading) {
     return (
@@ -183,7 +192,7 @@ export default function App() {
       <div style={styles.app}>
         <style>{globalCss}</style>
         <div style={styles.loadingScreen}>
-          <AlertCircle size={22} style={{ marginBottom: 10, color: "var(--accent)" }} />
+          <AlertCircle size={22} style={{ marginBottom: 10, color: "var(--warn)" }} />
           <div>Kon geen verbinding maken met de database.</div>
           <div style={{ fontSize: 12, color: "var(--text-dim)", marginTop: 8 }}>{loadError}</div>
           <div style={{ fontSize: 12, color: "var(--text-dim)", marginTop: 8 }}>
@@ -200,7 +209,7 @@ export default function App() {
         <style>{globalCss}</style>
         <Header />
         <LoginScreen players={players} onLogin={login} />
-        <footer style={styles.footer}>FC TOTT — Talk Of The Town · Zaalvoetbal</footer>
+        <footer style={styles.footer}>FC TOTT · Sponsored By Nola Marketing (website, branding en marketing)</footer>
       </div>
     );
   }
@@ -233,6 +242,7 @@ export default function App() {
           <MatchesTab
             matches={matches} players={players}
             attendanceByMatch={attendanceByMatch} lineupsByMatch={lineupsByMatch}
+            goalsByMatch={goalsByMatch}
             me={me} isAdmin={isAdmin} reloadAll={reloadAll}
           />
         )}
@@ -255,7 +265,7 @@ export default function App() {
         {isAdmin && <AdminPanel players={players} reloadAll={reloadAll} />}
       </main>
 
-      <footer style={styles.footer}>FC TOTT — Talk Of The Town · Zaalvoetbal</footer>
+      <footer style={styles.footer}>FC TOTT · Sponsored By Nola Marketing (website, branding en marketing)</footer>
     </div>
   );
 }
@@ -376,11 +386,12 @@ function Top3({ nextMatch, countdown, myOpenCount, potTotal }) {
 // ============================================================
 // Wedstrijden + Aanwezigheid + Opstelling
 // ============================================================
-function MatchesTab({ matches, players, attendanceByMatch, lineupsByMatch, me, isAdmin, reloadAll }) {
+function MatchesTab({ matches, players, attendanceByMatch, lineupsByMatch, goalsByMatch, me, isAdmin, reloadAll }) {
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ category: "competitie", opponent: "", date: "", location: "" });
   const [expanded, setExpanded] = useState(null);
   const [lineupOpenFor, setLineupOpenFor] = useState(null);
+  const [resultOpenFor, setResultOpenFor] = useState(null);
   const [reasonPrompt, setReasonPrompt] = useState(null);
   const [reasonText, setReasonText] = useState("");
   const [busy, setBusy] = useState(false);
@@ -453,7 +464,7 @@ function MatchesTab({ matches, players, attendanceByMatch, lineupsByMatch, me, i
                   const active = attendanceByMatch[nextMatch.id]?.[me.id]?.status === s.key;
                   return (
                     <button key={s.key} onClick={() => requestStatus(nextMatch, s.key)} disabled={busy}
-                      style={{ ...styles.meBtn, ...(active ? { background: s.color, color: "#0E1116", borderColor: s.color } : {}) }}>
+                      style={{ ...styles.meBtn, ...(active ? { background: s.color, color: "#fff", borderColor: s.color } : {}) }}>
                       <Icon size={20} />
                       {s.label}
                     </button>
@@ -527,6 +538,8 @@ function MatchesTab({ matches, players, attendanceByMatch, lineupsByMatch, me, i
             return acc;
           }, {});
           const lineup = lineupsByMatch[m.id];
+          const matchGoals = goalsByMatch[m.id] || [];
+          const hasScore = m.own_score !== null && m.own_score !== undefined;
           const enoughPresent = counts.aanwezig >= 5;
           const hasUnsure = counts.twijfel > 0;
 
@@ -541,12 +554,30 @@ function MatchesTab({ matches, players, attendanceByMatch, lineupsByMatch, me, i
                     {m.location && <span style={styles.metaItem}><MapPin size={13} /> {m.location}</span>}
                   </div>
                 </div>
+                {hasScore && (
+                  <div style={styles.scoreBadge}>{m.own_score} - {m.opponent_score}</div>
+                )}
                 {isAdmin && (
                   <button style={styles.iconBtn} onClick={() => removeMatch(m.id)} aria-label="Verwijderen">
                     <Trash2 size={15} />
                   </button>
                 )}
               </div>
+
+              {hasScore && matchGoals.length > 0 && (
+                <div style={styles.lineupPreview}>
+                  <Goal size={13} /> Doelpunten:&nbsp;
+                  {matchGoals.map((g, i) => {
+                    const scorer = players.find((p) => p.id === g.scorer_id)?.name || "Onbekend";
+                    const assist = players.find((p) => p.id === g.assist_id)?.name;
+                    return (
+                      <span key={g.id}>
+                        {i > 0 && ", "}{scorer}{assist ? ` (assist: ${assist})` : ""}
+                      </span>
+                    );
+                  })}
+                </div>
+              )}
 
               {lineup && (lineup.keeper || lineup.fielders?.length > 0) && (
                 <div style={styles.lineupPreview}>
@@ -567,8 +598,8 @@ function MatchesTab({ matches, players, attendanceByMatch, lineupsByMatch, me, i
               <button style={styles.attendanceToggle} onClick={() => setExpanded(isOpen ? null : m.id)}>
                 <span style={styles.attendanceSummary}>
                   <Check size={13} color="var(--success)" /> {counts.aanwezig}
-                  <X size={13} color="var(--accent)" style={{ marginLeft: 10 }} /> {counts.afwezig}
-                  <HelpCircle size={13} color="#E8B339" style={{ marginLeft: 10 }} /> {counts.twijfel}
+                  <X size={13} color="var(--warn)" style={{ marginLeft: 10 }} /> {counts.afwezig}
+                  <HelpCircle size={13} color="#A6790A" style={{ marginLeft: 10 }} /> {counts.twijfel}
                 </span>
                 <span style={styles.attendanceToggleLabel}>
                   Iedereen {isOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
@@ -618,6 +649,21 @@ function MatchesTab({ matches, players, attendanceByMatch, lineupsByMatch, me, i
                         await db.saveLineup(m.id, next.keeper, next.fielders);
                         await reloadAll();
                       }}
+                    />
+                  )}
+                </div>
+              )}
+
+              {isAdmin && (
+                <div style={styles.lineupSection}>
+                  <button style={styles.attendanceToggle} onClick={() => setResultOpenFor(resultOpenFor === m.id ? null : m.id)}>
+                    <span style={styles.attendanceToggleLabel}>
+                      <Goal size={14} /> Uitslag &amp; doelpunten invullen {resultOpenFor === m.id ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                    </span>
+                  </button>
+                  {resultOpenFor === m.id && (
+                    <MatchResultEditor
+                      match={m} players={players} goals={matchGoals} reloadAll={reloadAll}
                     />
                   )}
                 </div>
@@ -687,6 +733,90 @@ function LineupEditor({ players, attendance, lineup, onSave }) {
   );
 }
 
+function MatchResultEditor({ match, players, goals, reloadAll }) {
+  const [ownScore, setOwnScore] = useState(match.own_score ?? "");
+  const [opponentScore, setOpponentScore] = useState(match.opponent_score ?? "");
+  const [savingScore, setSavingScore] = useState(false);
+  const [newGoal, setNewGoal] = useState({ scorerId: "", assistId: "" });
+  const [savingGoal, setSavingGoal] = useState(false);
+
+  const saveScore = async () => {
+    if (ownScore === "" || opponentScore === "") return;
+    setSavingScore(true);
+    try {
+      await db.updateMatchScore(match.id, Number(ownScore), Number(opponentScore));
+      await reloadAll();
+    } finally { setSavingScore(false); }
+  };
+
+  const addGoalNow = async () => {
+    if (!newGoal.scorerId) return;
+    setSavingGoal(true);
+    try {
+      await db.addGoal(match.id, newGoal.scorerId, newGoal.assistId || null);
+      await reloadAll();
+      setNewGoal({ scorerId: "", assistId: "" });
+    } finally { setSavingGoal(false); }
+  };
+
+  const removeGoal = async (id) => {
+    setSavingGoal(true);
+    try { await db.deleteGoal(id); await reloadAll(); } finally { setSavingGoal(false); }
+  };
+
+  return (
+    <div style={styles.lineupEditor}>
+      <div style={styles.lineupLabel}>Eindstand</div>
+      <div style={styles.scoreInputRow}>
+        <span style={styles.scoreInputTeam}>FC TOTT</span>
+        <input style={styles.scoreInput} type="number" min="0" value={ownScore}
+          onChange={(e) => setOwnScore(e.target.value)} />
+        <span style={styles.scoreInputDash}>—</span>
+        <input style={styles.scoreInput} type="number" min="0" value={opponentScore}
+          onChange={(e) => setOpponentScore(e.target.value)} />
+        <span style={styles.scoreInputTeam}>{match.opponent}</span>
+      </div>
+      <button style={styles.primaryBtn} onClick={saveScore} disabled={savingScore}>
+        {savingScore ? "Opslaan…" : "Uitslag opslaan"}
+      </button>
+
+      <div style={{ ...styles.lineupLabel, marginTop: 18 }}>Doelpunten</div>
+      {goals.length === 0 && <div style={styles.lineupEmpty}>Nog geen doelpunten ingevoerd.</div>}
+      {goals.length > 0 && (
+        <div style={styles.rulesCard}>
+          {goals.map((g) => {
+            const scorer = players.find((p) => p.id === g.scorer_id)?.name || "Onbekend";
+            const assist = players.find((p) => p.id === g.assist_id)?.name;
+            return (
+              <div key={g.id} style={styles.ruleRow}>
+                <Goal size={13} style={{ color: "var(--accent)", flexShrink: 0 }} />
+                <span style={styles.ruleText}>{scorer}{assist ? ` — assist: ${assist}` : ""}</span>
+                <button style={styles.iconBtnGhost} onClick={() => removeGoal(g.id)} aria-label="Verwijderen" disabled={savingGoal}>
+                  <X size={14} />
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      <div style={styles.formRow} className="tott-formrow">
+        <select style={styles.input} value={newGoal.scorerId} onChange={(e) => setNewGoal({ ...newGoal, scorerId: e.target.value })}>
+          <option value="">Doelpunt door…</option>
+          {players.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+        </select>
+        <select style={styles.input} value={newGoal.assistId} onChange={(e) => setNewGoal({ ...newGoal, assistId: e.target.value })}>
+          <option value="">Assist door… (optioneel)</option>
+          {players.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+        </select>
+      </div>
+      <button style={styles.primaryBtn} onClick={addGoalNow} disabled={savingGoal || !newGoal.scorerId}>
+        <Plus size={15} /> Doelpunt toevoegen
+      </button>
+    </div>
+  );
+}
+
 // ============================================================
 // Profiel
 // ============================================================
@@ -709,11 +839,6 @@ function ProfileTab({ me, players, attendanceByMatch, matches, statsByPlayer, is
       await reloadAll();
       setEditing(false);
     } finally { setBusy(false); }
-  };
-
-  const updateStat = async (field, delta) => {
-    setBusy(true);
-    try { await db.adjustStat(me.id, field, delta); await reloadAll(); } finally { setBusy(false); }
   };
 
   return (
@@ -756,14 +881,15 @@ function ProfileTab({ me, players, attendanceByMatch, matches, statsByPlayer, is
           <div style={styles.statBox}>
             <div style={styles.statValue}>{myStats.goals}</div>
             <div style={styles.statLabel}><Goal size={11} style={{ verticalAlign: "-1px" }} /> Goals</div>
-            {isAdmin && <StatStepper onMinus={() => updateStat("goals", -1)} onPlus={() => updateStat("goals", 1)} />}
           </div>
           <div style={styles.statBox}>
             <div style={styles.statValue}>{myStats.assists}</div>
             <div style={styles.statLabel}><Handshake size={11} style={{ verticalAlign: "-1px" }} /> Assists</div>
-            {isAdmin && <StatStepper onMinus={() => updateStat("assists", -1)} onPlus={() => updateStat("assists", 1)} />}
           </div>
         </div>
+        {isAdmin && (
+          <div style={styles.statsHint}>Goals en assists worden bijgehouden via de uitslag van elke wedstrijd, in het Wedstrijden-tabblad.</div>
+        )}
       </div>
 
       {isAdmin && (
@@ -786,15 +912,6 @@ function ProfileTab({ me, players, attendanceByMatch, matches, statsByPlayer, is
         </div>
       )}
     </section>
-  );
-}
-
-function StatStepper({ onMinus, onPlus }) {
-  return (
-    <div style={styles.statStepper}>
-      <button style={styles.statStepBtn} onClick={onMinus}>−</button>
-      <button style={styles.statStepBtn} onClick={onPlus}>+</button>
-    </div>
   );
 }
 
@@ -1173,16 +1290,21 @@ function EmptyState({ text }) {
 // ============================================================
 const globalCss = `
   :root {
-    --bg: #0E1116;
-    --card: #161B22;
-    --line: #2A313C;
-    --accent: #FF5A1F;
-    --success: #3DDC84;
-    --text: #F2F4F7;
-    --text-dim: #8A93A1;
+    --bg: #FFFFFF;
+    --bg-soft: #F7F7F4;
+    --card: #FFFFFF;
+    --line: #E2E2DC;
+    --accent: #4A5D23;
+    --accent-soft: #E8EDDD;
+    --warn: #C7401F;
+    --warn-soft: #FBE7E1;
+    --success: #4A5D23;
+    --text: #181815;
+    --text-dim: #6B6B63;
+    --shadow: 0 1px 3px rgba(24,24,21,0.06), 0 1px 2px rgba(24,24,21,0.04);
   }
   * { box-sizing: border-box; }
-  body { margin: 0; }
+  body { margin: 0; background: var(--bg-soft); }
   button { font-family: inherit; cursor: pointer; }
   input, select, textarea { font-family: inherit; }
   input:focus, select:focus, textarea:focus, button:focus-visible {
@@ -1202,9 +1324,9 @@ const globalCss = `
 
   .tott-top3 { padding: 12px 14px; flex-direction: column; gap: 8px; }
 
-  .tott-nav { padding: 10px 12px 0; gap: 2px; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+  .tott-nav { padding: 10px 12px 0; gap: 2px; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; scroll-snap-type: x proximity; }
   .tott-nav::-webkit-scrollbar { display: none; }
-  .tott-navbtn { padding: 9px 10px; font-size: 12.5px; white-space: nowrap; flex-shrink: 0; }
+  .tott-navbtn { padding: 9px 10px; font-size: 12.5px; white-space: nowrap; flex-shrink: 0; scroll-snap-align: start; }
 
   .tott-main { padding: 18px 14px 32px; }
 
@@ -1285,49 +1407,49 @@ const styles = {
   loginWrap: { flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 },
   loginCard: {
     width: "100%", maxWidth: 360, background: "var(--card)", border: "1px solid var(--line)",
-    borderRadius: 14, padding: 24, display: "flex", flexDirection: "column", gap: 4,
+    borderRadius: 20, padding: 24, display: "flex", flexDirection: "column", gap: 4, boxShadow: "var(--shadow)",
   },
   loginIcon: {
-    width: 38, height: 38, borderRadius: 9, background: "var(--bg)", border: "1px solid var(--line)",
-    display: "flex", alignItems: "center", justifyContent: "center", color: "var(--accent)", marginBottom: 10,
+    width: 38, height: 38, borderRadius: 12, background: "var(--text)", border: "none",
+    display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", marginBottom: 10,
   },
   loginTitle: { fontFamily: "'Space Grotesk', sans-serif", fontSize: 19, fontWeight: 700, marginBottom: 4 },
   loginSub: { fontSize: 12.5, color: "var(--text-dim)", marginBottom: 16, lineHeight: 1.5 },
   loginLabel: { fontSize: 11.5, color: "var(--text-dim)", fontWeight: 600, marginTop: 10, marginBottom: 6 },
   pwRow: { display: "flex", gap: 6 },
   pwToggle: {
-    background: "var(--bg)", border: "1px solid var(--line)", borderRadius: 7,
+    background: "var(--bg-soft)", border: "1px solid var(--line)", borderRadius: 999,
     padding: "0 12px", color: "var(--text-dim)",
   },
   loginError: {
-    display: "flex", alignItems: "center", gap: 6, color: "var(--accent)",
+    display: "flex", alignItems: "center", gap: 6, color: "var(--warn)",
     fontSize: 12.5, marginTop: 12, lineHeight: 1.4,
   },
   primaryBtnFull: {
     display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
-    background: "var(--accent)", border: "none", color: "#fff",
-    padding: "12px 16px", borderRadius: 8, fontSize: 14, fontWeight: 700, marginTop: 18, width: "100%",
+    background: "var(--text)", border: "none", color: "#fff",
+    padding: "13px 16px", borderRadius: 999, fontSize: 14, fontWeight: 700, marginTop: 18, width: "100%",
   },
 
   header: { display: "flex", alignItems: "center", gap: 14, padding: "20px 20px 16px", borderBottom: "1px solid var(--line)" },
   crest: {
-    width: 44, height: 44, borderRadius: 8, background: "linear-gradient(135deg, var(--accent), #C73E0E)",
+    width: 44, height: 44, borderRadius: 12, background: "var(--text)",
     display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Space Grotesk', sans-serif",
-    fontWeight: 700, fontSize: 12, letterSpacing: "0.5px", flexShrink: 0,
+    fontWeight: 700, fontSize: 12, letterSpacing: "0.5px", flexShrink: 0, color: "#fff",
   },
   clubName: { fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: 19, letterSpacing: "-0.2px" },
   clubSub: { fontSize: 12.5, color: "var(--text-dim)", marginTop: 2 },
   logoutBtn: {
-    background: "transparent", border: "1px solid var(--line)", borderRadius: 8,
+    background: "var(--bg-soft)", border: "1px solid var(--line)", borderRadius: 999,
     padding: "8px 10px", color: "var(--text-dim)", flexShrink: 0,
   },
 
   top3: { display: "flex", gap: 10, padding: "14px 16px", background: "var(--card)", borderBottom: "1px solid var(--line)" },
   top3Item: {
     flex: 1, display: "flex", alignItems: "center", gap: 10,
-    background: "var(--bg)", border: "1px solid var(--line)", borderRadius: 9, padding: "10px 12px",
+    background: "var(--bg-soft)", border: "1px solid var(--line)", borderRadius: 14, padding: "10px 12px",
   },
-  top3Warn: { borderColor: "var(--accent)" },
+  top3Warn: { borderColor: "var(--warn)", background: "var(--warn-soft)" },
   top3Label: { fontSize: 10.5, color: "var(--text-dim)", textTransform: "uppercase", letterSpacing: "0.4px" },
   top3Value: { fontSize: 13.5, fontWeight: 700, marginTop: 1 },
 
@@ -1345,35 +1467,35 @@ const styles = {
   h3: { fontFamily: "'Space Grotesk', sans-serif", fontSize: 15, fontWeight: 700, margin: "22px 0 10px" },
 
   addBtn: {
-    display: "flex", alignItems: "center", gap: 6, background: "transparent", border: "1px solid var(--line)",
-    color: "var(--text)", padding: "8px 13px", borderRadius: 7, fontSize: 13, fontWeight: 600,
+    display: "flex", alignItems: "center", gap: 6, background: "var(--bg-soft)", border: "1px solid var(--line)",
+    color: "var(--text)", padding: "8px 13px", borderRadius: 999, fontSize: 13, fontWeight: 600,
   },
   primaryBtn: {
     display: "flex", alignItems: "center", justifyContent: "center", gap: 6, background: "var(--accent)",
-    border: "none", color: "#fff", padding: "10px 16px", borderRadius: 7, fontSize: 13.5, fontWeight: 700, whiteSpace: "nowrap",
+    border: "none", color: "#fff", padding: "10px 18px", borderRadius: 999, fontSize: 13.5, fontWeight: 700, whiteSpace: "nowrap",
   },
   secondaryBtn: {
     display: "flex", alignItems: "center", justifyContent: "center", gap: 6, background: "transparent",
-    border: "1px solid var(--line)", color: "var(--text)", padding: "10px 16px", borderRadius: 7, fontSize: 13.5, fontWeight: 600,
+    border: "1px solid var(--line)", color: "var(--text)", padding: "10px 18px", borderRadius: 999, fontSize: 13.5, fontWeight: 600,
   },
   formCard: {
-    background: "var(--card)", border: "1px solid var(--line)", borderRadius: 10,
+    background: "var(--card)", border: "1px solid var(--line)", borderRadius: 18, boxShadow: "var(--shadow)",
     padding: 16, marginBottom: 18, display: "flex", flexDirection: "column", gap: 10,
   },
   formRow: { display: "flex", gap: 10, flexWrap: "wrap" },
   input: {
-    flex: 1, minWidth: 140, background: "var(--bg)", border: "1px solid var(--line)",
-    borderRadius: 7, padding: "10px 12px", color: "var(--text)", fontSize: 13.5,
+    flex: 1, minWidth: 140, background: "var(--bg-soft)", border: "1px solid var(--line)",
+    borderRadius: 10, padding: "10px 12px", color: "var(--text)", fontSize: 13.5,
   },
   textarea: {
-    width: "100%", background: "var(--bg)", border: "1px solid var(--line)", borderRadius: 7,
+    width: "100%", background: "var(--bg-soft)", border: "1px solid var(--line)", borderRadius: 10,
     padding: "10px 12px", color: "var(--text)", fontSize: 13.5, resize: "vertical", marginTop: 10,
   },
 
   matchList: { display: "flex", flexDirection: "column", gap: 10 },
   matchCard: {
     display: "flex", alignItems: "center", gap: 14,
-    background: "var(--card)", border: "1px solid var(--line)", borderRadius: 10, padding: "14px 16px",
+    background: "var(--card)", border: "1px solid var(--line)", borderRadius: 18, padding: "14px 16px", boxShadow: "var(--shadow)",
   },
   matchCardCol: { flexDirection: "column", alignItems: "stretch", gap: 0 },
   matchCardTop: { display: "flex", alignItems: "center", gap: 14, paddingBottom: 12 },
@@ -1393,9 +1515,23 @@ const styles = {
     alignItems: "flex-start", gap: 6, lineHeight: 1.5,
   },
 
+  scoreBadge: {
+    fontFamily: "'JetBrains Mono', monospace", fontSize: 15, fontWeight: 700,
+    color: "var(--text)", background: "var(--bg)", border: "1px solid var(--line)",
+    borderRadius: 7, padding: "4px 10px", flexShrink: 0,
+  },
+  scoreInputRow: { display: "flex", alignItems: "center", gap: 8, marginBottom: 12, flexWrap: "wrap" },
+  scoreInputTeam: { fontSize: 12.5, fontWeight: 600, color: "var(--text-dim)" },
+  scoreInputDash: { color: "var(--text-dim)" },
+  scoreInput: {
+    width: 56, textAlign: "center", background: "var(--bg)", border: "1px solid var(--line)",
+    borderRadius: 7, padding: "8px 6px", color: "var(--text)", fontSize: 14, fontFamily: "'JetBrains Mono', monospace",
+  },
+  statsHint: { fontSize: 11.5, color: "var(--text-dim)", marginTop: 14, lineHeight: 1.4 },
+
   unsureWarning: {
-    display: "flex", alignItems: "flex-start", gap: 7, fontSize: 11.5, color: "#E8B339",
-    background: "rgba(232,179,57,0.08)", borderRadius: 7, padding: "8px 10px", marginBottom: 10, lineHeight: 1.4,
+    display: "flex", alignItems: "flex-start", gap: 7, fontSize: 11.5, color: "#A6790A",
+    background: "rgba(166,121,10,0.08)", borderRadius: 12, padding: "8px 10px", marginBottom: 10, lineHeight: 1.4,
   },
 
   attendanceToggle: {
@@ -1426,42 +1562,42 @@ const styles = {
     border: "1px solid var(--line)", borderRadius: 7, padding: "7px 11px", fontSize: 12.5,
     fontWeight: 600, background: "transparent", color: "var(--text-dim)",
   },
-  lineupChipActive: { borderColor: "var(--success)", color: "var(--success)", background: "rgba(61,220,132,0.08)" },
-  lineupChipActiveKeeper: { borderColor: "var(--accent)", color: "var(--accent)", background: "rgba(255,90,31,0.08)" },
+  lineupChipActive: { borderColor: "var(--success)", color: "var(--success)", background: "var(--accent-soft)" },
+  lineupChipActiveKeeper: { borderColor: "var(--text)", color: "var(--text)", background: "var(--bg-soft)" },
   lineupChipDisabled: { opacity: 0.35 },
   lineupEmpty: { fontSize: 12.5, color: "var(--text-dim)", padding: "10px 0" },
 
-  meCard: { background: "var(--card)", border: "1px solid var(--accent)", borderRadius: 12, padding: 16, marginBottom: 20 },
+  meCard: { background: "var(--card)", border: "1px solid var(--line)", borderRadius: 18, padding: 16, marginBottom: 20, boxShadow: "var(--shadow)" },
   meCardHead: { display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, marginBottom: 4 },
   meCardTitle: { fontFamily: "'Space Grotesk', sans-serif", fontSize: 16.5, fontWeight: 700 },
   catTag: {
     fontSize: 10.5, fontWeight: 700, color: "var(--accent)", border: "1px solid var(--accent)",
-    borderRadius: 5, padding: "3px 7px", flexShrink: 0, whiteSpace: "nowrap",
+    borderRadius: 999, padding: "3px 9px", flexShrink: 0, whiteSpace: "nowrap", background: "var(--accent-soft)",
   },
   meCardMatch: { fontSize: 13, color: "var(--text-dim)", marginBottom: 14 },
   meBtnRow: { display: "grid", gridTemplateColumns: "1fr", gap: 8 },
   meBtn: {
     display: "flex", flexDirection: "column", alignItems: "center", gap: 6,
-    border: "1px solid var(--line)", borderRadius: 10, padding: "14px 8px",
-    background: "var(--bg)", color: "var(--text)", fontSize: 13, fontWeight: 700,
+    border: "1px solid var(--line)", borderRadius: 14, padding: "14px 8px",
+    background: "var(--bg-soft)", color: "var(--text)", fontSize: 13, fontWeight: 700,
   },
   deadlineNote: { fontSize: 11.5, color: "var(--text-dim)", marginTop: 10 },
   deadlinePassed: {
-    display: "flex", alignItems: "center", gap: 7, fontSize: 12.5, color: "var(--accent)",
-    background: "rgba(255,90,31,0.08)", borderRadius: 8, padding: "10px 12px",
+    display: "flex", alignItems: "center", gap: 7, fontSize: 12.5, color: "var(--warn)",
+    background: "var(--warn-soft)", borderRadius: 12, padding: "10px 12px",
   },
   myReason: { fontSize: 12, color: "var(--text-dim)", marginTop: 10, fontStyle: "italic" },
 
   modalOverlay: {
-    position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", display: "flex",
+    position: "fixed", inset: 0, background: "rgba(24,24,21,0.45)", display: "flex",
     alignItems: "center", justifyContent: "center", padding: 20, zIndex: 50,
   },
-  modalCard: { width: "100%", maxWidth: 380, background: "var(--card)", border: "1px solid var(--line)", borderRadius: 12, padding: 18 },
+  modalCard: { width: "100%", maxWidth: 380, background: "var(--card)", border: "1px solid var(--line)", borderRadius: 20, padding: 18, boxShadow: "var(--shadow)" },
   modalTitle: { fontFamily: "'Space Grotesk', sans-serif", fontSize: 15.5, fontWeight: 700, marginBottom: 4 },
   modalSub: { fontSize: 12, color: "var(--text-dim)" },
   modalActions: { display: "flex", gap: 8, marginTop: 14, justifyContent: "flex-end" },
 
-  rulesCard: { background: "var(--card)", border: "1px solid var(--line)", borderRadius: 10, overflow: "hidden", marginBottom: 14 },
+  rulesCard: { background: "var(--card)", border: "1px solid var(--line)", borderRadius: 18, overflow: "hidden", marginBottom: 14, boxShadow: "var(--shadow)" },
   ruleRow: { display: "flex", alignItems: "center", gap: 12, padding: "13px 16px", borderBottom: "1px solid var(--line)" },
   ruleNum: { fontFamily: "'JetBrains Mono', monospace", color: "var(--accent)", fontSize: 12.5, flexShrink: 0 },
   ruleText: { flex: 1, fontSize: 14, lineHeight: 1.5 },
@@ -1470,7 +1606,7 @@ const styles = {
 
   potCard: {
     display: "flex", alignItems: "center", gap: 16, background: "var(--card)",
-    border: "1px solid var(--line)", borderRadius: 12, padding: 18, marginBottom: 8,
+    border: "1px solid var(--line)", borderRadius: 18, padding: 18, marginBottom: 8, boxShadow: "var(--shadow)",
   },
   potAmount: { fontFamily: "'Space Grotesk', sans-serif", fontSize: 28, fontWeight: 700 },
   potSub: { fontSize: 12.5, color: "var(--text-dim)", marginTop: 2, lineHeight: 1.4 },
@@ -1478,7 +1614,7 @@ const styles = {
   legend: { display: "flex", gap: 16, flexWrap: "wrap", marginBottom: 16, fontSize: 12.5, color: "var(--text-dim)" },
   legendItem: { display: "flex", alignItems: "center", gap: 6 },
   legendAmount: { fontFamily: "'JetBrains Mono', monospace", color: "var(--text)" },
-  tableWrap: { background: "var(--card)", border: "1px solid var(--line)", borderRadius: 10, overflow: "auto", marginBottom: 16 },
+  tableWrap: { background: "var(--card)", border: "1px solid var(--line)", borderRadius: 18, overflow: "auto", marginBottom: 16, boxShadow: "var(--shadow)" },
   table: { width: "100%", borderCollapse: "collapse" },
   th: {
     textAlign: "left", padding: "12px 14px", fontSize: 11, textTransform: "uppercase",
@@ -1491,39 +1627,37 @@ const styles = {
   tr: {},
   td: { padding: "12px 14px", borderBottom: "1px solid var(--line)", whiteSpace: "nowrap" },
   tdName: { padding: "12px 14px", borderBottom: "1px solid var(--line)", fontWeight: 600, fontSize: 13.5 },
-  warnBadge: { display: "inline-flex", alignItems: "center", gap: 4, marginLeft: 10, fontSize: 10.5, color: "var(--accent)", fontWeight: 600 },
+  warnBadge: { display: "inline-flex", alignItems: "center", gap: 4, marginLeft: 10, fontSize: 10.5, color: "var(--warn)", fontWeight: 600 },
   statusPill: {
     display: "flex", alignItems: "center", gap: 5, border: "1px solid var(--line)",
     borderRadius: 6, padding: "5px 10px", fontSize: 12, fontWeight: 600, background: "transparent",
   },
   pillPaid: { color: "var(--success)", borderColor: "var(--success)" },
-  pillOpen: { color: "var(--accent)", borderColor: "var(--accent)" },
+  pillOpen: { color: "var(--warn)", borderColor: "var(--warn)" },
   myFeeList: { display: "flex", flexDirection: "column", gap: 8 },
   myFeeRow: { display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 },
   myFeeName: { display: "flex", alignItems: "center", gap: 8, fontSize: 14, fontWeight: 600 },
 
-  profileCard: { background: "var(--card)", border: "1px solid var(--line)", borderRadius: 12, padding: 18, marginBottom: 16 },
+  profileCard: { background: "var(--card)", border: "1px solid var(--line)", borderRadius: 18, padding: 18, marginBottom: 16, boxShadow: "var(--shadow)" },
   profileTop: { display: "flex", alignItems: "center", gap: 14 },
   profilePhoto: {
-    width: 56, height: 56, borderRadius: "50%", background: "var(--bg)", border: "1px solid var(--line)",
+    width: 56, height: 56, borderRadius: "50%", background: "var(--bg-soft)", border: "1px solid var(--line)",
     display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text-dim)", flexShrink: 0, overflow: "hidden",
   },
   profilePhotoImg: { width: "100%", height: "100%", objectFit: "cover" },
   profileName: { fontFamily: "'Space Grotesk', sans-serif", fontSize: 18, fontWeight: 700 },
   profileMeta: { fontSize: 12, color: "var(--text-dim)", marginTop: 3 },
   editBtn: {
-    display: "flex", alignItems: "center", gap: 6, background: "transparent", border: "1px solid var(--line)",
-    color: "var(--text)", padding: "8px 12px", borderRadius: 7, fontSize: 12, fontWeight: 600, flexShrink: 0,
+    display: "flex", alignItems: "center", gap: 6, background: "var(--bg-soft)", border: "1px solid var(--line)",
+    color: "var(--text)", padding: "8px 12px", borderRadius: 999, fontSize: 12, fontWeight: 600, flexShrink: 0,
   },
   profileEditForm: { display: "flex", flexDirection: "column", gap: 4, marginTop: 16, paddingTop: 16, borderTop: "1px solid var(--line)" },
   statGrid: { display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10, marginTop: 18 },
-  statBox: { background: "var(--bg)", border: "1px solid var(--line)", borderRadius: 10, padding: "12px 8px", textAlign: "center" },
+  statBox: { background: "var(--bg-soft)", border: "1px solid var(--line)", borderRadius: 14, padding: "12px 8px", textAlign: "center" },
   statValue: { fontFamily: "'Space Grotesk', sans-serif", fontSize: 20, fontWeight: 700 },
   statLabel: { fontSize: 10.5, color: "var(--text-dim)", marginTop: 4, textTransform: "uppercase", letterSpacing: "0.3px" },
-  statStepper: { display: "flex", gap: 6, justifyContent: "center", marginTop: 8 },
-  statStepBtn: { width: 24, height: 24, borderRadius: 6, border: "1px solid var(--line)", background: "transparent", color: "var(--text)", fontSize: 14, lineHeight: 1 },
 
-  teamStatsCard: { background: "var(--card)", border: "1px solid var(--line)", borderRadius: 12, padding: 18 },
+  teamStatsCard: { background: "var(--card)", border: "1px solid var(--line)", borderRadius: 18, padding: 18, boxShadow: "var(--shadow)" },
   teamStatRow: { display: "flex", alignItems: "center", gap: 14, padding: "10px 0", borderBottom: "1px solid var(--line)" },
   teamStatName: { flex: 1, fontSize: 13.5, fontWeight: 600 },
   teamStatVal: { display: "flex", alignItems: "center", gap: 5, fontSize: 12.5, color: "var(--text-dim)", fontFamily: "'JetBrains Mono', monospace", minWidth: 46, justifyContent: "flex-end" },
@@ -1531,17 +1665,17 @@ const styles = {
   adminPanel: { marginTop: 28 },
   beheerToggle: {
     display: "block", width: "100%", background: "transparent", border: "1px dashed var(--line)",
-    borderRadius: 9, padding: "10px 14px", color: "var(--text-dim)", fontSize: 12.5, fontWeight: 600, textAlign: "center",
+    borderRadius: 14, padding: "10px 14px", color: "var(--text-dim)", fontSize: 12.5, fontWeight: 600, textAlign: "center",
   },
   adminBody: { marginTop: 16 },
   adminRow: { display: "flex", alignItems: "center", gap: 10, padding: "12px 16px", borderBottom: "1px solid var(--line)" },
   adminRowName: { fontSize: 13.5, fontWeight: 700, display: "flex", alignItems: "center" },
   adminRowMeta: { fontSize: 11.5, color: "var(--text-dim)", marginTop: 2 },
   adminActionBtn: {
-    display: "flex", alignItems: "center", gap: 5, border: "1px solid var(--line)", borderRadius: 7,
+    display: "flex", alignItems: "center", gap: 5, border: "1px solid var(--line)", borderRadius: 999,
     padding: "6px 10px", fontSize: 11.5, fontWeight: 600, background: "transparent", flexShrink: 0, whiteSpace: "nowrap",
   },
-  adminActionBtnDanger: { color: "var(--accent)", borderColor: "var(--accent)" },
+  adminActionBtnDanger: { color: "var(--warn)", borderColor: "var(--warn)" },
   adminActionBtnOk: { color: "var(--success)", borderColor: "var(--success)" },
 
   empty: { display: "flex", alignItems: "center", gap: 8, color: "var(--text-dim)", fontSize: 13.5, padding: "20px 4px" },
