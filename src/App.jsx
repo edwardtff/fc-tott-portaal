@@ -103,7 +103,7 @@ function useLocalJsonState(key, fallback) {
     try {
       window.localStorage.setItem(key, JSON.stringify(value));
     } catch (error) {
-      console.warn("Kon lokale clubdata niet opslaan", error);
+      console.warn("Kon clubdata niet opslaan", error);
     }
   }, [key, value]);
 
@@ -172,7 +172,7 @@ export default function App() {
         }
       } catch (e) {
         console.error(e);
-        setLoadError(e.message || "Kon geen verbinding maken met de database.");
+        setLoadError("Het clubportaal is tijdelijk niet bereikbaar.");
       } finally {
         setLoading(false);
       }
@@ -251,10 +251,9 @@ export default function App() {
         <style>{globalCss + dreelioDashboardCss}</style>
         <div style={styles.loadingScreen}>
           <AlertCircle size={22} style={{ marginBottom: 10, color: "var(--warn)" }} />
-          <div>Kon geen verbinding maken met de database.</div>
-          <div style={{ fontSize: 12, color: "var(--text-dim)", marginTop: 8 }}>{loadError}</div>
+          <div>Het clubportaal is tijdelijk niet bereikbaar.</div>
           <div style={{ fontSize: 12, color: "var(--text-dim)", marginTop: 8 }}>
-            Controleer of VITE_SUPABASE_URL en VITE_SUPABASE_ANON_KEY correct zijn ingesteld.
+            Probeer het later opnieuw of neem contact op met het bestuur.
           </div>
         </div>
       </div>
@@ -382,7 +381,7 @@ function LoginScreen({ players, onLogin, branding = DEFAULT_BRANDING }) {
       }
       onLogin(found.id);
     } catch (err) {
-      setError("Kon niet inloggen: " + err.message);
+      setError("Inloggen lukt nu niet. Probeer het later opnieuw of neem contact op met het bestuur.");
     } finally {
       setBusy(false);
     }
@@ -1158,7 +1157,7 @@ function MatchResultEditor({ match, players, goals, reloadAll }) {
 
 
 // ============================================================
-// Updates / clubfeed zonder Supabase-wijzigingen
+// Updates / clubfeed
 // ============================================================
 function UpdatesTab({ posts, setPosts, me, players, isAdmin }) {
   const [showComposer, setShowComposer] = useState(posts.length === 0);
@@ -1230,7 +1229,7 @@ function UpdatesTab({ posts, setPosts, me, players, isAdmin }) {
       </div>
 
       <div className="dreelio-muted-note dreelio-updates-note">
-        Zonder Supabase-aanpassing worden posts en geüploade afbeeldingen lokaal in deze browser opgeslagen. Afbeelding-URL's werken het lichtst.
+        Deel korte updates, foto’s en mededelingen met het team. Houd posts compact, zodat de feed rustig blijft.
       </div>
 
       {showComposer && (
