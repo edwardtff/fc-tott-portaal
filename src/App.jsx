@@ -240,7 +240,7 @@ export default function App() {
   if (loading) {
     return (
       <div style={styles.app} className="tott-app dreelio-app">
-        <style>{globalCss + dreelioDashboardCss + appFeelingCss + fcxMobileDashboardCss}</style>
+        <style>{globalCss + dreelioDashboardCss + appFeelingCss + fcxMobileDashboardCss + kpiRectangleHardFixCss}</style>
         <div style={styles.loadingScreen}>Laden…</div>
       </div>
     );
@@ -249,7 +249,7 @@ export default function App() {
   if (loadError) {
     return (
       <div style={styles.app} className="tott-app dreelio-app">
-        <style>{globalCss + dreelioDashboardCss + appFeelingCss + fcxMobileDashboardCss}</style>
+        <style>{globalCss + dreelioDashboardCss + appFeelingCss + fcxMobileDashboardCss + kpiRectangleHardFixCss}</style>
         <div style={styles.loadingScreen}>
           <AlertCircle size={22} style={{ marginBottom: 10, color: "var(--warn)" }} />
           <div>Het clubportaal is tijdelijk niet bereikbaar.</div>
@@ -264,7 +264,7 @@ export default function App() {
   if (!me) {
     return (
       <div style={styles.app} className="tott-app dreelio-app">
-        <style>{globalCss + dreelioDashboardCss + appFeelingCss + fcxMobileDashboardCss}</style>
+        <style>{globalCss + dreelioDashboardCss + appFeelingCss + fcxMobileDashboardCss + kpiRectangleHardFixCss}</style>
         <Header branding={branding} />
         <LoginScreen players={players} onLogin={login} branding={branding} />
         <footer style={styles.footer}>FC TOTT · Sponsored By Nola Marketing (website, branding en marketing)</footer>
@@ -277,7 +277,7 @@ export default function App() {
 
   return (
     <div style={styles.app} className="tott-app dreelio-app">
-      <style>{globalCss + dreelioDashboardCss + appFeelingCss + fcxMobileDashboardCss}</style>
+      <style>{globalCss + dreelioDashboardCss + appFeelingCss + fcxMobileDashboardCss + kpiRectangleHardFixCss}</style>
 
       <div className="dreelio-shell">
         <DreelioSidebar
@@ -3779,7 +3779,7 @@ const fcxMobileDashboardCss = `
     overflow: hidden;
     min-height: 188px;
     padding: 21px 18px 18px;
-    border-radius: 25px;
+    border-radius: 20px !important;
     color: #fff;
     text-align: left;
     display: flex;
@@ -3794,7 +3794,7 @@ const fcxMobileDashboardCss = `
     content: "";
     position: absolute;
     inset: 0;
-    border-radius: inherit;
+    border-radius: 20px !important;
     background: radial-gradient(circle at 50% 0%, rgba(255,255,255,.07), transparent 48%);
     pointer-events: none;
   }
@@ -4329,7 +4329,7 @@ const fcxMobileDashboardCss = `
       flex: initial;
       min-width: 0;
       min-height: 156px;
-      border-radius: 22px;
+      border-radius: 20px !important;
       padding: 15px 13px 14px;
       scroll-snap-align: none;
       aspect-ratio: auto;
@@ -4369,6 +4369,64 @@ const fcxMobileDashboardCss = `
     .fcx-brand-copy span { font-size: 15px; }
     .fcx-kpi-card { min-height: 148px; padding: 14px 12px; }
     .fcx-hero-copy strong { font-size: 38px; }
+  }
+`;
+
+
+const kpiRectangleHardFixCss = `
+  /* Hard fix: KPI cards must be rounded rectangles, not circular buttons. */
+  .dreelio-main .fcx-kpi-row {
+    display: grid !important;
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    gap: 14px !important;
+    overflow: visible !important;
+  }
+
+  .dreelio-main button.fcx-kpi-card,
+  .dreelio-main .fcx-kpi-card,
+  button.fcx-kpi-card {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    height: auto !important;
+    min-height: 188px !important;
+    aspect-ratio: auto !important;
+    border-radius: 20px !important;
+    padding: 21px 18px 18px !important;
+    flex: initial !important;
+    clip-path: none !important;
+    transform: none;
+  }
+
+  .dreelio-main button.fcx-kpi-card::before,
+  .dreelio-main .fcx-kpi-card::before,
+  button.fcx-kpi-card::before {
+    border-radius: 20px !important;
+  }
+
+  @media (max-width: 860px) {
+    .dreelio-main .fcx-kpi-row {
+      grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+      gap: 10px !important;
+    }
+
+    .dreelio-main button.fcx-kpi-card,
+    .dreelio-main .fcx-kpi-card,
+    button.fcx-kpi-card {
+      min-height: 154px !important;
+      border-radius: 20px !important;
+      padding: 15px 13px 14px !important;
+    }
+  }
+
+  @media (max-width: 380px) {
+    .dreelio-main button.fcx-kpi-card,
+    .dreelio-main .fcx-kpi-card,
+    button.fcx-kpi-card {
+      min-height: 146px !important;
+      border-radius: 20px !important;
+      padding: 14px 12px !important;
+    }
   }
 `;
 
