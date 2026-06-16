@@ -87,6 +87,14 @@ export async function deleteMatch(id) {
   if (error) throw error;
 }
 
+export async function updateMatchScore(matchId, ownScore, opponentScore) {
+  const { error } = await supabase
+    .from("matches")
+    .update({ own_score: ownScore, opponent_score: opponentScore })
+    .eq("id", matchId);
+  if (error) throw error;
+}
+
 // ============================================================
 // Attendance
 // ============================================================
@@ -208,23 +216,22 @@ export async function deleteFine(id) {
 }
 
 // ============================================================
-// Stats
+// Goals (doelpunten per wedstrijd)
 // ============================================================
-export async function fetchStats() {
-  const { data, error } = await supabase.from("stats").select("*");
+export async function fetchGoals() {
+  const { data, error } = await supabase.from("goals").select("*");
   if (error) throw error;
   return data;
 }
 
-export async function adjustStat(playerId, field, delta) {
-  const { data: current, error: readErr } = await supabase
-    .from("stats")
-    .select("*")
-    .eq("player_id", playerId)
-    .maybeSingle();
-  if (readErr) throw readErr;
-  const base = current || { player_id: playerId, goals: 0, assists: 0 };
-  const next = Math.max(0, (base[field] || 0) + delta);
-  const { error } = await supabase.from("stats").upsert({ ...base, [field]: next });
+export async function addGoal(matchId, scorerId, assistId) {
+  const { error } = await supabase
+    .from("goals")
+    .insert({ match_id: matchId, scorer_id: scorerId, assist_id: assistId || null });
+  if (error) throw error;
+}
+
+export async function deleteGoal(id) {
+  const { error } = await supabase.from("goals").delete().eq("id", id);
   if (error) throw error;
 }
