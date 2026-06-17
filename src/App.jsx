@@ -7082,4 +7082,465 @@ const publicLandingCss = String.raw`
     .public-portal-row b { grid-column: 1 / -1; width: 100%; }
   }
 
+
+  /* ============================================================
+     PUBLIC LANDING MOBILE REDESIGN PATCH
+     Goal: cleaner mobile proportions, no wrapped login, compact match cards,
+     horizontal update cards, better spacing and readability.
+  ============================================================ */
+  .public-topbar {
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+  }
+  .public-login,
+  .public-cta,
+  .public-card-link,
+  .public-section-head button {
+    white-space: nowrap;
+  }
+  .public-match-section {
+    background:
+      radial-gradient(circle at 18% 0%, rgba(255,48,79,.14), transparent 34%),
+      linear-gradient(135deg, rgba(255,255,255,.055), rgba(255,255,255,.018));
+  }
+  .public-match-card {
+    background:
+      radial-gradient(circle at 18% 0%, rgba(255,48,79,.12), transparent 38%),
+      linear-gradient(150deg, rgba(255,255,255,.062), rgba(255,255,255,.018));
+  }
+  .public-news-card {
+    background:
+      linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.025));
+  }
+
+  @media (max-width: 620px) {
+    .public-page {
+      padding-bottom: 38px;
+      background:
+        radial-gradient(circle at 15% 0%, rgba(255,48,79,.16), transparent 30%),
+        radial-gradient(circle at 92% 16%, rgba(213,169,70,.12), transparent 30%),
+        #030303;
+    }
+    .public-topbar {
+      position: sticky;
+      top: 0;
+      z-index: 40;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto auto;
+      gap: 10px;
+      min-height: 76px;
+      height: auto;
+      padding: max(10px, env(safe-area-inset-top)) 14px 10px;
+      background: rgba(4,4,4,.88);
+      border-bottom: 1px solid rgba(255,255,255,.12);
+    }
+    .public-brand {
+      min-width: 0;
+      gap: 9px;
+    }
+    .public-brand img {
+      width: 45px;
+      height: 45px;
+      flex: 0 0 auto;
+    }
+    .public-brand span {
+      min-width: 0;
+    }
+    .public-brand strong {
+      max-width: 172px;
+      font-size: 18px;
+      line-height: .98;
+      letter-spacing: -.03em;
+      display: block;
+    }
+    .public-brand small {
+      margin-top: 5px;
+      font-size: 13px;
+    }
+    .public-top-actions {
+      gap: 8px;
+    }
+    .public-login {
+      width: auto;
+      min-width: 92px;
+      height: 44px;
+      padding: 0 14px;
+      border-radius: 10px;
+      font-size: 15px;
+      line-height: 1;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .public-login svg { width: 17px; height: 17px; }
+    .public-menu {
+      width: 38px;
+      height: 44px;
+      display: grid;
+      place-items: center;
+    }
+    .public-menu span {
+      width: 28px;
+      height: 2.5px;
+      border-radius: 999px;
+    }
+    .public-menu-panel {
+      top: calc(100% + 8px);
+      right: 12px;
+      left: 12px;
+      border-radius: 16px;
+      background: rgba(15,15,15,.96);
+      box-shadow: 0 20px 50px rgba(0,0,0,.55);
+    }
+
+    .public-hero {
+      min-height: min(560px, calc(100vh - 78px));
+      padding: 32px 18px 28px;
+      align-items: flex-start;
+      overflow: hidden;
+      border-bottom: 1px solid rgba(255,255,255,.08);
+    }
+    .public-hero-bg {
+      width: 100%;
+      opacity: .78;
+      background-position: 68% center;
+      filter: saturate(1.05) contrast(1.08);
+    }
+    .public-hero:before {
+      background:
+        linear-gradient(90deg,#030303 0%,rgba(3,3,3,.94) 44%,rgba(3,3,3,.42) 74%,rgba(3,3,3,.72) 100%),
+        linear-gradient(0deg,#030303 0%,rgba(3,3,3,0) 30%);
+    }
+    .public-hero-copy {
+      width: min(100%, 355px);
+      padding-top: 4px;
+    }
+    .public-hero h1 {
+      font-size: clamp(50px, 14vw, 66px);
+      line-height: .88;
+      letter-spacing: .015em;
+      max-width: 330px;
+      text-shadow: 0 8px 28px rgba(0,0,0,.55);
+    }
+    .public-tagline {
+      margin-top: 18px;
+      font-size: clamp(13px, 3.55vw, 15px);
+      line-height: 1.2;
+      letter-spacing: .18em;
+    }
+    .public-redline {
+      width: 92px;
+      height: 4px;
+      margin: 14px 0 18px;
+    }
+    .public-hero p {
+      max-width: 320px;
+      font-size: 15.5px;
+      line-height: 1.48;
+      color: rgba(255,255,255,.9);
+    }
+    .public-cta-stack {
+      width: min(100%, 335px);
+      gap: 10px;
+      margin-top: 22px;
+    }
+    .public-cta {
+      min-height: 50px;
+      border-radius: 10px;
+      padding: 0 14px;
+      font-size: 14.5px;
+      letter-spacing: -.01em;
+      justify-content: space-between;
+    }
+    .public-cta svg:first-child { flex: 0 0 auto; }
+
+    .public-section,
+    .public-friendly {
+      margin: 14px 14px;
+      border-radius: 18px;
+      border: 1px solid rgba(255,255,255,.12);
+      box-shadow: 0 18px 46px rgba(0,0,0,.34);
+      overflow: hidden;
+    }
+    .public-section > .public-section-title,
+    .public-section-head {
+      padding: 16px 18px 10px;
+    }
+    .public-section-title,
+    .public-section-head {
+      font-size: 15.5px;
+      line-height: 1.12;
+      letter-spacing: .035em;
+    }
+    .public-section-title span,
+    .public-section-head .public-section-title span {
+      width: 9px;
+      height: 9px;
+    }
+    .public-section-head {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+      gap: 10px;
+    }
+    .public-section-head button {
+      font-size: 13.5px;
+      line-height: 1.15;
+      gap: 4px;
+      max-width: 148px;
+      justify-content: flex-end;
+      text-align: right;
+    }
+
+    .public-match-grid {
+      grid-template-columns: 1fr;
+      padding: 0 12px 12px;
+      gap: 12px;
+    }
+    .public-match-card,
+    .public-match-card + .public-match-card {
+      border: 1px solid rgba(255,255,255,.12) !important;
+      border-radius: 16px;
+      padding: 15px 15px 14px;
+      min-height: 0;
+      overflow: hidden;
+    }
+    .public-match-card h2 {
+      font-size: 16px;
+      letter-spacing: .035em;
+      margin-bottom: 12px;
+    }
+    .public-versus,
+    .public-score-row {
+      grid-template-columns: minmax(0, 1fr) 44px minmax(0, 1fr);
+      gap: 8px;
+      margin: 8px 0 13px;
+      align-items: center;
+    }
+    .public-versus > b {
+      font-size: 28px;
+      line-height: 1;
+      color: #fff;
+    }
+    .public-score-row > b {
+      font-size: 38px;
+      line-height: .92;
+      letter-spacing: -.04em;
+    }
+    .public-team {
+      min-width: 0;
+      gap: 8px;
+    }
+    .public-team img,
+    .public-opponent-badge {
+      width: 54px;
+      height: 54px;
+    }
+    .public-opponent-badge {
+      font-size: 20px;
+      border-width: 3px;
+    }
+    .public-team strong {
+      display: block;
+      width: 100%;
+      font-size: 13.5px;
+      line-height: 1.15;
+      word-break: normal;
+      overflow-wrap: normal;
+    }
+    .public-team.compact strong {
+      font-size: 13px;
+    }
+    .public-meta {
+      margin-top: 10px;
+      padding-top: 12px;
+      gap: 8px;
+      font-size: 14px;
+      line-height: 1.25;
+    }
+    .public-meta span {
+      gap: 8px;
+    }
+    .public-meta svg {
+      width: 17px;
+      height: 17px;
+      flex: 0 0 auto;
+    }
+    .public-meta.result {
+      align-items: flex-start;
+      text-align: left;
+    }
+    .public-meta.result em {
+      align-self: flex-start;
+      font-size: 13px;
+      padding: 8px 13px;
+      border-radius: 9px;
+    }
+    .public-card-link {
+      margin-top: 12px;
+      padding-top: 12px;
+      font-size: 15px;
+      min-height: 30px;
+    }
+
+    .public-news-grid {
+      display: flex;
+      gap: 12px;
+      overflow-x: auto;
+      scroll-snap-type: x mandatory;
+      -webkit-overflow-scrolling: touch;
+      padding: 5px 14px 16px;
+      scrollbar-width: none;
+    }
+    .public-news-grid::-webkit-scrollbar { display: none; }
+    .public-news-card {
+      flex: 0 0 min(78vw, 300px);
+      scroll-snap-align: start;
+      border-radius: 14px;
+      overflow: hidden;
+    }
+    .public-news-image {
+      height: 126px;
+      border-radius: 0;
+    }
+    .public-news-image span {
+      top: 10px;
+      left: 10px;
+      font-size: 11px;
+      padding: 7px 10px;
+      border-radius: 7px;
+    }
+    .public-news-body {
+      padding: 12px 13px 14px;
+    }
+    .public-news-body small {
+      font-size: 12px;
+    }
+    .public-news-body h3 {
+      margin: 6px 0 4px;
+      font-size: 16px;
+      line-height: 1.16;
+    }
+    .public-news-body p {
+      font-size: 13.5px;
+      line-height: 1.36;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .public-friendly {
+      padding: 17px;
+      display: grid;
+      grid-template-columns: 48px 1fr;
+      gap: 12px;
+      align-items: center;
+    }
+    .public-hand svg { width: 42px; height: 42px; }
+    .public-friendly h2 {
+      font-size: 19px;
+      line-height: 1.1;
+      margin: 0 0 5px;
+    }
+    .public-friendly p {
+      font-size: 13.5px;
+      line-height: 1.38;
+      margin: 0;
+    }
+    .public-friendly .public-cta {
+      grid-column: 1 / -1;
+      width: 100%;
+      margin-top: 4px;
+    }
+
+    .public-sponsors {
+      display: flex;
+      overflow-x: auto;
+      gap: 10px;
+      padding: 7px 14px 16px;
+      scroll-snap-type: x mandatory;
+      scrollbar-width: none;
+    }
+    .public-sponsors::-webkit-scrollbar { display: none; }
+    .public-sponsor {
+      flex: 0 0 145px;
+      min-height: 52px;
+      border-radius: 11px;
+      font-size: 14.5px;
+      scroll-snap-align: start;
+    }
+
+    .public-portal-row {
+      margin: 0 14px 10px;
+      padding: 12px;
+      grid-template-columns: 38px minmax(0, 1fr) 86px;
+      gap: 10px;
+      border-radius: 13px;
+    }
+    .public-portal-row svg {
+      width: 28px;
+      height: 28px;
+    }
+    .public-portal-row strong {
+      font-size: 14.5px;
+      line-height: 1.1;
+    }
+    .public-portal-row small {
+      margin-top: 2px;
+      font-size: 11.5px;
+      line-height: 1.2;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .public-portal-row b {
+      min-height: 38px;
+      padding: 0 10px;
+      border-radius: 9px;
+      font-size: 14px;
+      grid-column: auto;
+    }
+    .public-form-section.is-open { display: block; }
+    .public-form { grid-template-columns: 1fr; gap: 10px; padding: 8px 14px 16px; }
+    .public-form input,
+    .public-form textarea { min-height: 46px; border-radius: 11px; }
+    .public-footer {
+      margin: 16px 18px 0;
+      padding: 18px 0 34px;
+      grid-template-columns: 1fr;
+      gap: 14px;
+      text-align: left;
+    }
+    .public-footer-brand img { width: 48px; height: 48px; }
+    .public-footer-brand strong { font-size: 22px; }
+    .public-contact { font-size: 13px; }
+  }
+
+  @media (max-width: 390px) {
+    .public-topbar { padding-left: 12px; padding-right: 12px; }
+    .public-brand img { width: 40px; height: 40px; }
+    .public-brand strong { max-width: 132px; font-size: 15.5px; }
+    .public-brand small { font-size: 12px; }
+    .public-login { min-width: 78px; height: 40px; font-size: 13.5px; padding: 0 10px; }
+    .public-login svg { display: none; }
+    .public-menu { width: 34px; }
+    .public-menu span { width: 25px; }
+    .public-hero { min-height: 548px; padding: 25px 16px 22px; }
+    .public-hero-copy { width: 100%; }
+    .public-hero h1 { font-size: 46px; max-width: 285px; }
+    .public-tagline { font-size: 12.2px; letter-spacing: .15em; }
+    .public-hero p { max-width: 284px; font-size: 14px; }
+    .public-cta { font-size: 13.2px; }
+    .public-section,
+    .public-friendly { margin-left: 12px; margin-right: 12px; }
+    .public-section-head { grid-template-columns: 1fr; align-items: start; }
+    .public-section-head button { max-width: none; justify-content: flex-start; text-align: left; }
+    .public-news-card { flex-basis: 82vw; }
+    .public-portal-row { grid-template-columns: 34px 1fr; }
+    .public-portal-row b { grid-column: 1 / -1; width: 100%; }
+  }
+
 `;
