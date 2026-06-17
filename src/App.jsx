@@ -591,6 +591,8 @@ export default function App() {
 // Public Landing Page
 // ============================================================
 function PublicLanding({ branding = DEFAULT_BRANDING, matches = [], posts = [], videos = [], sponsors = [], goals = [], onLoginClick, onSubmitFriendlyRequest }) {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [friendlyOpen, setFriendlyOpen] = useState(false);
   const [request, setRequest] = useState({ teamName: "", contactName: "", email: "", phone: "", preferredDate: "", message: "" });
   const [requestStatus, setRequestStatus] = useState("");
   const [requestBusy, setRequestBusy] = useState(false);
@@ -601,20 +603,51 @@ function PublicLanding({ branding = DEFAULT_BRANDING, matches = [], posts = [], 
   const past = sortedMatches.filter((m) => new Date(m.match_date).getTime() <= Date.now()).reverse();
   const nextMatch = upcoming[0];
   const latestResult = past.find((m) => m.own_score !== null && m.own_score !== undefined && m.opponent_score !== null && m.opponent_score !== undefined);
-  const publicNews = posts.slice(0, 3);
-  const publicSponsors = sponsors.length > 0 ? sponsors : [
-    { id: "fallback-1", name: "JAKO", logo_url: "" },
-    { id: "fallback-2", name: "voetbalshop.nl", logo_url: "" },
-    { id: "fallback-3", name: "Panna Kool", logo_url: "" },
-    { id: "fallback-4", name: "Topsport", logo_url: "" },
-    { id: "fallback-5", name: "Futsal.nl", logo_url: "" },
+
+  const fallbackNews = [
+    { id: "fallback-1", title: "Training in volle gang", text: "Voorbereiding op de laatste wedstrijden van het seizoen.", category: "Training", date: "17 mei 2025", image: "/landing-assets/thumb-training.jpg" },
+    { id: "fallback-2", title: "Overwinning in topper!", text: "FC TOTT wint spannende wedstrijd van City Futsal.", category: "Hoofdveld", date: "11 mei 2025", image: "/landing-assets/thumb-team.jpg" },
+    { id: "fallback-3", title: "Nieuwe speler verwelkomd", text: "Malek komt het team versterken komend seizoen.", category: "Nieuws", date: "9 mei 2025", image: "/landing-assets/thumb-player.jpg" },
   ];
-  const newsFallback = [
-    { id: "fallback-news-1", title: "Training in volle gang", text: "Voorbereiding op de laatste wedstrijden van het seizoen.", category: "Training", date: "17 mei 2025", images: [] },
-    { id: "fallback-news-2", title: "Overwinning in topper!", text: "FC TOTT wint spannende wedstrijd van City Futsal.", category: "Wedstrijd", date: "11 mei 2025", images: [] },
-    { id: "fallback-news-3", title: "Nieuwe speler verwelkomd", text: "Malek komt het team versterken komend seizoen.", category: "Nieuws", date: "9 mei 2025", images: [] },
+  const newsItems = (posts.length ? posts.slice(0, 3).map((post, index) => ({
+    id: post.id || index,
+    title: post.title || "Clubupdate",
+    text: post.text || post.body || "Meer nieuws verschijnt binnenkort in het clubportal.",
+    category: post.category || "Nieuws",
+    date: post.date || (post.created_at ? formatDateShort(post.created_at) : "Clubnieuws"),
+    image: post.images?.[0] || fallbackNews[index % fallbackNews.length].image,
+  })) : fallbackNews);
+
+  const fallbackSponsors = [
+    { id: "fallback-sponsor-1", name: "JAKO" },
+    { id: "fallback-sponsor-2", name: "voetbalshop.nl" },
+    { id: "fallback-sponsor-3", name: "PANNA KOOL" },
+    { id: "fallback-sponsor-4", name: "TOPSPORT" },
+    { id: "fallback-sponsor-5", name: "FUTSAL.NL" },
   ];
-  const newsItems = publicNews.length > 0 ? publicNews : newsFallback;
+  const sponsorItems = sponsors.length ? sponsors : fallbackSponsors;
+
+  const nextDateObj = nextMatch ? new Date(nextMatch.match_date) : null;
+  const nextDate = nextDateObj ? nextDateObj.toLocaleDateString("nl-NL", { weekday: "long", day: "numeric", month: "long", year: "numeric" }) : "Zaterdag 24 mei 2025";
+  const nextTime = nextDateObj ? nextDateObj.toLocaleTimeString("nl-NL", { hour: "2-digit", minute: "2-digit" }) : "19:30";
+  const nextOpponent = nextMatch?.opponent || "Urban Futsal";
+  const nextLocation = nextMatch?.location || "Sporthal Zuid, Rotterdam";
+
+  const resultDateObj = latestResult ? new Date(latestResult.match_date) : null;
+  const resultDate = resultDateObj ? resultDateObj.toLocaleDateString("nl-NL", { day: "numeric", month: "long", year: "numeric" }) : "Zaterdag 18 mei 2025";
+  const resultOpponent = latestResult?.opponent || "City Futsal";
+  const resultScore = latestResult ? `${latestResult.own_score} - ${latestResult.opponent_score}` : "7 - 3";
+  const resultLabel = latestResult ? (Number(latestResult.own_score) > Number(latestResult.opponent_score) ? "Gewonnen" : Number(latestResult.own_score) === Number(latestResult.opponent_score) ? "Gelijk" : "Verloren") : "Gewonnen";
+
+  const scrollTo = (selector) => {
+    setMenuOpen(false);
+    window.requestAnimationFrame(() => document.querySelector(selector)?.scrollIntoView({ behavior: "smooth", block: "start" }));
+  };
+
+  const openFriendlyForm = () => {
+    setFriendlyOpen(true);
+    window.requestAnimationFrame(() => document.getElementById("friendly-form")?.scrollIntoView({ behavior: "smooth", block: "start" }));
+  };
 
   const submitFriendly = async (event) => {
     event.preventDefault();
@@ -636,171 +669,145 @@ function PublicLanding({ branding = DEFAULT_BRANDING, matches = [], posts = [], 
     }
   };
 
-  const hasNextMatch = !!nextMatch;
-  const hasLatestResult = !!latestResult;
-  const nextMatchDate = nextMatch ? new Date(nextMatch.match_date) : null;
-  const nextDate = nextMatchDate ? nextMatchDate.toLocaleDateString("nl-NL", { weekday: "short", day: "numeric", month: "long", year: "numeric" }) : "Nog niet gepland";
-  const nextTime = nextMatchDate ? nextMatchDate.toLocaleTimeString("nl-NL", { hour: "2-digit", minute: "2-digit" }) : "Tijd volgt";
-  const latestDate = latestResult ? new Date(latestResult.match_date).toLocaleDateString("nl-NL", { day: "numeric", month: "long", year: "numeric" }) : "Nog geen wedstrijd gespeeld";
-  const latestScore = latestResult ? `${latestResult.own_score} - ${latestResult.opponent_score}` : "—";
-  const latestOpponent = latestResult?.opponent || "Tegenstander";
-  const nextOpponent = nextMatch?.opponent || "Tegenstander volgt";
-  const latestResultLabel = latestResult ? (Number(latestResult.own_score) > Number(latestResult.opponent_score) ? "Gewonnen" : Number(latestResult.own_score) === Number(latestResult.opponent_score) ? "Gelijk" : "Verloren") : "Nog geen uitslag";
-
   return (
-    <div className="fcx-public" id="home">
-      <header className="fcx-mobile-header">
-        <a className="fcx-mobile-brand" href="#home" aria-label="FC Talk Of The Town home">
+    <div className="public-page" id="home">
+      <link rel="preconnect" href="https://fonts.googleapis.com" />
+      <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+      <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@500;600;700;800;900&display=swap" rel="stylesheet" />
+      <header className="public-topbar">
+        <button className="public-brand" onClick={() => scrollTo("#home")} aria-label="FC TOTT home">
           <img src={logoUrl} alt="FC Talk Of The Town" />
           <span><strong>FC Talk Of The Town</strong><small>Futsal Club</small></span>
-        </a>
-        <div className="fcx-mobile-header-actions">
-          <button className="fcx-login-pill" onClick={onLoginClick}><Users size={18} /> Log in</button>
-          <button className="fcx-menu-btn" aria-label="Menu"><span /><span /><span /></button>
+        </button>
+        <nav className="public-nav" aria-label="Hoofdmenu">
+          <button onClick={() => scrollTo("#home")}>Home</button>
+          <button onClick={() => scrollTo("#wedstrijden")}>Wedstrijden</button>
+          <button onClick={() => scrollTo("#updates")}>Updates</button>
+          <button onClick={() => scrollTo("#sponsors")}>Sponsors</button>
+          <button onClick={() => scrollTo("#contact")}>Contact</button>
+        </nav>
+        <div className="public-top-actions">
+          <button className="public-login" onClick={onLoginClick}><Users size={18} /> Log in</button>
+          <button className="public-menu" onClick={() => setMenuOpen((value) => !value)} aria-expanded={menuOpen} aria-label="Menu">
+            {menuOpen ? <X size={30} /> : <><span /><span /><span /></>}
+          </button>
         </div>
+        {menuOpen && (
+          <div className="public-menu-panel">
+            <button onClick={() => scrollTo("#home")}>Home</button>
+            <button onClick={() => scrollTo("#wedstrijden")}>Wedstrijden</button>
+            <button onClick={() => scrollTo("#updates")}>Updates</button>
+            <button onClick={openFriendlyForm}>Oefenwedstrijd aanvragen</button>
+            <button onClick={() => scrollTo("#sponsors")}>Sponsors</button>
+            <button onClick={onLoginClick}>Log in portal</button>
+          </div>
+        )}
       </header>
 
-      <main className="fcx-mobile-page">
-        <section className="fcx-mobile-hero">
-          <div className="fcx-hero-copy">
-            <h1>FC Talk Of <span>The Town</span></h1>
-            <div className="fcx-hero-sub">Futsal. Community. Passie.</div>
+      <main>
+        <section className="public-hero">
+          <div className="public-hero-bg" aria-hidden="true" />
+          <div className="public-hero-copy">
+            <h1>FC Talk Of<br />The <span>Town</span></h1>
+            <div className="public-tagline">Futsal. Community. Passie.</div>
+            <div className="public-redline" />
             <p>Welkom bij FC Talk Of The Town Futsal Club. De thuisbasis voor supporters, nieuws, sponsoren en oefenwedstrijden aanvragen.</p>
-            <div className="fcx-hero-actions">
-              <a className="fcx-red-cta" href="#wedstrijden"><Calendar size={18} /> Bekijk volgende wedstrijd <ChevronRight size={18} /></a>
-              <a className="fcx-gold-cta" href="#friendly"><Handshake size={18} /> Vraag oefenwedstrijd aan <ChevronRight size={18} /></a>
-            </div>
-          </div>
-          <div className="fcx-hero-visual" aria-hidden="true">
-            <img className="fcx-hero-watermark" src={logoUrl} alt="" />
-            <div className="fcx-player-silhouette">
-              <div className="fcx-player-head" />
-              <div className="fcx-player-body"><span>Talk Of The Town</span><strong>10</strong></div>
-              <div className="fcx-player-ball" />
+            <div className="public-cta-stack">
+              <button className="public-cta red" onClick={() => scrollTo("#wedstrijden")}><Calendar size={20} /> Bekijk volgende wedstrijd <ChevronRight size={20} /></button>
+              <button className="public-cta gold" onClick={openFriendlyForm}><Handshake size={20} /> Vraag oefenwedstrijd aan <ChevronRight size={20} /></button>
             </div>
           </div>
         </section>
 
-        <section id="wedstrijden" className="fcx-mobile-section fcx-match-section">
-          <div className="fcx-match-section-head">
-            <SectionTitle title="Alles rondom FC TOTT" />
-            <p>De belangrijkste wedstrijdinformatie in één rustige clubkaart.</p>
-          </div>
-
-          <div className="fcx-match-grid">
-            <article className={`fcx-match-card fcx-next-match-card ${!hasNextMatch ? "is-empty" : ""}`}>
-              <div className="fcx-card-kicker"><Calendar size={15} /> Volgende wedstrijd</div>
-              <div className="fcx-versus-row">
-                <div className="fcx-team-badge-wrap">
-                  <img src={logoUrl} alt="FC TOTT" />
-                  <span>FC TOTT</span>
-                </div>
-                <div className="fcx-vs-pill">VS</div>
-                <div className="fcx-team-badge-wrap">
-                  <div className="fcx-opponent-badge">{nextOpponent.slice(0, 2).toUpperCase()}</div>
-                  <span>{nextOpponent}</span>
-                </div>
+        <section className="public-section public-match-section" id="wedstrijden">
+          <div className="public-section-title"><span />Alles rondom FC TOTT</div>
+          <div className="public-match-grid">
+            <article className="public-match-card">
+              <h2>Volgende wedstrijd</h2>
+              <div className="public-versus">
+                <div className="public-team"><img src={logoUrl} alt="FC TOTT" /><strong>FC Talk Of The Town</strong></div>
+                <b>VS</b>
+                <div className="public-team"><div className="public-opponent-badge">{nextOpponent.slice(0, 2).toUpperCase()}</div><strong>{nextOpponent}</strong></div>
               </div>
-              <div className="fcx-match-details-box">
-                <div className="fcx-meta-line"><Calendar size={15} /> {nextDate}</div>
-                <div className="fcx-meta-line"><Clock size={15} /> {nextTime}</div>
-                <div className="fcx-meta-line"><MapPin size={15} /> {nextMatch?.location || "Locatie volgt"}</div>
-              </div>
-              <a className="fcx-card-action" href="/portal">Wedstrijd details <ChevronRight size={16} /></a>
+              <div className="public-meta"><span><Calendar size={18} /> {nextDate}</span><span><Clock size={18} /> {nextTime}</span><span><MapPin size={18} /> {nextLocation}</span></div>
+              <button onClick={onLoginClick} className="public-card-link">Wedstrijd details <ChevronRight size={18} /></button>
             </article>
-
-            <article className={`fcx-match-card fcx-result-card ${!hasLatestResult ? "is-empty" : ""}`}>
-              <div className="fcx-card-kicker"><Trophy size={15} /> Laatste uitslag</div>
-              <div className="fcx-score-showcase">
-                <div className="fcx-team-badge-wrap compact">
-                  <img src={logoUrl} alt="FC TOTT" />
-                  <span>FC TOTT</span>
-                </div>
-                <strong>{latestScore}</strong>
-                <div className="fcx-team-badge-wrap compact">
-                  <div className="fcx-opponent-badge">{latestOpponent.slice(0, 2).toUpperCase()}</div>
-                  <span>{latestOpponent}</span>
-                </div>
+            <article className="public-match-card">
+              <h2>Laatste uitslag</h2>
+              <div className="public-score-row">
+                <div className="public-team compact"><img src={logoUrl} alt="FC TOTT" /><strong>FC TOTT</strong></div>
+                <b>{resultScore}</b>
+                <div className="public-team compact"><div className="public-opponent-badge">{resultOpponent.slice(0, 2).toUpperCase()}</div><strong>{resultOpponent}</strong></div>
               </div>
-              <div className="fcx-match-details-box">
-                <div className="fcx-meta-line"><Calendar size={15} /> {latestDate}</div>
-                <div className={`fcx-result-pill ${!hasLatestResult ? "muted" : ""}`}>{latestResultLabel}</div>
-              </div>
-              <a className="fcx-card-action" href="/portal">Bekijk uitslagen <ChevronRight size={16} /></a>
+              <div className="public-meta result"><span><Calendar size={18} /> {resultDate}</span><em>{resultLabel}</em></div>
+              <button onClick={onLoginClick} className="public-card-link">Bekijk uitslagen <ChevronRight size={18} /></button>
             </article>
           </div>
         </section>
 
-        <section id="team" className="fcx-mobile-section">
-          <div className="fcx-section-headline"><SectionTitle title="Laatste updates" /><button onClick={onLoginClick}>Bekijk alle updates <ChevronRight size={16} /></button></div>
-          <div className="fcx-news-row">
-            {newsItems.map((post, index) => (
-              <article className="fcx-news-card" key={post.id || index}>
-                <div className={`fcx-news-thumb fcx-news-thumb-${index + 1}`}>
-                  {post.images?.[0] ? <img src={post.images[0]} alt="" /> : <span>{(post.category || "Nieuws").slice(0, 9)}</span>}
-                </div>
-                <small>{post.date || (post.created_at ? formatDateShort(post.created_at) : "Clubnieuws")}</small>
-                <h3>{post.title}</h3>
-                <p>{post.text || post.body || "Meer nieuws verschijnt binnenkort in het clubportal."}</p>
+        <section className="public-section" id="updates">
+          <div className="public-section-head"><div className="public-section-title"><span />Laatste updates</div><button onClick={() => scrollTo("#updates")}>Bekijk alle updates <ChevronRight size={18} /></button></div>
+          <div className="public-news-grid">
+            {newsItems.map((item) => (
+              <article className="public-news-card" key={item.id}>
+                <div className="public-news-image" style={{ backgroundImage: `url(${item.image})` }}><span>{item.category}</span></div>
+                <div className="public-news-body"><small>{item.date}</small><h3>{item.title}</h3><p>{item.text}</p></div>
               </article>
             ))}
           </div>
         </section>
 
-        <section id="friendly" className="fcx-friendly-strip">
-          <div className="fcx-handshake"><Handshake size={56} /></div>
-          <div>
-            <h2>Oefenwedstrijd aanvragen</h2>
-            <p>Op zoek naar een sterke tegenstander? Vraag een oefenwedstrijd aan en we regelen zo snel mogelijk contact met je op.</p>
-          </div>
-          <a href="#friendly-form" className="fcx-gold-cta">Aanvraag versturen <ChevronRight size={18} /></a>
+        <section className="public-friendly" id="friendly">
+          <div className="public-hand"><Handshake size={70} /></div>
+          <div><h2>Oefenwedstrijd aanvragen</h2><p>Op zoek naar een sterke tegenstander? Vraag een oefenwedstrijd aan en we regelen zo snel mogelijk contact met je op.</p></div>
+          <button className="public-cta gold" onClick={openFriendlyForm}>Aanvraag versturen <ChevronRight size={20} /></button>
         </section>
 
-        <section id="sponsors" className="fcx-mobile-section fcx-sponsors-section">
-          <div className="fcx-section-headline"><SectionTitle title="Onze sponsors" /><a href="#contact">Partner worden <ChevronRight size={16} /></a></div>
-          <div className="fcx-sponsor-row">
-            {publicSponsors.map((sponsor) => (
-              <a key={sponsor.id} className="fcx-sponsor-tile" href={sponsor.website_url || sponsor.websiteUrl || "#"} target={sponsor.website_url || sponsor.websiteUrl ? "_blank" : undefined} rel="noreferrer">
+        <section className="public-section" id="sponsors">
+          <div className="public-section-head"><div className="public-section-title"><span />Onze sponsors</div><button onClick={() => scrollTo("#contact")}>Partner worden <ChevronRight size={18} /></button></div>
+          <div className="public-sponsors">
+            {sponsorItems.map((sponsor) => (
+              <a className="public-sponsor" key={sponsor.id} href={sponsor.website_url || sponsor.websiteUrl || "#"} target={sponsor.website_url || sponsor.websiteUrl ? "_blank" : undefined} rel="noreferrer">
                 {sponsor.logo_url ? <img src={sponsor.logo_url} alt={sponsor.name} /> : <span>{sponsor.name}</span>}
               </a>
             ))}
           </div>
         </section>
 
-        <section className="fcx-mobile-section fcx-portal-section">
-          <SectionTitle title="Toegang tot het portal" />
-          {[{ title: "Spelers", icon: Users, text: "Bekijk wedstrijden, statistieken en teamupdates." }, { title: "Begeleiders", icon: ShieldCheck, text: "Beheer team, communicatie en wedstrijden." }, { title: "Admins", icon: Shield, text: "Volledige toegang tot clubbeheer & instellingen." }].map((item, index) => {
-            const Icon = item.icon;
+        <section className="public-section public-portal">
+          <div className="public-section-title"><span />Toegang tot het portal</div>
+          {[{ title: "Spelers", icon: Users, text: "Bekijk wedstrijden, statistieken en teamupdates." }, { title: "Begeleiders", icon: ShieldCheck, text: "Beheer team, communicatie en wedstrijden." }, { title: "Admins", icon: Shield, text: "Volledige toegang tot clubbeheer & instellingen." }].map((role, index) => {
+            const Icon = role.icon;
             return (
-              <button className="fcx-portal-row" key={item.title} onClick={onLoginClick}>
-                <Icon size={30} className={index === 1 ? "gold" : ""} />
-                <span><strong>{item.title}</strong><small>{item.text}</small></span>
-                <b>Log in <ChevronRight size={16} /></b>
+              <button className="public-portal-row" key={role.title} onClick={onLoginClick}>
+                <Icon size={34} className={index === 1 ? "gold" : ""} />
+                <span><strong>{role.title}</strong><small>{role.text}</small></span>
+                <b>Log in <ChevronRight size={18} /></b>
               </button>
             );
           })}
         </section>
 
-        <section id="contact" className="fcx-mobile-section fcx-contact-section">
-          <SectionTitle title="Aanvraag versturen" />
-          <form id="friendly-form" className="fcx-mobile-form" onSubmit={submitFriendly}>
+        <section id="contact" className={`public-section public-form-section ${friendlyOpen ? "is-open" : ""}`}>
+          <div className="public-section-title"><span />Aanvraag versturen</div>
+          <form id="friendly-form" className="public-form" onSubmit={submitFriendly}>
             <input value={request.teamName} onChange={(e) => setRequest({ ...request, teamName: e.target.value })} placeholder="Teamnaam" />
             <input value={request.contactName} onChange={(e) => setRequest({ ...request, contactName: e.target.value })} placeholder="Contactpersoon" />
             <input type="email" value={request.email} onChange={(e) => setRequest({ ...request, email: e.target.value })} placeholder="E-mail" />
             <input value={request.phone} onChange={(e) => setRequest({ ...request, phone: e.target.value })} placeholder="Telefoon" />
             <input type="date" value={request.preferredDate} onChange={(e) => setRequest({ ...request, preferredDate: e.target.value })} />
             <textarea value={request.message} onChange={(e) => setRequest({ ...request, message: e.target.value })} placeholder="Bericht of voorkeuren" rows={4} />
-            {requestStatus && <div className="fcx-public-form-status">{requestStatus}</div>}
-            <button className="fcx-red-cta" disabled={requestBusy}>{requestBusy ? "Versturen…" : "Aanvraag versturen"} <ChevronRight size={18} /></button>
+            {requestStatus && <div className="public-form-status">{requestStatus}</div>}
+            <button className="public-cta red" disabled={requestBusy}>{requestBusy ? "Versturen…" : "Aanvraag versturen"} <ChevronRight size={18} /></button>
           </form>
         </section>
       </main>
 
-      <footer className="fcx-mobile-footer">
-        <div className="fcx-footer-brand"><img src={logoUrl} alt="FC TOTT" /><span><strong>FC Talk Of The Town</strong><small>Futsal. Community. Passie.</small></span></div>
-        <div className="fcx-footer-contact"><span><MessageCircle size={15} /> info@fctalkofthetownfutsal.nl</span><span><MapPin size={15} /> Binnenweg 123, 1000 AA Amsterdam</span><span>☎ +31 6 12345678</span></div>
-        <div className="fcx-footer-social"><strong>Volg ons</strong><span>◎ ● ▶ ♪</span></div>
-        <small>© {new Date().getFullYear()} FC Talk Of The Town Futsal Club. Alle rechten voorbehouden.</small>
+      <footer className="public-footer">
+        <div className="public-footer-brand"><img src={logoUrl} alt="FC TOTT" /><span><strong>FC Talk Of The Town</strong><small>Futsal. Community. Passie.</small></span></div>
+        <div className="public-contact"><span>✉ info@fctalkofthetownfutsal.nl</span><span>⌖ Binnenweg 123, 1000 AB Amsterdam</span><span>☎ +31 6 12345678</span></div>
+        <div className="public-social"><strong>Volg ons</strong><span>◎ ● ▶ ♪</span></div>
+        <small>© {new Date().getFullYear()} FC Talk Of The Town. Alle rechten voorbehouden.</small>
       </footer>
     </div>
   );
@@ -6681,771 +6688,329 @@ const mobileZoomLockCss = `
 `;
 
 const publicLandingCss = String.raw`
-  .public-site-shell { min-height: 100vh; background: #020202; color: #fff; }
-  .fcx-public {
-    --red: #ff3158;
-    --red2: #c8102e;
-    --gold: #d6ad52;
-    --gold2: #8e6b2d;
-    --card: rgba(18, 19, 20, 0.78);
-    --line: rgba(255,255,255,0.115);
-    --muted: rgba(255,255,255,0.70);
-    min-height: 100vh;
-    overflow-x: hidden;
-    color: #fff;
-    font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    background:
-      radial-gradient(circle at 72% 10%, rgba(255, 29, 64, 0.24), transparent 32%),
-      radial-gradient(circle at 18% 42%, rgba(214, 173, 82, 0.06), transparent 26%),
-      linear-gradient(180deg, #030303 0%, #070707 55%, #020202 100%);
-  }
-  .fcx-public *, .fcx-public *:before, .fcx-public *:after { box-sizing: border-box; }
-  .fcx-mobile-header {
-    position: sticky; top: 0; z-index: 80;
-    height: clamp(72px, 9.8vw, 92px);
-    display: flex; align-items: center; justify-content: space-between; gap: 14px;
-    padding: max(12px, env(safe-area-inset-top)) clamp(16px, 4vw, 44px) 12px;
-    border-bottom: 1px solid rgba(255,255,255,0.08);
-    background: rgba(3,3,3,0.78);
-    backdrop-filter: blur(22px) saturate(145%);
-    -webkit-backdrop-filter: blur(22px) saturate(145%);
-  }
-  .fcx-mobile-brand { display: flex; align-items: center; gap: 11px; color: #fff; text-decoration: none; min-width: 0; }
-  .fcx-mobile-brand img { width: clamp(46px, 7.2vw, 62px); height: clamp(46px, 7.2vw, 62px); border-radius: 50%; object-fit: contain; filter: drop-shadow(0 10px 22px rgba(255,49,88,0.28)); flex: 0 0 auto; }
-  .fcx-mobile-brand strong { display: block; color: #fff; font-weight: 950; font-size: clamp(18px, 2.4vw, 23px); line-height: 1.05; letter-spacing: -0.035em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 45vw; }
-  .fcx-mobile-brand small { display: block; color: var(--gold); font-weight: 750; font-size: clamp(12px, 1.6vw, 15px); margin-top: 3px; }
-  .fcx-mobile-header-actions { display: flex; align-items: center; gap: clamp(10px, 2.4vw, 18px); flex-shrink: 0; }
-  .fcx-login-pill { min-height: 48px; padding: 0 clamp(16px, 3vw, 26px); border-radius: 10px; border: 1px solid rgba(214,173,82,0.9); color: var(--gold); background: rgba(0,0,0,0.18); display: inline-flex; align-items: center; gap: 9px; font-weight: 900; font-size: 16px; box-shadow: inset 0 1px 0 rgba(255,255,255,0.05), 0 10px 25px rgba(214,173,82,0.08); }
-  .fcx-menu-btn { width: 45px; height: 45px; border: 0; background: transparent; display: grid; place-items: center; gap: 5px; padding: 8px; }
-  .fcx-menu-btn span { width: 30px; height: 3px; border-radius: 10px; display: block; background: rgba(255,255,255,0.9); }
+  @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@500;600;700;800;900&display=swap');
 
-  .fcx-mobile-page { width: min(100%, 1480px); margin: 0 auto; padding: 0 clamp(14px, 3.6vw, 56px) 20px; }
-  .fcx-mobile-hero {
-    min-height: clamp(500px, 67vw, 700px);
-    position: relative;
-    display: grid;
-    grid-template-columns: minmax(0, 0.88fr) minmax(310px, 1.12fr);
+  :root {
+    --pub-bg: #030303;
+    --pub-panel: #101010;
+    --pub-line: rgba(255,255,255,.13);
+    --pub-red: #ff304f;
+    --pub-red2: #e51d35;
+    --pub-gold: #d9aa39;
+    --pub-muted: #b9b4b1;
+  }
+  .public-page, .public-page * { box-sizing: border-box; }
+  .public-page {
+    min-height: 100vh;
+    color: #fff;
+    background:
+      radial-gradient(circle at 84% 10%, rgba(146,9,20,.44), transparent 30%),
+      radial-gradient(circle at 16% 20%, rgba(95,9,16,.2), transparent 26%),
+      #030303;
+    font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    overflow-x: hidden;
+  }
+  .public-page button { font: inherit; cursor: pointer; }
+  .public-topbar {
+    height: 102px;
+    display: flex;
     align-items: center;
     gap: 22px;
-    overflow: hidden;
-    border-bottom: 1px solid rgba(255,255,255,0.055);
+    padding: 15px 34px 16px;
+    border-bottom: 1px solid rgba(255,255,255,.09);
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: rgba(3,3,3,.84);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
   }
-  .fcx-mobile-hero:before { content: ""; position: absolute; inset: 0 -12%; background: radial-gradient(circle at 67% 48%, rgba(255,0,42,0.34), transparent 34%), linear-gradient(90deg, rgba(3,3,3,0.98), rgba(3,3,3,0.28) 52%, rgba(3,3,3,0.65)); pointer-events: none; }
-  .fcx-hero-copy { position: relative; z-index: 2; padding: clamp(26px, 5vw, 70px) 0; }
-  .fcx-hero-copy h1 { margin: 0; max-width: 740px; text-transform: uppercase; font-weight: 1000; letter-spacing: -0.055em; line-height: 0.92; font-size: clamp(56px, 8.6vw, 112px); color: #fff; text-shadow: 0 2px 0 rgba(255,255,255,0.06), 0 22px 50px rgba(0,0,0,0.5); }
-  .fcx-hero-copy h1 span { color: var(--gold); }
-  .fcx-hero-sub { margin-top: 18px; text-transform: uppercase; letter-spacing: 0.22em; color: rgba(255,255,255,0.92); font-weight: 950; font-size: clamp(14px, 2vw, 22px); position: relative; }
-  .fcx-hero-sub:after { content: ""; display: block; width: 58px; height: 3px; border-radius: 6px; background: var(--red); margin-top: 13px; box-shadow: 0 0 28px rgba(255,49,88,0.75); }
-  .fcx-hero-copy p { max-width: 480px; color: rgba(255,255,255,0.85); font-size: clamp(16px, 2.1vw, 20px); line-height: 1.45; margin: 18px 0 24px; }
-  .fcx-hero-actions { display: grid; width: min(100%, 420px); gap: 12px; }
-  .fcx-red-cta, .fcx-gold-cta { min-height: 52px; border-radius: 10px; padding: 0 18px; display: inline-flex; align-items: center; justify-content: space-between; gap: 12px; text-decoration: none; font-size: 16px; font-weight: 950; border: 0; cursor: pointer; white-space: nowrap; }
-  .fcx-red-cta { color: #fff; background: linear-gradient(135deg, #ff344f 0%, #d31530 58%, #a50c20 100%); box-shadow: 0 18px 42px rgba(255,49,88,0.28), inset 0 1px 0 rgba(255,255,255,0.28); }
-  .fcx-gold-cta { color: var(--gold); background: rgba(0,0,0,0.30); border: 1px solid rgba(214,173,82,0.76); box-shadow: inset 0 1px 0 rgba(255,255,255,0.05); }
-  .fcx-hero-visual { position: relative; z-index: 1; min-height: clamp(440px, 62vw, 650px); align-self: stretch; }
-  .fcx-hero-watermark { position: absolute; right: -5%; top: 2%; width: min(52vw, 470px); opacity: 0.46; filter: drop-shadow(0 22px 70px rgba(255,49,88,0.35)); }
-  .fcx-player-silhouette { position: absolute; bottom: 0; left: 15%; width: min(46vw, 420px); height: min(60vw, 560px); filter: drop-shadow(0 38px 80px rgba(0,0,0,0.9)); }
-  .fcx-player-head { position: absolute; top: 4%; left: 44%; width: 72px; height: 86px; border-radius: 46% 46% 42% 42%; background: radial-gradient(circle at 50% 18%, #251611, #050505 72%); box-shadow: 0 0 36px rgba(255,49,88,0.28); }
-  .fcx-player-body { position: absolute; left: 15%; right: 12%; top: 19%; bottom: 0; border-radius: 44% 44% 11% 11%; background: linear-gradient(90deg, rgba(0,0,0,0.85), rgba(38,16,16,0.86) 42%, rgba(0,0,0,0.95)), linear-gradient(135deg, #181818, #070707); border-left: 3px solid rgba(255,49,88,0.55); border-right: 3px solid rgba(255,49,88,0.38); }
-  .fcx-player-body:before, .fcx-player-body:after { content: ""; position: absolute; top: 10%; width: 76px; height: 280px; border-radius: 60px; background: linear-gradient(#151515, #070707); border-top: 3px solid rgba(255,49,88,0.45); }
-  .fcx-player-body:before { left: -48px; transform: rotate(10deg); }
-  .fcx-player-body:after { right: -48px; transform: rotate(-10deg); }
-  .fcx-player-body span { position: absolute; top: 15%; left: 0; right: 0; color: var(--gold); text-transform: uppercase; text-align: center; letter-spacing: .1em; font-size: clamp(10px, 1.55vw, 18px); font-weight: 950; transform: rotate(8deg); }
-  .fcx-player-body strong { position: absolute; top: 31%; left: 0; right: 0; color: rgba(214,173,82,0.68); text-align: center; font-size: clamp(76px, 13vw, 150px); line-height: 1; font-weight: 1000; text-shadow: 0 2px 0 rgba(255,255,255,0.08); }
-  .fcx-player-ball { position: absolute; left: 2%; bottom: 5%; width: 110px; height: 110px; border-radius: 50%; background: radial-gradient(circle at 40% 30%, #b6a28e, #392d28 48%, #0a0a0a 75%); border: 2px solid rgba(255,255,255,0.12); box-shadow: inset 0 0 25px rgba(0,0,0,0.7), 0 15px 45px rgba(0,0,0,0.9); }
-
-  .fcx-mobile-section, .fcx-friendly-strip { border-radius: 22px; border: 1px solid var(--line); background: linear-gradient(135deg, rgba(255,255,255,0.055), rgba(255,255,255,0.02)); box-shadow: 0 22px 60px rgba(0,0,0,0.36), inset 0 1px 0 rgba(255,255,255,0.07); }
-  .fcx-mobile-section { margin-top: 18px; padding: clamp(16px, 2.4vw, 22px); }
-  .fcx-section-title { display: inline-flex; align-items: center; gap: 9px; color: rgba(255,255,255,0.92); text-transform: uppercase; font-weight: 950; letter-spacing: .035em; font-size: clamp(16px, 2vw, 20px); }
-  .fcx-section-title span { width: 11px; height: 11px; border-radius: 50%; background: var(--red); box-shadow: 0 0 18px rgba(255,49,88,0.75); }
-  .fcx-match-grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 18px; margin-top: 15px; }
-  .fcx-match-card { min-width: 0; padding: 18px; border-radius: 16px; background: radial-gradient(circle at 5% 0%, rgba(255,49,88,0.12), transparent 40%), rgba(10,10,10,0.62); border: 1px solid rgba(255,255,255,0.105); display: grid; gap: 12px; }
-  .fcx-match-card h3 { margin: 0; color: var(--red); text-transform: uppercase; font-size: 16px; font-weight: 950; }
-  .fcx-team-line, .fcx-score-line { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 12px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.09); padding-bottom: 12px; }
-  .fcx-team-line span, .fcx-score-line span { display: grid; gap: 7px; justify-items: center; color: rgba(255,255,255,0.92); font-size: 12.5px; line-height: 1.12; }
-  .fcx-team-line img, .fcx-score-line img, .fcx-opponent-badge { width: 58px; height: 58px; border-radius: 50%; object-fit: contain; }
-  .fcx-team-line > strong { color: #fff; font-size: 22px; }
-  .fcx-score-line > strong { color: #fff; font-size: clamp(32px, 5.2vw, 52px); letter-spacing: -0.04em; }
-  .fcx-opponent-badge { display: grid; place-items: center; color: var(--gold); border: 2px solid rgba(214,173,82,0.72); background: radial-gradient(circle, rgba(214,173,82,0.16), rgba(0,0,0,0.42)); font-weight: 1000; font-size: 24px; }
-  .fcx-meta-line { display: flex; align-items: center; gap: 9px; color: rgba(255,255,255,0.78); font-size: 14px; }
-  .fcx-meta-line svg { color: var(--gold); flex: 0 0 auto; }
-  .fcx-result-pill { justify-self: center; color: #7df06e; background: rgba(42,142,54,0.35); border: 1px solid rgba(93,230,102,0.23); border-radius: 8px; padding: 6px 12px; font-weight: 850; }
-  .fcx-card-action { margin-top: auto; display: flex; align-items: center; justify-content: space-between; color: var(--red); text-decoration: none; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 12px; font-weight: 900; }
-
-  .fcx-section-headline { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-bottom: 14px; }
-  .fcx-section-headline button, .fcx-section-headline a { border: 0; background: none; color: var(--red); display: inline-flex; align-items: center; gap: 8px; text-decoration: none; font-weight: 900; white-space: nowrap; }
-  .fcx-news-row { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 14px; }
-  .fcx-news-card { min-width: 0; border-radius: 13px; overflow: hidden; background: rgba(255,255,255,0.035); border: 1px solid rgba(255,49,88,0.28); }
-  .fcx-news-thumb { position: relative; height: clamp(112px, 15vw, 160px); display: block; overflow: hidden; background: radial-gradient(circle at 30% 25%, rgba(214,173,82,0.36), transparent 30%), linear-gradient(135deg, #312017, #121212); }
-  .fcx-news-thumb:before { content: ""; position: absolute; inset: 0; background: linear-gradient(135deg, rgba(255,49,88,0.18), transparent); }
-  .fcx-news-thumb span { position: absolute; top: 10px; left: 10px; padding: 5px 9px; border-radius: 7px; background: var(--red); color: #fff; text-transform: uppercase; font-size: 11px; font-weight: 950; }
-  .fcx-news-thumb img { width: 100%; height: 100%; object-fit: cover; }
-  .fcx-news-card small { display: block; color: rgba(255,255,255,0.58); padding: 10px 13px 0; }
-  .fcx-news-card h3 { margin: 4px 13px 4px; color: #fff; font-size: 18px; line-height: 1.12; }
-  .fcx-news-card p { margin: 0 13px 14px; color: rgba(255,255,255,0.72); font-size: 14px; line-height: 1.35; }
-  .fcx-friendly-strip { margin-top: 18px; padding: 20px; display: grid; grid-template-columns: auto 1fr auto; gap: 18px; align-items: center; border-color: rgba(255,49,88,0.36); background: linear-gradient(100deg, rgba(255,49,88,0.24), rgba(255,255,255,0.03) 48%, rgba(214,173,82,0.06)); }
-  .fcx-handshake { color: var(--red); filter: drop-shadow(0 0 22px rgba(255,49,88,0.34)); }
-  .fcx-friendly-strip h2 { margin: 0; color: #fff; text-transform: uppercase; font-size: clamp(22px, 3vw, 30px); }
-  .fcx-friendly-strip p { margin: 6px 0 0; color: rgba(255,255,255,0.75); line-height: 1.42; }
-  .fcx-sponsor-row { display: grid; grid-template-columns: repeat(5, minmax(0,1fr)); gap: 12px; margin-top: 14px; }
-  .fcx-sponsor-tile { min-height: 66px; display: grid; place-items: center; padding: 12px; border-radius: 10px; background: rgba(255,255,255,0.045); border: 1px solid rgba(255,255,255,0.10); color: rgba(255,255,255,0.84); text-decoration: none; text-transform: uppercase; font-weight: 1000; letter-spacing: -0.02em; }
-  .fcx-sponsor-tile img { max-width: 92%; max-height: 44px; object-fit: contain; }
-  .fcx-portal-section { display: grid; gap: 10px; }
-  .fcx-portal-row { min-height: 78px; padding: 12px 14px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.09); background: linear-gradient(90deg, rgba(255,255,255,0.052), rgba(255,255,255,0.025)); display: grid; grid-template-columns: auto 1fr auto; gap: 14px; align-items: center; text-align: left; color: #fff; }
-  .fcx-portal-row svg { color: var(--red); }
-  .fcx-portal-row svg.gold { color: var(--gold); }
-  .fcx-portal-row strong { display: block; text-transform: uppercase; font-size: 17px; }
-  .fcx-portal-row small { display: block; color: rgba(255,255,255,0.68); margin-top: 2px; }
-  .fcx-portal-row b { color: #fff; background: linear-gradient(135deg, #ff344f, #b90d22); border-radius: 9px; padding: 10px 15px; display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; }
-  .fcx-contact-section { display: none; }
-  .fcx-mobile-form { display: grid; gap: 10px; margin-top: 14px; }
-  .fcx-mobile-form input, .fcx-mobile-form textarea { width: 100%; font-size: 16px; border-radius: 12px; color: #fff; background: rgba(0,0,0,0.38); border: 1px solid rgba(255,255,255,0.13); outline: none; padding: 14px; }
-  .fcx-public-form-status { color: var(--gold); font-weight: 900; }
-  .fcx-mobile-footer { margin-top: 24px; padding: 22px clamp(14px, 3.6vw, 56px) 28px; border-top: 1px solid rgba(255,255,255,0.09); display: grid; grid-template-columns: 1.1fr 1.3fr 0.7fr; gap: 18px; color: rgba(255,255,255,0.72); }
-  .fcx-footer-brand { display: flex; align-items: center; gap: 12px; }
-  .fcx-footer-brand img { width: 58px; height: 58px; object-fit: contain; border-radius: 50%; }
-  .fcx-footer-brand strong { display: block; color: #fff; text-transform: uppercase; font-weight: 950; }
-  .fcx-footer-brand small { display: block; color: rgba(255,255,255,0.62); text-transform: uppercase; font-size: 12px; margin-top: 2px; }
-  .fcx-footer-contact { display: grid; gap: 7px; }
-  .fcx-footer-contact span { display: flex; gap: 9px; align-items: center; }
-  .fcx-footer-social { display: grid; gap: 8px; align-content: start; }
-  .fcx-footer-social strong { color: #fff; text-transform: uppercase; }
-  .fcx-footer-social span { font-size: 25px; letter-spacing: .26em; color: #fff; }
-  .fcx-mobile-footer > small { grid-column: 1 / -1; text-align: center; color: rgba(255,255,255,0.45); }
-
-  @media (min-width: 900px) {
-    .fcx-public { min-width: 320px; }
-    .fcx-mobile-page { padding-top: 0; }
-  }
-  @media (max-width: 820px) {
-    .fcx-mobile-page { padding-left: 16px; padding-right: 16px; }
-    .fcx-mobile-hero { grid-template-columns: 1fr; min-height: 560px; padding-top: 12px; align-items: start; }
-    .fcx-mobile-hero:before { background: radial-gradient(circle at 75% 40%, rgba(255,0,42,0.34), transparent 30%), linear-gradient(90deg, rgba(3,3,3,0.96), rgba(3,3,3,0.34) 68%, rgba(3,3,3,0.75)); }
-    .fcx-hero-copy { width: 55%; min-width: 290px; padding: 28px 0 0; }
-    .fcx-hero-copy h1 { font-size: clamp(54px, 11.5vw, 84px); }
-    .fcx-hero-visual { position: absolute; inset: 0 0 0 38%; min-height: 0; }
-    .fcx-hero-watermark { right: -32%; top: 0; width: 470px; max-width: 88vw; opacity: .46; }
-    .fcx-player-silhouette { left: 0; bottom: 0; width: 340px; max-width: 64vw; height: 470px; max-height: 78%; }
-    .fcx-match-grid { grid-template-columns: repeat(2, minmax(0,1fr)); gap: 1px; }
-    .fcx-match-card { border-radius: 14px; padding: 16px; }
-    .fcx-news-row, .fcx-sponsor-row { display: flex; overflow-x: auto; gap: 12px; padding-bottom: 4px; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; }
-    .fcx-news-row::-webkit-scrollbar, .fcx-sponsor-row::-webkit-scrollbar { display: none; }
-    .fcx-news-card { flex: 0 0 min(78vw, 280px); scroll-snap-align: start; }
-    .fcx-sponsor-tile { flex: 0 0 150px; }
-    .fcx-friendly-strip { grid-template-columns: auto 1fr; }
-    .fcx-friendly-strip .fcx-gold-cta { grid-column: 1 / -1; width: 100%; }
-    .fcx-mobile-footer { grid-template-columns: 1fr; }
-  }
-  @media (max-width: 560px) {
-    .fcx-mobile-header { padding-left: 14px; padding-right: 14px; height: 72px; }
-    .fcx-mobile-brand img { width: 44px; height: 44px; }
-    .fcx-mobile-brand strong { font-size: 16.5px; max-width: 38vw; }
-    .fcx-mobile-brand small { font-size: 12px; }
-    .fcx-login-pill { min-height: 40px; padding: 0 13px; font-size: 14px; }
-    .fcx-menu-btn { width: 38px; height: 38px; }
-    .fcx-menu-btn span { width: 25px; height: 2.5px; }
-    .fcx-mobile-page { padding-left: 12px; padding-right: 12px; }
-    .fcx-mobile-hero { min-height: 510px; }
-    .fcx-hero-copy { width: 61%; min-width: 0; }
-    .fcx-hero-copy h1 { font-size: clamp(46px, 12.6vw, 64px); }
-    .fcx-hero-sub { font-size: 12px; letter-spacing: .19em; }
-    .fcx-hero-copy p { font-size: 15px; line-height: 1.44; margin: 15px 0 18px; }
-    .fcx-hero-actions { width: 100%; max-width: 340px; }
-    .fcx-red-cta, .fcx-gold-cta { min-height: 48px; font-size: 14.5px; padding: 0 14px; }
-    .fcx-hero-visual { left: 42%; }
-    .fcx-player-silhouette { left: -8%; width: 300px; height: 430px; }
-    .fcx-player-ball { width: 82px; height: 82px; }
-    .fcx-hero-watermark { width: 350px; right: -42%; }
-    .fcx-mobile-section { margin-top: 13px; padding: 12px; border-radius: 18px; }
-    .fcx-section-title { font-size: 15px; }
-    .fcx-match-card { padding: 11px; }
-    .fcx-match-card h3 { font-size: 13px; }
-    .fcx-team-line, .fcx-score-line { gap: 7px; }
-    .fcx-team-line img, .fcx-score-line img, .fcx-opponent-badge { width: 44px; height: 44px; font-size: 18px; }
-    .fcx-team-line span, .fcx-score-line span { font-size: 10.8px; }
-    .fcx-team-line > strong { font-size: 18px; }
-    .fcx-score-line > strong { font-size: 35px; }
-    .fcx-meta-line { font-size: 12px; gap: 6px; }
-    .fcx-card-action { font-size: 13px; }
-    .fcx-section-headline { align-items: flex-start; }
-    .fcx-section-headline button, .fcx-section-headline a { font-size: 13px; }
-    .fcx-friendly-strip { padding: 14px; border-radius: 18px; gap: 12px; }
-    .fcx-friendly-strip h2 { font-size: 19px; }
-    .fcx-friendly-strip p { font-size: 14px; }
-    .fcx-portal-row { grid-template-columns: auto 1fr; }
-    .fcx-portal-row b { grid-column: 1 / -1; justify-content: center; }
-    .fcx-footer-social span { letter-spacing: .18em; }
-  }
-  @media (max-width: 374px) {
-    .fcx-mobile-brand strong { display: none; }
-    .fcx-mobile-hero { min-height: 560px; }
-    .fcx-hero-copy { width: 100%; padding-top: 22px; }
-    .fcx-hero-copy h1 { font-size: 44px; }
-    .fcx-hero-copy p { max-width: 260px; }
-    .fcx-hero-visual { opacity: 0.55; left: 35%; }
-    .fcx-match-grid { grid-template-columns: 1fr; gap: 12px; }
-  }
-
-  /* Public match/result section polish */
-  .fcx-match-section {
-    padding: clamp(18px, 3vw, 30px) !important;
-    border-radius: 26px !important;
-    background:
-      radial-gradient(circle at 12% 0%, rgba(255,49,88,0.18), transparent 30%),
-      linear-gradient(135deg, rgba(255,255,255,0.07), rgba(255,255,255,0.025)) !important;
-  }
-  .fcx-match-section-head {
+  .public-brand {
+    border: 0;
+    background: transparent;
     display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 18px;
-    margin-bottom: 18px;
+    align-items: center;
+    gap: 16px;
+    color: #fff;
+    text-align: left;
+    padding: 0;
   }
-  .fcx-match-section-head p {
-    max-width: 360px;
-    margin: 2px 0 0;
-    color: rgba(255,255,255,0.62);
-    line-height: 1.45;
-    font-size: 14px;
+  .public-brand img { width: 60px; height: 60px; border-radius: 50%; object-fit: contain; }
+  .public-brand strong { display:block; font-size: 24px; font-weight: 900; line-height: 1.04; white-space: nowrap; }
+  .public-brand small { display:block; color: var(--pub-gold); font-size: 15px; margin-top: 5px; }
+  .public-nav { margin-left: auto; display: flex; align-items: center; gap: 28px; }
+  .public-nav button { background: transparent; border: 0; color: #fff; font-weight: 800; font-size: 14px; opacity: .86; }
+  .public-nav button:hover { color: var(--pub-red); opacity: 1; }
+  .public-top-actions { display: flex; align-items: center; gap: 20px; margin-left: auto; }
+  .public-login {
+    height: 58px;
+    min-width: 164px;
+    padding: 0 26px;
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid var(--pub-gold);
+    border-radius: 8px;
+    color: #ffd24e;
+    background: transparent;
+    font-weight: 900;
+    font-size: 19px;
   }
-  .fcx-match-grid {
-    display: grid !important;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: clamp(14px, 2vw, 22px) !important;
-    margin-top: 0 !important;
+  .public-menu {
+    width: 48px;
+    height: 48px;
+    border: 0;
+    background: transparent;
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 8px;
+    padding: 0;
   }
-  .fcx-match-card {
+  .public-menu span { width: 34px; height: 3px; border-radius: 3px; background: #fff; display: block; }
+  .public-menu-panel {
+    position: absolute;
+    right: 32px;
+    top: calc(100% + 10px);
+    width: 260px;
+    padding: 12px;
+    border: 1px solid rgba(255,255,255,.15);
+    border-radius: 16px;
+    background: rgba(12,12,12,.95);
+    box-shadow: 0 24px 60px rgba(0,0,0,.55);
+    display: grid;
+    gap: 6px;
+    animation: publicMenuIn .2s ease both;
+  }
+  .public-menu-panel button {
+    min-height: 44px;
+    border: 0;
+    border-radius: 10px;
+    background: rgba(255,255,255,.04);
+    color: #fff;
+    text-align: left;
+    padding: 0 14px;
+    font-weight: 800;
+  }
+  @keyframes publicMenuIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+
+  .public-hero {
+    min-height: 505px;
     position: relative;
     overflow: hidden;
-    min-height: 100%;
-    padding: clamp(16px, 2.4vw, 24px) !important;
-    border-radius: 22px !important;
-    display: flex !important;
-    flex-direction: column;
-    gap: 16px !important;
-    background:
-      linear-gradient(145deg, rgba(18,18,18,0.94), rgba(8,8,8,0.96)),
-      radial-gradient(circle at 10% 0%, rgba(255,49,88,0.16), transparent 42%) !important;
-    border: 1px solid rgba(255,255,255,0.12) !important;
-    box-shadow:
-      0 18px 46px rgba(0,0,0,0.44),
-      inset 0 1px 0 rgba(255,255,255,0.06) !important;
+    padding: 24px 40px 18px;
   }
-  .fcx-match-card:before {
-    content: "";
+  .public-hero-bg {
     position: absolute;
-    inset: -1px;
-    border-radius: inherit;
-    pointer-events: none;
-    background: linear-gradient(135deg, rgba(255,49,88,0.18), transparent 42%, rgba(214,173,82,0.12));
-    opacity: 0.75;
+    inset: 0 0 0 auto;
+    width: 62%;
+    background:
+      linear-gradient(90deg,#030303 0%,rgba(3,3,3,.3) 30%,rgba(3,3,3,.04) 58%,#030303 100%),
+      url('/landing-assets/hero-art.jpg') center right/cover no-repeat;
+    opacity: .96;
   }
-  .fcx-match-card > * { position: relative; z-index: 1; }
-  .fcx-card-kicker {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    color: var(--red);
+  .public-hero-copy { position: relative; z-index: 2; width: min(430px,48vw); padding-top: 5px; }
+  .public-hero h1 {
+    font-family: 'Bebas Neue', Impact, sans-serif;
+    font-size: clamp(64px, 8.8vw, 88px);
+    line-height: .86;
+    letter-spacing: .012em;
     text-transform: uppercase;
-    letter-spacing: 0.02em;
-    font-weight: 1000;
-    font-size: clamp(14px, 2vw, 18px);
+    margin: 0;
+    color: #fff;
+    text-shadow: 0 10px 40px #000;
   }
-  .fcx-card-kicker svg { color: var(--gold); }
-  .fcx-versus-row,
-  .fcx-score-showcase {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  .public-hero h1 span { color: var(--pub-gold); }
+  .public-tagline { margin-top: 25px; font-size: 21px; letter-spacing: .23em; font-weight: 900; color: #f1efed; text-transform: uppercase; }
+  .public-redline { width: 76px; height: 3px; background: var(--pub-red); margin: 21px 0 17px; }
+  .public-hero p { font-size: 18px; line-height: 1.43; color: #f1f1f1; margin: 0 0 22px; max-width: 395px; }
+  .public-cta-stack { display: grid; gap: 12px; width: 386px; max-width: 100%; }
+  .public-cta {
+    min-height: 58px;
+    border-radius: 8px;
+    border: 1.5px solid rgba(255,255,255,.16);
+    display: flex;
     align-items: center;
-    gap: clamp(10px, 2vw, 18px);
-    padding: 8px 0 2px;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 0 23px;
+    font-size: 18px;
+    font-weight: 900;
+    color: #fff;
+    text-decoration: none;
   }
-  .fcx-team-badge-wrap {
-    min-width: 0;
-    display: grid;
-    justify-items: center;
-    align-content: start;
-    gap: 8px;
-    color: rgba(255,255,255,0.9);
-    text-align: center;
-    font-weight: 850;
-    line-height: 1.1;
-    font-size: clamp(13px, 1.8vw, 16px);
-  }
-  .fcx-team-badge-wrap span {
-    display: block;
-    max-width: 100%;
+  .public-cta.red { background: linear-gradient(180deg,#ff3d4e,#d7192e); box-shadow: 0 10px 24px rgba(224,25,45,.26); }
+  .public-cta.gold { color: #e6ba41; border-color: #b4851e; background: rgba(11,11,9,.55); }
+
+  .public-section,
+  .public-friendly {
+    margin: 0 34px 13px;
+    border: 1px solid rgba(255,255,255,.13);
+    border-radius: 11px;
+    background: linear-gradient(145deg,rgba(24,24,24,.86),rgba(7,7,7,.88));
+    box-shadow: 0 0 0 1px rgba(255,255,255,.02),0 22px 50px rgba(0,0,0,.36);
     overflow: hidden;
-    text-overflow: ellipsis;
   }
-  .fcx-team-badge-wrap img,
-  .fcx-team-badge-wrap .fcx-opponent-badge {
-    width: clamp(54px, 8vw, 74px);
-    height: clamp(54px, 8vw, 74px);
-    border-radius: 999px;
-    object-fit: contain;
+  .public-section-title,
+  .public-section-head {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    font-size: 19px;
+    font-weight: 900;
+    letter-spacing: .03em;
+    text-transform: uppercase;
   }
-  .fcx-team-badge-wrap.compact img,
-  .fcx-team-badge-wrap.compact .fcx-opponent-badge {
-    width: clamp(50px, 7vw, 68px);
-    height: clamp(50px, 7vw, 68px);
+  .public-section-title span {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--pub-red);
+    box-shadow: 0 0 14px rgba(255,48,79,.7);
+    flex: 0 0 auto;
   }
-  .fcx-vs-pill {
-    width: clamp(46px, 6vw, 62px);
-    height: clamp(46px, 6vw, 62px);
-    border-radius: 999px;
-    display: grid;
-    place-items: center;
-    color: #fff;
-    font-weight: 1000;
-    background: rgba(255,49,88,0.14);
-    border: 1px solid rgba(255,49,88,0.38);
-    box-shadow: 0 0 30px rgba(255,49,88,0.15);
-    letter-spacing: -0.04em;
-  }
-  .fcx-score-showcase > strong {
-    color: #fff;
-    font-size: clamp(44px, 7vw, 72px);
-    line-height: 1;
-    letter-spacing: -0.07em;
-    text-shadow: 0 18px 40px rgba(0,0,0,0.5);
-  }
-  .fcx-match-details-box {
-    display: grid;
-    gap: 10px;
-    padding: 14px 0;
-    border-top: 1px solid rgba(255,255,255,0.09);
-    border-bottom: 1px solid rgba(255,255,255,0.09);
-  }
-  .fcx-match-card .fcx-meta-line {
-    color: rgba(255,255,255,0.76) !important;
-    font-size: clamp(13px, 1.7vw, 15px) !important;
-    line-height: 1.35;
-  }
-  .fcx-match-card .fcx-card-action {
-    margin-top: auto !important;
-    padding-top: 0 !important;
-    border-top: 0 !important;
-    min-height: 42px;
-    border-radius: 12px;
-    padding-left: 0;
-    padding-right: 0;
-    color: var(--red) !important;
-    font-size: clamp(14px, 1.8vw, 16px) !important;
-  }
-  .fcx-result-pill {
-    justify-self: start !important;
-    border-radius: 999px !important;
-    padding: 7px 12px !important;
-    font-size: 13px;
-    color: #7df06e !important;
-  }
-  .fcx-result-pill.muted {
-    color: rgba(255,255,255,0.72) !important;
-    background: rgba(255,255,255,0.055) !important;
-    border-color: rgba(255,255,255,0.11) !important;
-  }
+  .public-section > .public-section-title,
+  .public-section-head { padding: 14px 20px 7px; }
+  .public-section-head { justify-content: space-between; }
+  .public-section-head button { color: var(--pub-red); border: 0; background: transparent; font-weight: 800; display: flex; align-items: center; gap: 4px; }
 
-  @media (max-width: 680px) {
-    .fcx-match-section-head { display: grid; gap: 8px; margin-bottom: 14px; }
-    .fcx-match-section-head p { font-size: 13px; }
-    .fcx-match-grid { grid-template-columns: 1fr !important; gap: 14px !important; }
-    .fcx-match-card { border-radius: 20px !important; padding: 16px !important; gap: 14px !important; }
-    .fcx-versus-row, .fcx-score-showcase { gap: 12px; }
-    .fcx-team-badge-wrap img,
-    .fcx-team-badge-wrap .fcx-opponent-badge { width: 58px; height: 58px; }
-    .fcx-team-badge-wrap { font-size: 13px; }
-    .fcx-vs-pill { width: 48px; height: 48px; }
-    .fcx-score-showcase > strong { font-size: 50px; }
-    .fcx-match-details-box { padding: 12px 0; }
-  }
+  .public-match-grid { display: grid; grid-template-columns: 1fr 1fr; }
+  .public-match-card { padding: 16px 25px 15px; min-height: 245px; }
+  .public-match-card + .public-match-card { border-left: 1px solid rgba(255,255,255,.13); }
+  .public-match-card h2 { margin: 0; color: var(--pub-red); font-size: 19px; text-transform: uppercase; letter-spacing: .025em; }
+  .public-versus,
+  .public-score-row { display: grid; grid-template-columns: 1fr 45px 1fr; align-items: center; gap: 12px; margin: 18px 0 15px; }
+  .public-score-row { grid-template-columns: 1fr 130px 1fr; }
+  .public-team { text-align: center; min-width: 0; }
+  .public-team img,
+  .public-opponent-badge { width: 70px; height: 70px; border-radius: 50%; object-fit: contain; margin: 0 auto; }
+  .public-opponent-badge { border: 3px solid rgba(217,170,57,.8); display: grid; place-items: center; color: #eac053; font-size: 29px; font-weight: 1000; background: radial-gradient(circle,rgba(217,170,57,.13),rgba(0,0,0,.5)); }
+  .public-team strong { display: block; margin-top: 8px; font-size: 15px; line-height: 1.2; color: #f5f5f5; }
+  .public-versus > b { font-size: 26px; text-align: center; color: #fff; }
+  .public-score-row > b { font-size: 58px; line-height: 1; font-weight: 1000; text-align: center; color: #fff; }
+  .public-meta { border-top: 1px solid rgba(255,255,255,.13); padding-top: 11px; color: #dad5d1; display: grid; gap: 9px; font-size: 16px; }
+  .public-meta span { display: flex; align-items: center; gap: 12px; }
+  .public-meta svg { color: var(--pub-gold); }
+  .public-meta.result { text-align: center; justify-items: center; }
+  .public-meta em { display: inline-flex; align-items: center; color: #72ef72; background: rgba(39,161,61,.25); border: 1px solid rgba(65,183,65,.35); border-radius: 7px; padding: 8px 18px; font-size: 15px; font-style: normal; font-weight: 900; }
+  .public-card-link { width: 100%; margin-top: 14px; border: 0; border-top: 1px solid rgba(255,255,255,.13); background: transparent; padding: 13px 0 0; color: var(--pub-red); font-weight: 900; font-size: 17px; display: flex; justify-content: space-between; }
 
-  @media (max-width: 390px) {
-    .fcx-match-section { padding: 12px !important; }
-    .fcx-match-card { padding: 14px !important; }
-    .fcx-team-badge-wrap img,
-    .fcx-team-badge-wrap .fcx-opponent-badge { width: 52px; height: 52px; font-size: 18px; }
-    .fcx-team-badge-wrap { font-size: 12px; }
-    .fcx-vs-pill { width: 44px; height: 44px; font-size: 14px; }
-    .fcx-score-showcase > strong { font-size: 42px; }
-  }
+  .public-news-grid { padding: 5px 17px 18px; display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; }
+  .public-news-card { border: 1px solid rgba(255,48,79,.32); border-radius: 9px; overflow: hidden; background: linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.02)); }
+  .public-news-image { height: 110px; background: center/cover no-repeat; position: relative; }
+  .public-news-image span { position: absolute; left: 9px; top: 9px; background: var(--pub-red2); color: #fff; border-radius: 4px; font-size: 12px; font-weight: 1000; padding: 5px 9px; text-transform: uppercase; }
+  .public-news-body { padding: 10px 12px 13px; }
+  .public-news-body small { color: #aaa; font-size: 12px; }
+  .public-news-body h3 { font-weight: 1000; margin: 5px 0 3px; font-size: 16px; color: #fff; }
+  .public-news-body p { color: #d0d0d0; line-height: 1.35; font-size: 14px; margin: 0; }
 
-
-  /* ============================================================
-     WEBSITE VISUAL REBUILD — approved landing-page quality pass
-     This block intentionally overrides the old public-site rules.
-     Portal/dashboard styles remain untouched.
-  ============================================================ */
-
-  .fcx-public {
-    --red: #ff3158;
-    --red-deep: #b60820;
-    --gold: #d8ad4f;
-    --gold-soft: #f0cf77;
-    --ink: #050505;
-    --panel: rgba(14,15,16,.78);
-    --panel2: rgba(24,18,19,.72);
-    --stroke: rgba(255,255,255,.115);
-    --stroke-red: rgba(255,49,88,.34);
-    --stroke-gold: rgba(216,173,79,.38);
-    --copy: rgba(255,255,255,.86);
-    --copy-soft: rgba(255,255,255,.62);
-    background:
-      radial-gradient(circle at 78% 12%, rgba(255,49,88,.18), transparent 28%),
-      radial-gradient(circle at 18% 38%, rgba(216,173,79,.07), transparent 28%),
-      linear-gradient(180deg, #020202 0%, #070505 38%, #030303 100%) !important;
-  }
-
-  .fcx-mobile-header {
-    height: clamp(76px, 8vw, 92px) !important;
-    padding: max(14px, env(safe-area-inset-top)) clamp(20px, 4vw, 54px) 14px !important;
-    border-bottom: 1px solid rgba(255,255,255,.075) !important;
-    background: rgba(2,2,2,.82) !important;
-  }
-
-  .fcx-mobile-brand img {
-    width: clamp(46px, 5.2vw, 66px) !important;
-    height: clamp(46px, 5.2vw, 66px) !important;
-  }
-
-  .fcx-mobile-brand strong {
-    font-size: clamp(17px, 2.1vw, 26px) !important;
-    font-weight: 950 !important;
-    letter-spacing: -.045em !important;
-  }
-
-  .fcx-mobile-brand small {
-    color: var(--gold) !important;
-    font-size: clamp(12px, 1.25vw, 16px) !important;
-    font-weight: 800 !important;
-  }
-
-  .fcx-login-pill {
-    border-radius: 12px !important;
-    min-height: 48px !important;
-    padding: 0 clamp(18px, 2.4vw, 30px) !important;
-    background: rgba(8,7,4,.48) !important;
-    border: 1px solid rgba(216,173,79,.9) !important;
-    color: var(--gold-soft) !important;
-    font-weight: 950 !important;
-  }
-
-  .fcx-menu-btn span { background: rgba(255,255,255,.92) !important; height: 3px !important; }
-
-  .fcx-mobile-menu {
-    border-radius: 22px !important;
-    background: rgba(10,8,8,.94) !important;
-    border: 1px solid rgba(216,173,79,.28) !important;
-  }
-
-  .fcx-mobile-page {
-    width: min(100%, 1580px) !important;
-    padding: 0 clamp(18px, 3.4vw, 62px) 28px !important;
-  }
-
-  .fcx-mobile-hero {
-    min-height: clamp(610px, 47vw, 760px) !important;
-    grid-template-columns: minmax(380px, .78fr) minmax(520px, 1.22fr) !important;
-    gap: clamp(18px, 3vw, 54px) !important;
-    border-bottom: 1px solid rgba(255,255,255,.07) !important;
-  }
-
-  .fcx-mobile-hero:before {
-    background:
-      linear-gradient(90deg, rgba(2,2,2,1) 0%, rgba(2,2,2,.93) 27%, rgba(2,2,2,.34) 56%, rgba(2,2,2,.78) 100%),
-      radial-gradient(circle at 69% 51%, rgba(255,49,88,.44), transparent 31%),
-      radial-gradient(circle at 82% 28%, rgba(216,173,79,.16), transparent 23%) !important;
-  }
-
-  .fcx-hero-copy {
-    padding-top: clamp(44px, 6vw, 94px) !important;
-    align-self: start !important;
-  }
-
-  .fcx-hero-copy h1 {
-    max-width: 680px !important;
-    font-family: Impact, Haettenschweiler, 'Arial Narrow Bold', 'Inter', sans-serif !important;
-    font-size: clamp(68px, 8.2vw, 128px) !important;
-    line-height: .88 !important;
-    letter-spacing: -.045em !important;
-    text-transform: uppercase !important;
-    text-shadow: 0 22px 58px rgba(0,0,0,.78) !important;
-  }
-
-  .fcx-hero-copy h1 span {
-    background: linear-gradient(180deg, #f4d37a, #b98325) !important;
-    -webkit-background-clip: text !important;
-    background-clip: text !important;
-    color: transparent !important;
-  }
-
-  .fcx-hero-sub {
-    margin-top: clamp(14px, 1.8vw, 22px) !important;
-    letter-spacing: .22em !important;
-    font-size: clamp(14px, 1.55vw, 23px) !important;
-  }
-
-  .fcx-hero-copy p {
-    max-width: 530px !important;
-    margin-top: 22px !important;
-    font-size: clamp(16px, 1.35vw, 20px) !important;
-    line-height: 1.55 !important;
-    color: rgba(255,255,255,.87) !important;
-  }
-
-  .fcx-hero-actions {
-    width: min(100%, 520px) !important;
-    grid-template-columns: 1fr !important;
-    gap: 14px !important;
-  }
-
-  .fcx-red-cta, .fcx-gold-cta {
-    min-height: 58px !important;
-    border-radius: 10px !important;
-    padding: 0 22px !important;
-    font-size: clamp(15px, 1.25vw, 18px) !important;
-    font-weight: 950 !important;
-  }
-
-  .fcx-red-cta {
-    background: linear-gradient(135deg, #ff354f 0%, #df1734 56%, #9d071a 100%) !important;
-    box-shadow: 0 18px 50px rgba(255,49,88,.28), inset 0 1px 0 rgba(255,255,255,.32) !important;
-  }
-
-  .fcx-gold-cta {
-    background: linear-gradient(135deg, rgba(216,173,79,.06), rgba(0,0,0,.38)) !important;
-    border-color: rgba(216,173,79,.78) !important;
-    color: var(--gold-soft) !important;
-  }
-
-  .fcx-hero-visual {
-    min-height: clamp(560px, 45vw, 760px) !important;
-    overflow: visible !important;
-  }
-
-  .fcx-hero-watermark {
-    width: min(46vw, 540px) !important;
-    right: 0 !important;
-    top: 4% !important;
-    opacity: .43 !important;
-    filter: drop-shadow(0 28px 80px rgba(255,49,88,.35)) !important;
-  }
-
-  .fcx-player-silhouette {
-    width: min(37vw, 500px) !important;
-    height: min(48vw, 650px) !important;
-    left: 18% !important;
-    bottom: 0 !important;
-  }
-
-  .fcx-mobile-section, .fcx-friendly-strip {
-    border-radius: clamp(18px, 2vw, 28px) !important;
-    border: 1px solid rgba(255,255,255,.105) !important;
-    background:
-      radial-gradient(circle at 8% 0%, rgba(255,49,88,.15), transparent 29%),
-      linear-gradient(135deg, rgba(255,255,255,.065), rgba(255,255,255,.024)) !important;
-    box-shadow: 0 28px 90px rgba(0,0,0,.43), inset 0 1px 0 rgba(255,255,255,.06) !important;
-  }
-
-  .fcx-section-title {
-    color: #fff !important;
-    text-transform: uppercase !important;
-    letter-spacing: .035em !important;
-    font-size: clamp(18px, 1.65vw, 24px) !important;
-    font-weight: 950 !important;
-  }
-
-  .fcx-section-title span {
-    background: var(--red) !important;
-    box-shadow: 0 0 30px rgba(255,49,88,.8) !important;
-  }
-
-  .fcx-match-section { padding: clamp(18px, 2.2vw, 34px) !important; }
-  .fcx-match-section-head { margin-bottom: 22px !important; }
-
-  .fcx-match-grid {
-    display: grid !important;
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-    gap: clamp(14px, 2vw, 24px) !important;
-  }
-
-  .fcx-match-card {
-    min-height: clamp(300px, 28vw, 430px) !important;
-    padding: clamp(18px, 2.2vw, 30px) !important;
-    border-radius: clamp(18px, 1.8vw, 24px) !important;
-    background:
-      radial-gradient(circle at 0% 0%, rgba(255,49,88,.18), transparent 36%),
-      linear-gradient(145deg, rgba(18,19,20,.91), rgba(8,8,9,.95)) !important;
-    border: 1px solid rgba(255,255,255,.12) !important;
-  }
-
-  .fcx-card-kicker {
-    color: var(--red) !important;
-    text-transform: uppercase !important;
-    font-size: clamp(15px, 1.4vw, 20px) !important;
-    font-weight: 1000 !important;
-    letter-spacing: .02em !important;
-  }
-
-  .fcx-versus-row, .fcx-score-showcase {
-    gap: clamp(14px, 2vw, 28px) !important;
-    padding: 20px 0 8px !important;
-  }
-
-  .fcx-team-badge-wrap img, .fcx-team-badge-wrap .fcx-opponent-badge {
-    width: clamp(58px, 6vw, 90px) !important;
-    height: clamp(58px, 6vw, 90px) !important;
-  }
-
-  .fcx-team-badge-wrap {
-    font-size: clamp(13px, 1.35vw, 18px) !important;
-    font-weight: 900 !important;
-  }
-
-  .fcx-vs-pill {
-    background: transparent !important;
-    border: 0 !important;
-    box-shadow: none !important;
-    color: #fff !important;
-    font-size: clamp(22px, 3vw, 42px) !important;
-  }
-
-  .fcx-score-showcase > strong {
-    font-size: clamp(52px, 5.8vw, 86px) !important;
-    letter-spacing: -.06em !important;
-  }
-
-  .fcx-match-details-box {
-    gap: 12px !important;
-    padding: 18px 0 !important;
-  }
-
-  .fcx-match-card .fcx-meta-line {
-    color: rgba(255,255,255,.74) !important;
-    font-size: clamp(14px, 1.35vw, 18px) !important;
-  }
-
-  .fcx-match-card .fcx-meta-line svg { color: var(--gold) !important; }
-  .fcx-card-action { color: var(--red) !important; font-weight: 950 !important; }
-
-  .fcx-news-row {
-    display: grid !important;
-    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
-    gap: clamp(12px, 1.6vw, 22px) !important;
-    overflow: visible !important;
-  }
-
-  .fcx-news-card {
-    border-radius: 16px !important;
-    background: rgba(255,255,255,.04) !important;
-    border-color: rgba(255,49,88,.28) !important;
-  }
-
-  .fcx-news-thumb { height: clamp(130px, 13vw, 190px) !important; }
-
-  .fcx-friendly-strip {
-    border-color: rgba(255,49,88,.38) !important;
-    padding: clamp(18px, 2.4vw, 30px) !important;
-  }
-
-  .fcx-friendly-strip h2 {
-    font-weight: 1000 !important;
-    letter-spacing: -.02em !important;
-  }
-
-  .fcx-sponsor-row {
-    display: grid !important;
-    grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
-    gap: clamp(10px, 1.35vw, 18px) !important;
-    overflow: visible !important;
-  }
-
-  .fcx-sponsor-tile {
-    border-radius: 12px !important;
-    min-height: 70px !important;
-    background: linear-gradient(145deg, rgba(255,255,255,.065), rgba(255,255,255,.025)) !important;
-  }
-
-  .fcx-portal-section { gap: 12px !important; }
-
-  .fcx-portal-row {
-    border-radius: 14px !important;
-    min-height: 76px !important;
-  }
-
-  .fcx-mobile-footer {
-    width: min(100%, 1580px) !important;
-    margin-left: auto !important;
-    margin-right: auto !important;
-  }
+  .public-friendly { display: grid; grid-template-columns: 110px 1fr 300px; align-items: center; gap: 22px; padding: 20px 26px; }
+  .public-hand { color: var(--pub-red); display: grid; place-items: center; }
+  .public-friendly h2 { margin: 0 0 7px; font-size: 21px; text-transform: uppercase; color: #fff; }
+  .public-friendly p { margin: 0; color: #ddd; line-height: 1.4; font-size: 16px; }
+  .public-sponsors { padding: 0 18px 20px; display: grid; grid-template-columns: repeat(5,1fr); gap: 14px; }
+  .public-sponsor { height: 60px; border: 1px solid rgba(255,255,255,.13); border-radius: 8px; background: rgba(255,255,255,.04); display: grid; place-items: center; color: #fff; text-decoration: none; font-weight: 1000; font-size: 21px; filter: grayscale(1); opacity: .9; padding: 8px; }
+  .public-sponsor img { max-width: 100%; max-height: 38px; object-fit: contain; }
+  .public-portal { padding-bottom: 18px; }
+  .public-portal-row { width: calc(100% - 36px); margin: 0 18px 9px; min-height: 61px; border: 1px solid rgba(255,255,255,.12); border-radius: 8px; background: linear-gradient(90deg,rgba(255,255,255,.06),rgba(255,255,255,.02)); display: grid; grid-template-columns: 66px 1fr 150px; align-items: center; padding: 10px 14px; color: #fff; text-align: left; }
+  .public-portal-row > svg { color: var(--pub-red); }
+  .public-portal-row > svg.gold { color: var(--pub-gold); }
+  .public-portal-row strong { display: block; font-size: 17px; text-transform: uppercase; }
+  .public-portal-row small { display: block; color: #aaa; font-size: 13px; margin-top: 3px; }
+  .public-portal-row b { height: 44px; border-radius: 7px; background: linear-gradient(180deg,#ff3d4e,#d7192e); display: flex; align-items: center; justify-content: center; gap: 12px; font-weight: 1000; }
+  .public-form-section { display: none; padding-bottom: 18px; }
+  .public-form-section.is-open { display: block; }
+  .public-form { padding: 10px 18px 0; display: grid; grid-template-columns: repeat(2,1fr); gap: 12px; }
+  .public-form textarea,
+  .public-form .public-form-status,
+  .public-form button { grid-column: 1 / -1; }
+  .public-form input,
+  .public-form textarea { width: 100%; border: 1px solid rgba(255,255,255,.14); border-radius: 10px; background: rgba(255,255,255,.06); color: #fff; min-height: 48px; padding: 0 14px; font-size: 16px; outline: none; }
+  .public-form textarea { padding: 14px; min-height: 110px; resize: vertical; }
+  .public-form-status { color: var(--pub-gold); font-weight: 800; }
+  .public-footer { display: grid; grid-template-columns: 1fr 1.1fr .7fr; gap: 22px; align-items: center; margin: 10px 35px 0; padding: 16px 0 30px; border-top: 1px solid rgba(255,255,255,.12); color: #eee; }
+  .public-footer-brand { display: flex; gap: 14px; align-items: center; }
+  .public-footer-brand img { width: 57px; height: 57px; object-fit: contain; }
+  .public-footer-brand strong { display: block; font-family: 'Bebas Neue'; font-size: 27px; letter-spacing: .03em; }
+  .public-footer-brand small { display: block; font-size: 11px; letter-spacing: .16em; text-transform: uppercase; }
+  .public-contact { display: grid; gap: 8px; color: #ddd; font-size: 14px; }
+  .public-social { display: grid; gap: 8px; font-size: 16px; }
+  .public-social span { font-size: 26px; letter-spacing: .12em; }
+  .public-footer > small { color: #9c9c9c; font-size: 12px; text-align: center; grid-column: 1/-1; }
 
   @media (max-width: 900px) {
-    .fcx-mobile-page { padding-left: 22px !important; padding-right: 22px !important; }
-    .fcx-mobile-hero {
-      min-height: 665px !important;
-      grid-template-columns: 1fr !important;
-      align-items: start !important;
-      padding-top: 18px !important;
-    }
-    .fcx-mobile-hero:before {
-      background:
-        linear-gradient(90deg, rgba(2,2,2,.98) 0%, rgba(2,2,2,.86) 36%, rgba(2,2,2,.36) 70%, rgba(2,2,2,.72) 100%),
-        radial-gradient(circle at 78% 48%, rgba(255,49,88,.42), transparent 31%) !important;
-    }
-    .fcx-hero-copy { width: min(62vw, 470px) !important; min-width: 0 !important; padding-top: 24px !important; z-index: 4 !important; }
-    .fcx-hero-copy h1 { font-size: clamp(58px, 11.5vw, 92px) !important; }
-    .fcx-hero-copy p { font-size: 17px !important; max-width: 370px !important; }
-    .fcx-hero-actions { max-width: 390px !important; }
-    .fcx-hero-visual { position: absolute !important; inset: 0 0 0 37% !important; min-height: 0 !important; opacity: 1 !important; }
-    .fcx-player-silhouette { width: min(54vw, 430px) !important; height: 560px !important; left: -4% !important; }
-    .fcx-hero-watermark { width: 420px !important; right: -36% !important; top: 8% !important; }
-    .fcx-news-row { display: flex !important; overflow-x: auto !important; scroll-snap-type: x mandatory !important; }
-    .fcx-news-card { flex: 0 0 min(75vw, 310px) !important; scroll-snap-align: start !important; }
-    .fcx-sponsor-row { display: flex !important; overflow-x: auto !important; scroll-snap-type: x mandatory !important; }
-    .fcx-sponsor-tile { flex: 0 0 165px !important; scroll-snap-align: start !important; }
-    .fcx-friendly-strip { grid-template-columns: auto 1fr !important; }
-    .fcx-friendly-strip .fcx-gold-cta { grid-column: 1 / -1 !important; }
+    .public-nav { display: none; }
+    .public-topbar { height: 88px; padding: 11px 22px; }
+    .public-brand img { width: 52px; height: 52px; }
+    .public-brand strong { font-size: 21px; }
+    .public-brand small { font-size: 14px; }
+    .public-login { height: 50px; min-width: 145px; font-size: 18px; padding: 0 19px; }
+    .public-hero { padding: 22px 40px 15px; min-height: 500px; }
+    .public-hero-bg { width: 62%; background-position: center right; opacity: .9; }
+    .public-hero-copy { width: 62%; }
+    .public-hero h1 { font-size: clamp(56px, 12vw, 76px); }
+    .public-tagline { font-size: 18px; letter-spacing: .22em; }
+    .public-hero p { font-size: 17px; }
+    .public-section,
+    .public-friendly { margin-left: 33px; margin-right: 33px; }
+    .public-section-title,
+    .public-section-head { font-size: 19px; }
+    .public-match-grid { grid-template-columns: 1fr 1fr; }
+    .public-match-card { padding: 16px 20px; }
+    .public-versus { grid-template-columns: 1fr 44px 1fr; gap: 7px; }
+    .public-score-row { grid-template-columns: 1fr 112px 1fr; gap: 7px; }
+    .public-team img,.public-opponent-badge { width: 63px; height: 63px; }
+    .public-team strong { font-size: 14px; }
+    .public-news-grid { grid-template-columns: repeat(3,1fr); gap: 15px; }
+    .public-news-image { height: 95px; }
+    .public-friendly { grid-template-columns: 90px 1fr 240px; }
+    .public-sponsors { grid-template-columns: repeat(5,1fr); }
+    .public-sponsor { font-size: 18px; }
+    .public-footer { grid-template-columns: 1fr 1fr .8fr; }
   }
 
-  @media (max-width: 640px) {
-    .fcx-mobile-header { height: 72px !important; padding-left: 14px !important; padding-right: 14px !important; }
-    .fcx-mobile-brand img { width: 44px !important; height: 44px !important; }
-    .fcx-mobile-brand strong { font-size: 16px !important; max-width: 42vw !important; }
-    .fcx-login-pill { min-height: 42px !important; padding: 0 13px !important; font-size: 14px !important; }
-    .fcx-mobile-page { padding-left: 13px !important; padding-right: 13px !important; }
-    .fcx-mobile-hero { min-height: 610px !important; }
-    .fcx-hero-copy { width: 66vw !important; padding-top: 22px !important; }
-    .fcx-hero-copy h1 { font-size: clamp(48px, 13vw, 70px) !important; }
-    .fcx-hero-sub { font-size: 12px !important; letter-spacing: .18em !important; }
-    .fcx-hero-copy p { max-width: 330px !important; font-size: 15.5px !important; line-height: 1.48 !important; }
-    .fcx-hero-actions { max-width: 360px !important; }
-    .fcx-red-cta, .fcx-gold-cta { min-height: 50px !important; font-size: 14.5px !important; padding: 0 14px !important; }
-    .fcx-hero-visual { left: 43% !important; }
-    .fcx-player-silhouette { width: 330px !important; height: 500px !important; left: -20px !important; }
-    .fcx-hero-watermark { width: 350px !important; right: -54% !important; top: 11% !important; }
-    .fcx-mobile-section, .fcx-friendly-strip { margin-top: 14px !important; border-radius: 18px !important; padding: 14px !important; }
-    .fcx-match-grid { grid-template-columns: 1fr !important; gap: 14px !important; }
-    .fcx-match-card { min-height: 0 !important; padding: 16px !important; border-radius: 18px !important; }
-    .fcx-versus-row, .fcx-score-showcase { padding: 14px 0 4px !important; }
-    .fcx-team-badge-wrap img, .fcx-team-badge-wrap .fcx-opponent-badge { width: 58px !important; height: 58px !important; }
-    .fcx-team-badge-wrap { font-size: 13px !important; }
-    .fcx-vs-pill { font-size: 24px !important; }
-    .fcx-score-showcase > strong { font-size: 50px !important; }
-    .fcx-section-headline { align-items: center !important; }
-    .fcx-section-headline a { font-size: 13px !important; }
-    .fcx-friendly-strip h2 { font-size: 20px !important; }
-    .fcx-friendly-strip p { font-size: 14px !important; }
-    .fcx-portal-row { grid-template-columns: auto 1fr !important; }
-    .fcx-portal-row b { grid-column: 1 / -1 !important; justify-content: center !important; }
+  @media (max-width: 620px) {
+    .public-topbar { gap: 10px; padding: 10px 16px; }
+    .public-brand { gap: 10px; }
+    .public-brand img { width: 46px; height: 46px; }
+    .public-brand strong { font-size: 18px; white-space: normal; }
+    .public-login { min-width: 104px; height: 44px; font-size: 15px; padding: 0 12px; }
+    .public-menu { width: 40px; }
+    .public-menu span { width: 28px; }
+    .public-menu-panel { right: 14px; left: 14px; width: auto; }
+    .public-hero { padding: 20px 22px 18px; min-height: 520px; display: flex; align-items: flex-start; }
+    .public-hero-bg { width: 78%; opacity: .76; background-position: 62% center; }
+    .public-hero:before { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg,#030303 0%,rgba(3,3,3,.94) 42%,rgba(3,3,3,.2)); z-index: 1; pointer-events: none; }
+    .public-hero-copy { width: 76%; z-index: 2; }
+    .public-hero h1 { font-size: 58px; }
+    .public-tagline { font-size: 15px; letter-spacing: .18em; margin-top: 18px; }
+    .public-redline { margin: 14px 0; }
+    .public-hero p { font-size: 15px; }
+    .public-cta { min-height: 52px; font-size: 15px; padding: 0 16px; }
+    .public-section,
+    .public-friendly { margin-left: 14px; margin-right: 14px; border-radius: 14px; }
+    .public-match-grid { grid-template-columns: 1fr; }
+    .public-match-card + .public-match-card { border-left: 0; border-top: 1px solid rgba(255,255,255,.13); }
+    .public-score-row { grid-template-columns: 1fr 100px 1fr; }
+    .public-news-grid { grid-template-columns: 1fr; }
+    .public-news-image { height: 155px; }
+    .public-friendly { grid-template-columns: 1fr; padding: 18px; }
+    .public-hand { justify-content: start; }
+    .public-sponsors { grid-template-columns: repeat(2,1fr); }
+    .public-portal-row { grid-template-columns: 46px 1fr; gap: 10px; }
+    .public-portal-row b { grid-column: 1 / -1; }
+    .public-form { grid-template-columns: 1fr; }
+    .public-footer { grid-template-columns: 1fr; margin-left: 18px; margin-right: 18px; }
   }
 
-  @media (max-width: 380px) {
-    .fcx-mobile-brand strong { display: none !important; }
-    .fcx-mobile-hero { min-height: 640px !important; }
-    .fcx-hero-copy { width: 100% !important; max-width: 305px !important; }
-    .fcx-hero-copy h1 { font-size: 48px !important; }
-    .fcx-hero-visual { left: 32% !important; opacity: .76 !important; }
-    .fcx-hero-actions { max-width: 310px !important; }
+  @media (prefers-reduced-motion: no-preference) {
+    .public-section, .public-friendly, .public-hero-copy { animation: publicFadeUp .55s ease both; }
+    .public-hero-bg { animation: publicHeroFloat 6s ease-in-out infinite alternate; }
+    .public-cta, .public-news-card, .public-match-card, .public-sponsor, .public-portal-row { transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease; }
+    .public-cta:hover, .public-news-card:hover, .public-match-card:hover, .public-sponsor:hover, .public-portal-row:hover { transform: translateY(-2px); border-color: rgba(255,48,79,.42); }
   }
-
+  @keyframes publicFadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes publicHeroFloat { from { transform: scale(1); } to { transform: scale(1.025); } }
 `;
-
