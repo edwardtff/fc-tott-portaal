@@ -594,6 +594,8 @@ function PublicLanding({ branding = DEFAULT_BRANDING, matches = [], posts = [], 
   const [request, setRequest] = useState({ teamName: "", contactName: "", email: "", phone: "", preferredDate: "", message: "" });
   const [requestStatus, setRequestStatus] = useState("");
   const [requestBusy, setRequestBusy] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [friendlyOpen, setFriendlyOpen] = useState(false);
 
   const logoUrl = branding.logoUrl || DEFAULT_BRANDING.logoUrl;
   const sortedMatches = [...matches].sort((a, b) => new Date(a.match_date) - new Date(b.match_date));
@@ -615,6 +617,24 @@ function PublicLanding({ branding = DEFAULT_BRANDING, matches = [], posts = [], 
     { id: "fallback-news-3", title: "Nieuwe speler verwelkomd", text: "Malek komt het team versterken komend seizoen.", category: "Nieuws", date: "9 mei 2025", images: [] },
   ];
   const newsItems = publicNews.length > 0 ? publicNews : newsFallback;
+
+  const openFriendlyForm = () => {
+    setFriendlyOpen(true);
+    window.requestAnimationFrame(() => {
+      document.getElementById("friendly-form")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  };
+
+  const closeMenuAndGo = (hash) => {
+    setMenuOpen(false);
+    if (hash === "portal") {
+      onLoginClick?.();
+      return;
+    }
+    window.requestAnimationFrame(() => {
+      document.querySelector(hash)?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  };
 
   const submitFriendly = async (event) => {
     event.preventDefault();
@@ -656,8 +676,20 @@ function PublicLanding({ branding = DEFAULT_BRANDING, matches = [], posts = [], 
         </a>
         <div className="fcx-mobile-header-actions">
           <button className="fcx-login-pill" onClick={onLoginClick}><Users size={18} /> Log in</button>
-          <button className="fcx-menu-btn" aria-label="Menu"><span /><span /><span /></button>
+          <button className={`fcx-menu-btn ${menuOpen ? "is-open" : ""}`} aria-label={menuOpen ? "Menu sluiten" : "Menu openen"} aria-expanded={menuOpen} onClick={() => setMenuOpen((value) => !value)}>
+            {menuOpen ? <X size={26} /> : <><span /><span /><span /></>}
+          </button>
         </div>
+        {menuOpen && (
+          <nav className="fcx-mobile-menu" aria-label="Mobiel menu">
+            <button onClick={() => closeMenuAndGo("#home")}>Home</button>
+            <button onClick={() => closeMenuAndGo("#wedstrijden")}>Wedstrijden</button>
+            <button onClick={() => closeMenuAndGo("#team")}>Updates</button>
+            <button onClick={() => { setMenuOpen(false); openFriendlyForm(); }}>Oefenwedstrijd</button>
+            <button onClick={() => closeMenuAndGo("#sponsors")}>Sponsors</button>
+            <button onClick={() => closeMenuAndGo("portal")}>Log in portal</button>
+          </nav>
+        )}
       </header>
 
       <main className="fcx-mobile-page">
@@ -668,7 +700,7 @@ function PublicLanding({ branding = DEFAULT_BRANDING, matches = [], posts = [], 
             <p>Welkom bij FC Talk Of The Town Futsal Club. De thuisbasis voor supporters, nieuws, sponsoren en oefenwedstrijden aanvragen.</p>
             <div className="fcx-hero-actions">
               <a className="fcx-red-cta" href="#wedstrijden"><Calendar size={18} /> Bekijk volgende wedstrijd <ChevronRight size={18} /></a>
-              <a className="fcx-gold-cta" href="#friendly"><Handshake size={18} /> Vraag oefenwedstrijd aan <ChevronRight size={18} /></a>
+              <button type="button" className="fcx-gold-cta" onClick={openFriendlyForm}><Handshake size={18} /> Vraag oefenwedstrijd aan <ChevronRight size={18} /></button>
             </div>
           </div>
           <div className="fcx-hero-visual" aria-hidden="true">
@@ -732,7 +764,7 @@ function PublicLanding({ branding = DEFAULT_BRANDING, matches = [], posts = [], 
         </section>
 
         <section id="team" className="fcx-mobile-section">
-          <div className="fcx-section-headline"><SectionTitle title="Laatste updates" /><button onClick={onLoginClick}>Bekijk alle updates <ChevronRight size={16} /></button></div>
+          <div className="fcx-section-headline"><SectionTitle title="Laatste updates" /><a href="#team">Bekijk alle updates <ChevronRight size={16} /></a></div>
           <div className="fcx-news-row">
             {newsItems.map((post, index) => (
               <article className="fcx-news-card" key={post.id || index}>
@@ -753,7 +785,7 @@ function PublicLanding({ branding = DEFAULT_BRANDING, matches = [], posts = [], 
             <h2>Oefenwedstrijd aanvragen</h2>
             <p>Op zoek naar een sterke tegenstander? Vraag een oefenwedstrijd aan en we regelen zo snel mogelijk contact met je op.</p>
           </div>
-          <a href="#friendly-form" className="fcx-gold-cta">Aanvraag versturen <ChevronRight size={18} /></a>
+          <button type="button" className="fcx-gold-cta" onClick={openFriendlyForm}>Aanvraag versturen <ChevronRight size={18} /></button>
         </section>
 
         <section id="sponsors" className="fcx-mobile-section fcx-sponsors-section">
@@ -781,7 +813,7 @@ function PublicLanding({ branding = DEFAULT_BRANDING, matches = [], posts = [], 
           })}
         </section>
 
-        <section id="contact" className="fcx-mobile-section fcx-contact-section">
+        <section id="contact" className={`fcx-mobile-section fcx-contact-section ${friendlyOpen ? "is-open" : ""}`}>
           <SectionTitle title="Aanvraag versturen" />
           <form id="friendly-form" className="fcx-mobile-form" onSubmit={submitFriendly}>
             <input value={request.teamName} onChange={(e) => setRequest({ ...request, teamName: e.target.value })} placeholder="Teamnaam" />
@@ -6719,6 +6751,111 @@ const publicLandingCss = String.raw`
   .fcx-menu-btn { width: 45px; height: 45px; border: 0; background: transparent; display: grid; place-items: center; gap: 5px; padding: 8px; }
   .fcx-menu-btn span { width: 30px; height: 3px; border-radius: 10px; display: block; background: rgba(255,255,255,0.9); }
 
+  html { scroll-behavior: smooth; }
+  .fcx-public section { scroll-margin-top: 92px; }
+  .fcx-mobile-hero, .fcx-mobile-section, .fcx-friendly-strip, .fcx-mobile-footer {
+    animation: fcxFadeUp 720ms cubic-bezier(.22,1,.36,1) both;
+  }
+  .fcx-mobile-section:nth-of-type(2) { animation-delay: 70ms; }
+  .fcx-mobile-section:nth-of-type(3) { animation-delay: 120ms; }
+  .fcx-friendly-strip { animation-delay: 160ms; }
+  .fcx-sponsors-section { animation-delay: 210ms; }
+  .fcx-portal-section { animation-delay: 250ms; }
+  .fcx-hero-watermark { animation: fcxSoftFloat 7s ease-in-out infinite alternate; }
+  .fcx-player-silhouette { animation: fcxHeroDrift 8s ease-in-out infinite alternate; }
+  .fcx-red-cta, .fcx-gold-cta, .fcx-match-card, .fcx-news-card, .fcx-sponsor-tile, .fcx-portal-row {
+    transition: transform 260ms cubic-bezier(.22,1,.36,1), box-shadow 260ms ease, border-color 260ms ease, background 260ms ease, opacity 220ms ease;
+  }
+  .fcx-red-cta:hover, .fcx-gold-cta:hover, .fcx-match-card:hover, .fcx-news-card:hover, .fcx-sponsor-tile:hover, .fcx-portal-row:hover {
+    transform: translateY(-3px);
+  }
+  .fcx-red-cta:active, .fcx-gold-cta:active, .fcx-portal-row:active { transform: translateY(0) scale(.985); }
+  .fcx-match-card:hover, .fcx-news-card:hover, .fcx-sponsor-tile:hover {
+    border-color: rgba(214,173,82,0.42) !important;
+    box-shadow: 0 26px 70px rgba(0,0,0,0.45), 0 0 34px rgba(255,49,88,0.08) !important;
+  }
+  .fcx-mobile-menu {
+    position: absolute;
+    top: calc(100% + 10px);
+    right: clamp(14px, 4vw, 44px);
+    z-index: 95;
+    width: min(290px, calc(100vw - 28px));
+    padding: 10px;
+    border-radius: 20px;
+    border: 1px solid rgba(214,173,82,0.26);
+    background: rgba(10,10,10,0.92);
+    box-shadow: 0 28px 80px rgba(0,0,0,0.62), inset 0 1px 0 rgba(255,255,255,0.08);
+    backdrop-filter: blur(24px) saturate(150%);
+    -webkit-backdrop-filter: blur(24px) saturate(150%);
+    display: grid;
+    gap: 6px;
+    animation: fcxMenuIn 220ms cubic-bezier(.22,1,.36,1) both;
+  }
+  .fcx-mobile-menu button {
+    width: 100%;
+    min-height: 44px;
+    border: 0;
+    border-radius: 14px;
+    background: transparent;
+    color: rgba(255,255,255,0.88);
+    text-align: left;
+    padding: 0 14px;
+    font-weight: 900;
+    font-size: 15px;
+  }
+  .fcx-mobile-menu button:hover { background: rgba(255,255,255,0.06); color: #fff; }
+  .fcx-mobile-menu button:last-child { color: var(--gold); background: rgba(214,173,82,0.08); }
+  .fcx-menu-btn.is-open {
+    border-radius: 14px;
+    color: #fff;
+    border: 1px solid rgba(255,255,255,0.10);
+    background: rgba(255,255,255,0.055);
+  }
+  .fcx-contact-section {
+    display: block !important;
+    max-height: 0;
+    opacity: 0;
+    overflow: hidden;
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    border-width: 0 !important;
+    transform: translateY(-8px);
+    transition: max-height 520ms cubic-bezier(.22,1,.36,1), opacity 320ms ease, transform 320ms ease, margin 320ms ease, padding 320ms ease, border-width 320ms ease;
+  }
+  .fcx-contact-section.is-open {
+    max-height: 900px;
+    opacity: 1;
+    overflow: visible;
+    margin-top: 18px !important;
+    padding: clamp(16px, 2.4vw, 22px) !important;
+    border-width: 1px !important;
+    transform: translateY(0);
+  }
+  .fcx-mobile-form input:focus, .fcx-mobile-form textarea:focus {
+    border-color: rgba(214,173,82,0.55);
+    box-shadow: 0 0 0 4px rgba(214,173,82,0.09), 0 0 36px rgba(255,49,88,0.05);
+  }
+  @keyframes fcxFadeUp {
+    from { opacity: 0; transform: translateY(22px); filter: blur(5px); }
+    to { opacity: 1; transform: translateY(0); filter: blur(0); }
+  }
+  @keyframes fcxMenuIn {
+    from { opacity: 0; transform: translateY(-8px) scale(.97); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  @keyframes fcxSoftFloat {
+    from { transform: translate3d(0,0,0) rotate(-1deg); opacity: .36; }
+    to { transform: translate3d(8px,-10px,0) rotate(1deg); opacity: .52; }
+  }
+  @keyframes fcxHeroDrift {
+    from { transform: translate3d(0,0,0); }
+    to { transform: translate3d(5px,-7px,0); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .fcx-public *, .fcx-public *:before, .fcx-public *:after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+  }
+
   .fcx-mobile-page { width: min(100%, 1480px); margin: 0 auto; padding: 0 clamp(14px, 3.6vw, 56px) 20px; }
   .fcx-mobile-hero {
     min-height: clamp(500px, 67vw, 700px);
@@ -6796,7 +6933,7 @@ const publicLandingCss = String.raw`
   .fcx-portal-row strong { display: block; text-transform: uppercase; font-size: 17px; }
   .fcx-portal-row small { display: block; color: rgba(255,255,255,0.68); margin-top: 2px; }
   .fcx-portal-row b { color: #fff; background: linear-gradient(135deg, #ff344f, #b90d22); border-radius: 9px; padding: 10px 15px; display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; }
-  .fcx-contact-section { display: none; }
+  /* contact form visibility handled by .fcx-contact-section.is-open */
   .fcx-mobile-form { display: grid; gap: 10px; margin-top: 14px; }
   .fcx-mobile-form input, .fcx-mobile-form textarea { width: 100%; font-size: 16px; border-radius: 12px; color: #fff; background: rgba(0,0,0,0.38); border: 1px solid rgba(255,255,255,0.13); outline: none; padding: 14px; }
   .fcx-public-form-status { color: var(--gold); font-weight: 900; }
