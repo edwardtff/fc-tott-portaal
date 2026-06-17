@@ -594,8 +594,6 @@ function PublicLanding({ branding = DEFAULT_BRANDING, matches = [], posts = [], 
   const [request, setRequest] = useState({ teamName: "", contactName: "", email: "", phone: "", preferredDate: "", message: "" });
   const [requestStatus, setRequestStatus] = useState("");
   const [requestBusy, setRequestBusy] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [friendlyOpen, setFriendlyOpen] = useState(false);
 
   const logoUrl = branding.logoUrl || DEFAULT_BRANDING.logoUrl;
   const sortedMatches = [...matches].sort((a, b) => new Date(a.match_date) - new Date(b.match_date));
@@ -617,24 +615,6 @@ function PublicLanding({ branding = DEFAULT_BRANDING, matches = [], posts = [], 
     { id: "fallback-news-3", title: "Nieuwe speler verwelkomd", text: "Malek komt het team versterken komend seizoen.", category: "Nieuws", date: "9 mei 2025", images: [] },
   ];
   const newsItems = publicNews.length > 0 ? publicNews : newsFallback;
-
-  const openFriendlyForm = () => {
-    setFriendlyOpen(true);
-    window.requestAnimationFrame(() => {
-      document.getElementById("friendly-form")?.scrollIntoView({ behavior: "smooth", block: "start" });
-    });
-  };
-
-  const closeMenuAndGo = (hash) => {
-    setMenuOpen(false);
-    if (hash === "portal") {
-      onLoginClick?.();
-      return;
-    }
-    window.requestAnimationFrame(() => {
-      document.querySelector(hash)?.scrollIntoView({ behavior: "smooth", block: "start" });
-    });
-  };
 
   const submitFriendly = async (event) => {
     event.preventDefault();
@@ -676,20 +656,8 @@ function PublicLanding({ branding = DEFAULT_BRANDING, matches = [], posts = [], 
         </a>
         <div className="fcx-mobile-header-actions">
           <button className="fcx-login-pill" onClick={onLoginClick}><Users size={18} /> Log in</button>
-          <button className={`fcx-menu-btn ${menuOpen ? "is-open" : ""}`} aria-label={menuOpen ? "Menu sluiten" : "Menu openen"} aria-expanded={menuOpen} onClick={() => setMenuOpen((value) => !value)}>
-            {menuOpen ? <X size={26} /> : <><span /><span /><span /></>}
-          </button>
+          <button className="fcx-menu-btn" aria-label="Menu"><span /><span /><span /></button>
         </div>
-        {menuOpen && (
-          <nav className="fcx-mobile-menu" aria-label="Mobiel menu">
-            <button onClick={() => closeMenuAndGo("#home")}>Home</button>
-            <button onClick={() => closeMenuAndGo("#wedstrijden")}>Wedstrijden</button>
-            <button onClick={() => closeMenuAndGo("#team")}>Updates</button>
-            <button onClick={() => { setMenuOpen(false); openFriendlyForm(); }}>Oefenwedstrijd</button>
-            <button onClick={() => closeMenuAndGo("#sponsors")}>Sponsors</button>
-            <button onClick={() => closeMenuAndGo("portal")}>Log in portal</button>
-          </nav>
-        )}
       </header>
 
       <main className="fcx-mobile-page">
@@ -700,7 +668,7 @@ function PublicLanding({ branding = DEFAULT_BRANDING, matches = [], posts = [], 
             <p>Welkom bij FC Talk Of The Town Futsal Club. De thuisbasis voor supporters, nieuws, sponsoren en oefenwedstrijden aanvragen.</p>
             <div className="fcx-hero-actions">
               <a className="fcx-red-cta" href="#wedstrijden"><Calendar size={18} /> Bekijk volgende wedstrijd <ChevronRight size={18} /></a>
-              <button type="button" className="fcx-gold-cta" onClick={openFriendlyForm}><Handshake size={18} /> Vraag oefenwedstrijd aan <ChevronRight size={18} /></button>
+              <a className="fcx-gold-cta" href="#friendly"><Handshake size={18} /> Vraag oefenwedstrijd aan <ChevronRight size={18} /></a>
             </div>
           </div>
           <div className="fcx-hero-visual" aria-hidden="true">
@@ -764,7 +732,7 @@ function PublicLanding({ branding = DEFAULT_BRANDING, matches = [], posts = [], 
         </section>
 
         <section id="team" className="fcx-mobile-section">
-          <div className="fcx-section-headline"><SectionTitle title="Laatste updates" /><a href="#team">Bekijk alle updates <ChevronRight size={16} /></a></div>
+          <div className="fcx-section-headline"><SectionTitle title="Laatste updates" /><button onClick={onLoginClick}>Bekijk alle updates <ChevronRight size={16} /></button></div>
           <div className="fcx-news-row">
             {newsItems.map((post, index) => (
               <article className="fcx-news-card" key={post.id || index}>
@@ -785,7 +753,7 @@ function PublicLanding({ branding = DEFAULT_BRANDING, matches = [], posts = [], 
             <h2>Oefenwedstrijd aanvragen</h2>
             <p>Op zoek naar een sterke tegenstander? Vraag een oefenwedstrijd aan en we regelen zo snel mogelijk contact met je op.</p>
           </div>
-          <button type="button" className="fcx-gold-cta" onClick={openFriendlyForm}>Aanvraag versturen <ChevronRight size={18} /></button>
+          <a href="#friendly-form" className="fcx-gold-cta">Aanvraag versturen <ChevronRight size={18} /></a>
         </section>
 
         <section id="sponsors" className="fcx-mobile-section fcx-sponsors-section">
@@ -813,7 +781,7 @@ function PublicLanding({ branding = DEFAULT_BRANDING, matches = [], posts = [], 
           })}
         </section>
 
-        <section id="contact" className={`fcx-mobile-section fcx-contact-section ${friendlyOpen ? "is-open" : ""}`}>
+        <section id="contact" className="fcx-mobile-section fcx-contact-section">
           <SectionTitle title="Aanvraag versturen" />
           <form id="friendly-form" className="fcx-mobile-form" onSubmit={submitFriendly}>
             <input value={request.teamName} onChange={(e) => setRequest({ ...request, teamName: e.target.value })} placeholder="Teamnaam" />
@@ -6751,111 +6719,6 @@ const publicLandingCss = String.raw`
   .fcx-menu-btn { width: 45px; height: 45px; border: 0; background: transparent; display: grid; place-items: center; gap: 5px; padding: 8px; }
   .fcx-menu-btn span { width: 30px; height: 3px; border-radius: 10px; display: block; background: rgba(255,255,255,0.9); }
 
-  html { scroll-behavior: smooth; }
-  .fcx-public section { scroll-margin-top: 92px; }
-  .fcx-mobile-hero, .fcx-mobile-section, .fcx-friendly-strip, .fcx-mobile-footer {
-    animation: fcxFadeUp 720ms cubic-bezier(.22,1,.36,1) both;
-  }
-  .fcx-mobile-section:nth-of-type(2) { animation-delay: 70ms; }
-  .fcx-mobile-section:nth-of-type(3) { animation-delay: 120ms; }
-  .fcx-friendly-strip { animation-delay: 160ms; }
-  .fcx-sponsors-section { animation-delay: 210ms; }
-  .fcx-portal-section { animation-delay: 250ms; }
-  .fcx-hero-watermark { animation: fcxSoftFloat 7s ease-in-out infinite alternate; }
-  .fcx-player-silhouette { animation: fcxHeroDrift 8s ease-in-out infinite alternate; }
-  .fcx-red-cta, .fcx-gold-cta, .fcx-match-card, .fcx-news-card, .fcx-sponsor-tile, .fcx-portal-row {
-    transition: transform 260ms cubic-bezier(.22,1,.36,1), box-shadow 260ms ease, border-color 260ms ease, background 260ms ease, opacity 220ms ease;
-  }
-  .fcx-red-cta:hover, .fcx-gold-cta:hover, .fcx-match-card:hover, .fcx-news-card:hover, .fcx-sponsor-tile:hover, .fcx-portal-row:hover {
-    transform: translateY(-3px);
-  }
-  .fcx-red-cta:active, .fcx-gold-cta:active, .fcx-portal-row:active { transform: translateY(0) scale(.985); }
-  .fcx-match-card:hover, .fcx-news-card:hover, .fcx-sponsor-tile:hover {
-    border-color: rgba(214,173,82,0.42) !important;
-    box-shadow: 0 26px 70px rgba(0,0,0,0.45), 0 0 34px rgba(255,49,88,0.08) !important;
-  }
-  .fcx-mobile-menu {
-    position: absolute;
-    top: calc(100% + 10px);
-    right: clamp(14px, 4vw, 44px);
-    z-index: 95;
-    width: min(290px, calc(100vw - 28px));
-    padding: 10px;
-    border-radius: 20px;
-    border: 1px solid rgba(214,173,82,0.26);
-    background: rgba(10,10,10,0.92);
-    box-shadow: 0 28px 80px rgba(0,0,0,0.62), inset 0 1px 0 rgba(255,255,255,0.08);
-    backdrop-filter: blur(24px) saturate(150%);
-    -webkit-backdrop-filter: blur(24px) saturate(150%);
-    display: grid;
-    gap: 6px;
-    animation: fcxMenuIn 220ms cubic-bezier(.22,1,.36,1) both;
-  }
-  .fcx-mobile-menu button {
-    width: 100%;
-    min-height: 44px;
-    border: 0;
-    border-radius: 14px;
-    background: transparent;
-    color: rgba(255,255,255,0.88);
-    text-align: left;
-    padding: 0 14px;
-    font-weight: 900;
-    font-size: 15px;
-  }
-  .fcx-mobile-menu button:hover { background: rgba(255,255,255,0.06); color: #fff; }
-  .fcx-mobile-menu button:last-child { color: var(--gold); background: rgba(214,173,82,0.08); }
-  .fcx-menu-btn.is-open {
-    border-radius: 14px;
-    color: #fff;
-    border: 1px solid rgba(255,255,255,0.10);
-    background: rgba(255,255,255,0.055);
-  }
-  .fcx-contact-section {
-    display: block !important;
-    max-height: 0;
-    opacity: 0;
-    overflow: hidden;
-    margin-top: 0 !important;
-    padding-top: 0 !important;
-    padding-bottom: 0 !important;
-    border-width: 0 !important;
-    transform: translateY(-8px);
-    transition: max-height 520ms cubic-bezier(.22,1,.36,1), opacity 320ms ease, transform 320ms ease, margin 320ms ease, padding 320ms ease, border-width 320ms ease;
-  }
-  .fcx-contact-section.is-open {
-    max-height: 900px;
-    opacity: 1;
-    overflow: visible;
-    margin-top: 18px !important;
-    padding: clamp(16px, 2.4vw, 22px) !important;
-    border-width: 1px !important;
-    transform: translateY(0);
-  }
-  .fcx-mobile-form input:focus, .fcx-mobile-form textarea:focus {
-    border-color: rgba(214,173,82,0.55);
-    box-shadow: 0 0 0 4px rgba(214,173,82,0.09), 0 0 36px rgba(255,49,88,0.05);
-  }
-  @keyframes fcxFadeUp {
-    from { opacity: 0; transform: translateY(22px); filter: blur(5px); }
-    to { opacity: 1; transform: translateY(0); filter: blur(0); }
-  }
-  @keyframes fcxMenuIn {
-    from { opacity: 0; transform: translateY(-8px) scale(.97); }
-    to { opacity: 1; transform: translateY(0) scale(1); }
-  }
-  @keyframes fcxSoftFloat {
-    from { transform: translate3d(0,0,0) rotate(-1deg); opacity: .36; }
-    to { transform: translate3d(8px,-10px,0) rotate(1deg); opacity: .52; }
-  }
-  @keyframes fcxHeroDrift {
-    from { transform: translate3d(0,0,0); }
-    to { transform: translate3d(5px,-7px,0); }
-  }
-  @media (prefers-reduced-motion: reduce) {
-    .fcx-public *, .fcx-public *:before, .fcx-public *:after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
-  }
-
   .fcx-mobile-page { width: min(100%, 1480px); margin: 0 auto; padding: 0 clamp(14px, 3.6vw, 56px) 20px; }
   .fcx-mobile-hero {
     min-height: clamp(500px, 67vw, 700px);
@@ -6933,7 +6796,7 @@ const publicLandingCss = String.raw`
   .fcx-portal-row strong { display: block; text-transform: uppercase; font-size: 17px; }
   .fcx-portal-row small { display: block; color: rgba(255,255,255,0.68); margin-top: 2px; }
   .fcx-portal-row b { color: #fff; background: linear-gradient(135deg, #ff344f, #b90d22); border-radius: 9px; padding: 10px 15px; display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; }
-  /* contact form visibility handled by .fcx-contact-section.is-open */
+  .fcx-contact-section { display: none; }
   .fcx-mobile-form { display: grid; gap: 10px; margin-top: 14px; }
   .fcx-mobile-form input, .fcx-mobile-form textarea { width: 100%; font-size: 16px; border-radius: 12px; color: #fff; background: rgba(0,0,0,0.38); border: 1px solid rgba(255,255,255,0.13); outline: none; padding: 14px; }
   .fcx-public-form-status { color: var(--gold); font-weight: 900; }
@@ -7204,6 +7067,384 @@ const publicLandingCss = String.raw`
     .fcx-team-badge-wrap { font-size: 12px; }
     .fcx-vs-pill { width: 44px; height: 44px; font-size: 14px; }
     .fcx-score-showcase > strong { font-size: 42px; }
+  }
+
+
+  /* ============================================================
+     WEBSITE VISUAL REBUILD — approved landing-page quality pass
+     This block intentionally overrides the old public-site rules.
+     Portal/dashboard styles remain untouched.
+  ============================================================ */
+
+  .fcx-public {
+    --red: #ff3158;
+    --red-deep: #b60820;
+    --gold: #d8ad4f;
+    --gold-soft: #f0cf77;
+    --ink: #050505;
+    --panel: rgba(14,15,16,.78);
+    --panel2: rgba(24,18,19,.72);
+    --stroke: rgba(255,255,255,.115);
+    --stroke-red: rgba(255,49,88,.34);
+    --stroke-gold: rgba(216,173,79,.38);
+    --copy: rgba(255,255,255,.86);
+    --copy-soft: rgba(255,255,255,.62);
+    background:
+      radial-gradient(circle at 78% 12%, rgba(255,49,88,.18), transparent 28%),
+      radial-gradient(circle at 18% 38%, rgba(216,173,79,.07), transparent 28%),
+      linear-gradient(180deg, #020202 0%, #070505 38%, #030303 100%) !important;
+  }
+
+  .fcx-mobile-header {
+    height: clamp(76px, 8vw, 92px) !important;
+    padding: max(14px, env(safe-area-inset-top)) clamp(20px, 4vw, 54px) 14px !important;
+    border-bottom: 1px solid rgba(255,255,255,.075) !important;
+    background: rgba(2,2,2,.82) !important;
+  }
+
+  .fcx-mobile-brand img {
+    width: clamp(46px, 5.2vw, 66px) !important;
+    height: clamp(46px, 5.2vw, 66px) !important;
+  }
+
+  .fcx-mobile-brand strong {
+    font-size: clamp(17px, 2.1vw, 26px) !important;
+    font-weight: 950 !important;
+    letter-spacing: -.045em !important;
+  }
+
+  .fcx-mobile-brand small {
+    color: var(--gold) !important;
+    font-size: clamp(12px, 1.25vw, 16px) !important;
+    font-weight: 800 !important;
+  }
+
+  .fcx-login-pill {
+    border-radius: 12px !important;
+    min-height: 48px !important;
+    padding: 0 clamp(18px, 2.4vw, 30px) !important;
+    background: rgba(8,7,4,.48) !important;
+    border: 1px solid rgba(216,173,79,.9) !important;
+    color: var(--gold-soft) !important;
+    font-weight: 950 !important;
+  }
+
+  .fcx-menu-btn span { background: rgba(255,255,255,.92) !important; height: 3px !important; }
+
+  .fcx-mobile-menu {
+    border-radius: 22px !important;
+    background: rgba(10,8,8,.94) !important;
+    border: 1px solid rgba(216,173,79,.28) !important;
+  }
+
+  .fcx-mobile-page {
+    width: min(100%, 1580px) !important;
+    padding: 0 clamp(18px, 3.4vw, 62px) 28px !important;
+  }
+
+  .fcx-mobile-hero {
+    min-height: clamp(610px, 47vw, 760px) !important;
+    grid-template-columns: minmax(380px, .78fr) minmax(520px, 1.22fr) !important;
+    gap: clamp(18px, 3vw, 54px) !important;
+    border-bottom: 1px solid rgba(255,255,255,.07) !important;
+  }
+
+  .fcx-mobile-hero:before {
+    background:
+      linear-gradient(90deg, rgba(2,2,2,1) 0%, rgba(2,2,2,.93) 27%, rgba(2,2,2,.34) 56%, rgba(2,2,2,.78) 100%),
+      radial-gradient(circle at 69% 51%, rgba(255,49,88,.44), transparent 31%),
+      radial-gradient(circle at 82% 28%, rgba(216,173,79,.16), transparent 23%) !important;
+  }
+
+  .fcx-hero-copy {
+    padding-top: clamp(44px, 6vw, 94px) !important;
+    align-self: start !important;
+  }
+
+  .fcx-hero-copy h1 {
+    max-width: 680px !important;
+    font-family: Impact, Haettenschweiler, 'Arial Narrow Bold', 'Inter', sans-serif !important;
+    font-size: clamp(68px, 8.2vw, 128px) !important;
+    line-height: .88 !important;
+    letter-spacing: -.045em !important;
+    text-transform: uppercase !important;
+    text-shadow: 0 22px 58px rgba(0,0,0,.78) !important;
+  }
+
+  .fcx-hero-copy h1 span {
+    background: linear-gradient(180deg, #f4d37a, #b98325) !important;
+    -webkit-background-clip: text !important;
+    background-clip: text !important;
+    color: transparent !important;
+  }
+
+  .fcx-hero-sub {
+    margin-top: clamp(14px, 1.8vw, 22px) !important;
+    letter-spacing: .22em !important;
+    font-size: clamp(14px, 1.55vw, 23px) !important;
+  }
+
+  .fcx-hero-copy p {
+    max-width: 530px !important;
+    margin-top: 22px !important;
+    font-size: clamp(16px, 1.35vw, 20px) !important;
+    line-height: 1.55 !important;
+    color: rgba(255,255,255,.87) !important;
+  }
+
+  .fcx-hero-actions {
+    width: min(100%, 520px) !important;
+    grid-template-columns: 1fr !important;
+    gap: 14px !important;
+  }
+
+  .fcx-red-cta, .fcx-gold-cta {
+    min-height: 58px !important;
+    border-radius: 10px !important;
+    padding: 0 22px !important;
+    font-size: clamp(15px, 1.25vw, 18px) !important;
+    font-weight: 950 !important;
+  }
+
+  .fcx-red-cta {
+    background: linear-gradient(135deg, #ff354f 0%, #df1734 56%, #9d071a 100%) !important;
+    box-shadow: 0 18px 50px rgba(255,49,88,.28), inset 0 1px 0 rgba(255,255,255,.32) !important;
+  }
+
+  .fcx-gold-cta {
+    background: linear-gradient(135deg, rgba(216,173,79,.06), rgba(0,0,0,.38)) !important;
+    border-color: rgba(216,173,79,.78) !important;
+    color: var(--gold-soft) !important;
+  }
+
+  .fcx-hero-visual {
+    min-height: clamp(560px, 45vw, 760px) !important;
+    overflow: visible !important;
+  }
+
+  .fcx-hero-watermark {
+    width: min(46vw, 540px) !important;
+    right: 0 !important;
+    top: 4% !important;
+    opacity: .43 !important;
+    filter: drop-shadow(0 28px 80px rgba(255,49,88,.35)) !important;
+  }
+
+  .fcx-player-silhouette {
+    width: min(37vw, 500px) !important;
+    height: min(48vw, 650px) !important;
+    left: 18% !important;
+    bottom: 0 !important;
+  }
+
+  .fcx-mobile-section, .fcx-friendly-strip {
+    border-radius: clamp(18px, 2vw, 28px) !important;
+    border: 1px solid rgba(255,255,255,.105) !important;
+    background:
+      radial-gradient(circle at 8% 0%, rgba(255,49,88,.15), transparent 29%),
+      linear-gradient(135deg, rgba(255,255,255,.065), rgba(255,255,255,.024)) !important;
+    box-shadow: 0 28px 90px rgba(0,0,0,.43), inset 0 1px 0 rgba(255,255,255,.06) !important;
+  }
+
+  .fcx-section-title {
+    color: #fff !important;
+    text-transform: uppercase !important;
+    letter-spacing: .035em !important;
+    font-size: clamp(18px, 1.65vw, 24px) !important;
+    font-weight: 950 !important;
+  }
+
+  .fcx-section-title span {
+    background: var(--red) !important;
+    box-shadow: 0 0 30px rgba(255,49,88,.8) !important;
+  }
+
+  .fcx-match-section { padding: clamp(18px, 2.2vw, 34px) !important; }
+  .fcx-match-section-head { margin-bottom: 22px !important; }
+
+  .fcx-match-grid {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: clamp(14px, 2vw, 24px) !important;
+  }
+
+  .fcx-match-card {
+    min-height: clamp(300px, 28vw, 430px) !important;
+    padding: clamp(18px, 2.2vw, 30px) !important;
+    border-radius: clamp(18px, 1.8vw, 24px) !important;
+    background:
+      radial-gradient(circle at 0% 0%, rgba(255,49,88,.18), transparent 36%),
+      linear-gradient(145deg, rgba(18,19,20,.91), rgba(8,8,9,.95)) !important;
+    border: 1px solid rgba(255,255,255,.12) !important;
+  }
+
+  .fcx-card-kicker {
+    color: var(--red) !important;
+    text-transform: uppercase !important;
+    font-size: clamp(15px, 1.4vw, 20px) !important;
+    font-weight: 1000 !important;
+    letter-spacing: .02em !important;
+  }
+
+  .fcx-versus-row, .fcx-score-showcase {
+    gap: clamp(14px, 2vw, 28px) !important;
+    padding: 20px 0 8px !important;
+  }
+
+  .fcx-team-badge-wrap img, .fcx-team-badge-wrap .fcx-opponent-badge {
+    width: clamp(58px, 6vw, 90px) !important;
+    height: clamp(58px, 6vw, 90px) !important;
+  }
+
+  .fcx-team-badge-wrap {
+    font-size: clamp(13px, 1.35vw, 18px) !important;
+    font-weight: 900 !important;
+  }
+
+  .fcx-vs-pill {
+    background: transparent !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    color: #fff !important;
+    font-size: clamp(22px, 3vw, 42px) !important;
+  }
+
+  .fcx-score-showcase > strong {
+    font-size: clamp(52px, 5.8vw, 86px) !important;
+    letter-spacing: -.06em !important;
+  }
+
+  .fcx-match-details-box {
+    gap: 12px !important;
+    padding: 18px 0 !important;
+  }
+
+  .fcx-match-card .fcx-meta-line {
+    color: rgba(255,255,255,.74) !important;
+    font-size: clamp(14px, 1.35vw, 18px) !important;
+  }
+
+  .fcx-match-card .fcx-meta-line svg { color: var(--gold) !important; }
+  .fcx-card-action { color: var(--red) !important; font-weight: 950 !important; }
+
+  .fcx-news-row {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: clamp(12px, 1.6vw, 22px) !important;
+    overflow: visible !important;
+  }
+
+  .fcx-news-card {
+    border-radius: 16px !important;
+    background: rgba(255,255,255,.04) !important;
+    border-color: rgba(255,49,88,.28) !important;
+  }
+
+  .fcx-news-thumb { height: clamp(130px, 13vw, 190px) !important; }
+
+  .fcx-friendly-strip {
+    border-color: rgba(255,49,88,.38) !important;
+    padding: clamp(18px, 2.4vw, 30px) !important;
+  }
+
+  .fcx-friendly-strip h2 {
+    font-weight: 1000 !important;
+    letter-spacing: -.02em !important;
+  }
+
+  .fcx-sponsor-row {
+    display: grid !important;
+    grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+    gap: clamp(10px, 1.35vw, 18px) !important;
+    overflow: visible !important;
+  }
+
+  .fcx-sponsor-tile {
+    border-radius: 12px !important;
+    min-height: 70px !important;
+    background: linear-gradient(145deg, rgba(255,255,255,.065), rgba(255,255,255,.025)) !important;
+  }
+
+  .fcx-portal-section { gap: 12px !important; }
+
+  .fcx-portal-row {
+    border-radius: 14px !important;
+    min-height: 76px !important;
+  }
+
+  .fcx-mobile-footer {
+    width: min(100%, 1580px) !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+  }
+
+  @media (max-width: 900px) {
+    .fcx-mobile-page { padding-left: 22px !important; padding-right: 22px !important; }
+    .fcx-mobile-hero {
+      min-height: 665px !important;
+      grid-template-columns: 1fr !important;
+      align-items: start !important;
+      padding-top: 18px !important;
+    }
+    .fcx-mobile-hero:before {
+      background:
+        linear-gradient(90deg, rgba(2,2,2,.98) 0%, rgba(2,2,2,.86) 36%, rgba(2,2,2,.36) 70%, rgba(2,2,2,.72) 100%),
+        radial-gradient(circle at 78% 48%, rgba(255,49,88,.42), transparent 31%) !important;
+    }
+    .fcx-hero-copy { width: min(62vw, 470px) !important; min-width: 0 !important; padding-top: 24px !important; z-index: 4 !important; }
+    .fcx-hero-copy h1 { font-size: clamp(58px, 11.5vw, 92px) !important; }
+    .fcx-hero-copy p { font-size: 17px !important; max-width: 370px !important; }
+    .fcx-hero-actions { max-width: 390px !important; }
+    .fcx-hero-visual { position: absolute !important; inset: 0 0 0 37% !important; min-height: 0 !important; opacity: 1 !important; }
+    .fcx-player-silhouette { width: min(54vw, 430px) !important; height: 560px !important; left: -4% !important; }
+    .fcx-hero-watermark { width: 420px !important; right: -36% !important; top: 8% !important; }
+    .fcx-news-row { display: flex !important; overflow-x: auto !important; scroll-snap-type: x mandatory !important; }
+    .fcx-news-card { flex: 0 0 min(75vw, 310px) !important; scroll-snap-align: start !important; }
+    .fcx-sponsor-row { display: flex !important; overflow-x: auto !important; scroll-snap-type: x mandatory !important; }
+    .fcx-sponsor-tile { flex: 0 0 165px !important; scroll-snap-align: start !important; }
+    .fcx-friendly-strip { grid-template-columns: auto 1fr !important; }
+    .fcx-friendly-strip .fcx-gold-cta { grid-column: 1 / -1 !important; }
+  }
+
+  @media (max-width: 640px) {
+    .fcx-mobile-header { height: 72px !important; padding-left: 14px !important; padding-right: 14px !important; }
+    .fcx-mobile-brand img { width: 44px !important; height: 44px !important; }
+    .fcx-mobile-brand strong { font-size: 16px !important; max-width: 42vw !important; }
+    .fcx-login-pill { min-height: 42px !important; padding: 0 13px !important; font-size: 14px !important; }
+    .fcx-mobile-page { padding-left: 13px !important; padding-right: 13px !important; }
+    .fcx-mobile-hero { min-height: 610px !important; }
+    .fcx-hero-copy { width: 66vw !important; padding-top: 22px !important; }
+    .fcx-hero-copy h1 { font-size: clamp(48px, 13vw, 70px) !important; }
+    .fcx-hero-sub { font-size: 12px !important; letter-spacing: .18em !important; }
+    .fcx-hero-copy p { max-width: 330px !important; font-size: 15.5px !important; line-height: 1.48 !important; }
+    .fcx-hero-actions { max-width: 360px !important; }
+    .fcx-red-cta, .fcx-gold-cta { min-height: 50px !important; font-size: 14.5px !important; padding: 0 14px !important; }
+    .fcx-hero-visual { left: 43% !important; }
+    .fcx-player-silhouette { width: 330px !important; height: 500px !important; left: -20px !important; }
+    .fcx-hero-watermark { width: 350px !important; right: -54% !important; top: 11% !important; }
+    .fcx-mobile-section, .fcx-friendly-strip { margin-top: 14px !important; border-radius: 18px !important; padding: 14px !important; }
+    .fcx-match-grid { grid-template-columns: 1fr !important; gap: 14px !important; }
+    .fcx-match-card { min-height: 0 !important; padding: 16px !important; border-radius: 18px !important; }
+    .fcx-versus-row, .fcx-score-showcase { padding: 14px 0 4px !important; }
+    .fcx-team-badge-wrap img, .fcx-team-badge-wrap .fcx-opponent-badge { width: 58px !important; height: 58px !important; }
+    .fcx-team-badge-wrap { font-size: 13px !important; }
+    .fcx-vs-pill { font-size: 24px !important; }
+    .fcx-score-showcase > strong { font-size: 50px !important; }
+    .fcx-section-headline { align-items: center !important; }
+    .fcx-section-headline a { font-size: 13px !important; }
+    .fcx-friendly-strip h2 { font-size: 20px !important; }
+    .fcx-friendly-strip p { font-size: 14px !important; }
+    .fcx-portal-row { grid-template-columns: auto 1fr !important; }
+    .fcx-portal-row b { grid-column: 1 / -1 !important; justify-content: center !important; }
+  }
+
+  @media (max-width: 380px) {
+    .fcx-mobile-brand strong { display: none !important; }
+    .fcx-mobile-hero { min-height: 640px !important; }
+    .fcx-hero-copy { width: 100% !important; max-width: 305px !important; }
+    .fcx-hero-copy h1 { font-size: 48px !important; }
+    .fcx-hero-visual { left: 32% !important; opacity: .76 !important; }
+    .fcx-hero-actions { max-width: 310px !important; }
   }
 
 `;
