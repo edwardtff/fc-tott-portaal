@@ -636,14 +636,16 @@ function PublicLanding({ branding = DEFAULT_BRANDING, matches = [], posts = [], 
     }
   };
 
+  const hasNextMatch = !!nextMatch;
+  const hasLatestResult = !!latestResult;
   const nextMatchDate = nextMatch ? new Date(nextMatch.match_date) : null;
-  const nextDate = nextMatchDate ? nextMatchDate.toLocaleDateString("nl-NL", { weekday: "long", day: "numeric", month: "long", year: "numeric" }) : "Nog niet gepland";
-  const nextTime = nextMatchDate ? nextMatchDate.toLocaleTimeString("nl-NL", { hour: "2-digit", minute: "2-digit" }) : "—";
-  const latestDate = latestResult ? new Date(latestResult.match_date).toLocaleDateString("nl-NL", { day: "numeric", month: "long", year: "numeric" }) : "Nog geen uitslag";
-  const latestScore = latestResult ? `${latestResult.own_score} - ${latestResult.opponent_score}` : "7 - 3";
-  const latestOpponent = latestResult?.opponent || "City Futsal";
-  const nextOpponent = nextMatch?.opponent || "Urban Futsal";
-  const latestResultLabel = latestResult ? (Number(latestResult.own_score) > Number(latestResult.opponent_score) ? "Gewonnen" : Number(latestResult.own_score) === Number(latestResult.opponent_score) ? "Gelijk" : "Verloren") : "Gewonnen";
+  const nextDate = nextMatchDate ? nextMatchDate.toLocaleDateString("nl-NL", { weekday: "short", day: "numeric", month: "long", year: "numeric" }) : "Nog niet gepland";
+  const nextTime = nextMatchDate ? nextMatchDate.toLocaleTimeString("nl-NL", { hour: "2-digit", minute: "2-digit" }) : "Tijd volgt";
+  const latestDate = latestResult ? new Date(latestResult.match_date).toLocaleDateString("nl-NL", { day: "numeric", month: "long", year: "numeric" }) : "Nog geen wedstrijd gespeeld";
+  const latestScore = latestResult ? `${latestResult.own_score} - ${latestResult.opponent_score}` : "—";
+  const latestOpponent = latestResult?.opponent || "Tegenstander";
+  const nextOpponent = nextMatch?.opponent || "Tegenstander volgt";
+  const latestResultLabel = latestResult ? (Number(latestResult.own_score) > Number(latestResult.opponent_score) ? "Gewonnen" : Number(latestResult.own_score) === Number(latestResult.opponent_score) ? "Gelijk" : "Verloren") : "Nog geen uitslag";
 
   return (
     <div className="fcx-public" id="home">
@@ -680,30 +682,50 @@ function PublicLanding({ branding = DEFAULT_BRANDING, matches = [], posts = [], 
         </section>
 
         <section id="wedstrijden" className="fcx-mobile-section fcx-match-section">
-          <SectionTitle title="Alles rondom FC TOTT" />
+          <div className="fcx-match-section-head">
+            <SectionTitle title="Alles rondom FC TOTT" />
+            <p>De belangrijkste wedstrijdinformatie in één rustige clubkaart.</p>
+          </div>
+
           <div className="fcx-match-grid">
-            <article className="fcx-match-card">
-              <h3>Volgende wedstrijd</h3>
-              <div className="fcx-team-line">
-                <span><img src={logoUrl} alt="FC TOTT" /><b>FC Talk Of The Town</b></span>
-                <strong>VS</strong>
-                <span><div className="fcx-opponent-badge">{nextOpponent.slice(0, 2).toUpperCase()}</div><b>{nextOpponent}</b></span>
+            <article className={`fcx-match-card fcx-next-match-card ${!hasNextMatch ? "is-empty" : ""}`}>
+              <div className="fcx-card-kicker"><Calendar size={15} /> Volgende wedstrijd</div>
+              <div className="fcx-versus-row">
+                <div className="fcx-team-badge-wrap">
+                  <img src={logoUrl} alt="FC TOTT" />
+                  <span>FC TOTT</span>
+                </div>
+                <div className="fcx-vs-pill">VS</div>
+                <div className="fcx-team-badge-wrap">
+                  <div className="fcx-opponent-badge">{nextOpponent.slice(0, 2).toUpperCase()}</div>
+                  <span>{nextOpponent}</span>
+                </div>
               </div>
-              <div className="fcx-meta-line"><Calendar size={15} /> {nextDate}</div>
-              <div className="fcx-meta-line"><Clock size={15} /> {nextTime}</div>
-              <div className="fcx-meta-line"><MapPin size={15} /> {nextMatch?.location || "Sporthal Zuid, Rotterdam"}</div>
+              <div className="fcx-match-details-box">
+                <div className="fcx-meta-line"><Calendar size={15} /> {nextDate}</div>
+                <div className="fcx-meta-line"><Clock size={15} /> {nextTime}</div>
+                <div className="fcx-meta-line"><MapPin size={15} /> {nextMatch?.location || "Locatie volgt"}</div>
+              </div>
               <a className="fcx-card-action" href="/portal">Wedstrijd details <ChevronRight size={16} /></a>
             </article>
 
-            <article className="fcx-match-card">
-              <h3>Laatste uitslag</h3>
-              <div className="fcx-score-line">
-                <span><img src={logoUrl} alt="FC TOTT" /><b>FC TOTT</b></span>
+            <article className={`fcx-match-card fcx-result-card ${!hasLatestResult ? "is-empty" : ""}`}>
+              <div className="fcx-card-kicker"><Trophy size={15} /> Laatste uitslag</div>
+              <div className="fcx-score-showcase">
+                <div className="fcx-team-badge-wrap compact">
+                  <img src={logoUrl} alt="FC TOTT" />
+                  <span>FC TOTT</span>
+                </div>
                 <strong>{latestScore}</strong>
-                <span><div className="fcx-opponent-badge">{latestOpponent.slice(0, 2).toUpperCase()}</div><b>{latestOpponent}</b></span>
+                <div className="fcx-team-badge-wrap compact">
+                  <div className="fcx-opponent-badge">{latestOpponent.slice(0, 2).toUpperCase()}</div>
+                  <span>{latestOpponent}</span>
+                </div>
               </div>
-              <div className="fcx-meta-line"><Calendar size={15} /> {latestDate}</div>
-              <div className="fcx-result-pill">{latestResultLabel}</div>
+              <div className="fcx-match-details-box">
+                <div className="fcx-meta-line"><Calendar size={15} /> {latestDate}</div>
+                <div className={`fcx-result-pill ${!hasLatestResult ? "muted" : ""}`}>{latestResultLabel}</div>
+              </div>
               <a className="fcx-card-action" href="/portal">Bekijk uitslagen <ChevronRight size={16} /></a>
             </article>
           </div>
@@ -6862,5 +6884,190 @@ const publicLandingCss = String.raw`
     .fcx-hero-visual { opacity: 0.55; left: 35%; }
     .fcx-match-grid { grid-template-columns: 1fr; gap: 12px; }
   }
+
+  /* Public match/result section polish */
+  .fcx-match-section {
+    padding: clamp(18px, 3vw, 30px) !important;
+    border-radius: 26px !important;
+    background:
+      radial-gradient(circle at 12% 0%, rgba(255,49,88,0.18), transparent 30%),
+      linear-gradient(135deg, rgba(255,255,255,0.07), rgba(255,255,255,0.025)) !important;
+  }
+  .fcx-match-section-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 18px;
+    margin-bottom: 18px;
+  }
+  .fcx-match-section-head p {
+    max-width: 360px;
+    margin: 2px 0 0;
+    color: rgba(255,255,255,0.62);
+    line-height: 1.45;
+    font-size: 14px;
+  }
+  .fcx-match-grid {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: clamp(14px, 2vw, 22px) !important;
+    margin-top: 0 !important;
+  }
+  .fcx-match-card {
+    position: relative;
+    overflow: hidden;
+    min-height: 100%;
+    padding: clamp(16px, 2.4vw, 24px) !important;
+    border-radius: 22px !important;
+    display: flex !important;
+    flex-direction: column;
+    gap: 16px !important;
+    background:
+      linear-gradient(145deg, rgba(18,18,18,0.94), rgba(8,8,8,0.96)),
+      radial-gradient(circle at 10% 0%, rgba(255,49,88,0.16), transparent 42%) !important;
+    border: 1px solid rgba(255,255,255,0.12) !important;
+    box-shadow:
+      0 18px 46px rgba(0,0,0,0.44),
+      inset 0 1px 0 rgba(255,255,255,0.06) !important;
+  }
+  .fcx-match-card:before {
+    content: "";
+    position: absolute;
+    inset: -1px;
+    border-radius: inherit;
+    pointer-events: none;
+    background: linear-gradient(135deg, rgba(255,49,88,0.18), transparent 42%, rgba(214,173,82,0.12));
+    opacity: 0.75;
+  }
+  .fcx-match-card > * { position: relative; z-index: 1; }
+  .fcx-card-kicker {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--red);
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    font-weight: 1000;
+    font-size: clamp(14px, 2vw, 18px);
+  }
+  .fcx-card-kicker svg { color: var(--gold); }
+  .fcx-versus-row,
+  .fcx-score-showcase {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    align-items: center;
+    gap: clamp(10px, 2vw, 18px);
+    padding: 8px 0 2px;
+  }
+  .fcx-team-badge-wrap {
+    min-width: 0;
+    display: grid;
+    justify-items: center;
+    align-content: start;
+    gap: 8px;
+    color: rgba(255,255,255,0.9);
+    text-align: center;
+    font-weight: 850;
+    line-height: 1.1;
+    font-size: clamp(13px, 1.8vw, 16px);
+  }
+  .fcx-team-badge-wrap span {
+    display: block;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .fcx-team-badge-wrap img,
+  .fcx-team-badge-wrap .fcx-opponent-badge {
+    width: clamp(54px, 8vw, 74px);
+    height: clamp(54px, 8vw, 74px);
+    border-radius: 999px;
+    object-fit: contain;
+  }
+  .fcx-team-badge-wrap.compact img,
+  .fcx-team-badge-wrap.compact .fcx-opponent-badge {
+    width: clamp(50px, 7vw, 68px);
+    height: clamp(50px, 7vw, 68px);
+  }
+  .fcx-vs-pill {
+    width: clamp(46px, 6vw, 62px);
+    height: clamp(46px, 6vw, 62px);
+    border-radius: 999px;
+    display: grid;
+    place-items: center;
+    color: #fff;
+    font-weight: 1000;
+    background: rgba(255,49,88,0.14);
+    border: 1px solid rgba(255,49,88,0.38);
+    box-shadow: 0 0 30px rgba(255,49,88,0.15);
+    letter-spacing: -0.04em;
+  }
+  .fcx-score-showcase > strong {
+    color: #fff;
+    font-size: clamp(44px, 7vw, 72px);
+    line-height: 1;
+    letter-spacing: -0.07em;
+    text-shadow: 0 18px 40px rgba(0,0,0,0.5);
+  }
+  .fcx-match-details-box {
+    display: grid;
+    gap: 10px;
+    padding: 14px 0;
+    border-top: 1px solid rgba(255,255,255,0.09);
+    border-bottom: 1px solid rgba(255,255,255,0.09);
+  }
+  .fcx-match-card .fcx-meta-line {
+    color: rgba(255,255,255,0.76) !important;
+    font-size: clamp(13px, 1.7vw, 15px) !important;
+    line-height: 1.35;
+  }
+  .fcx-match-card .fcx-card-action {
+    margin-top: auto !important;
+    padding-top: 0 !important;
+    border-top: 0 !important;
+    min-height: 42px;
+    border-radius: 12px;
+    padding-left: 0;
+    padding-right: 0;
+    color: var(--red) !important;
+    font-size: clamp(14px, 1.8vw, 16px) !important;
+  }
+  .fcx-result-pill {
+    justify-self: start !important;
+    border-radius: 999px !important;
+    padding: 7px 12px !important;
+    font-size: 13px;
+    color: #7df06e !important;
+  }
+  .fcx-result-pill.muted {
+    color: rgba(255,255,255,0.72) !important;
+    background: rgba(255,255,255,0.055) !important;
+    border-color: rgba(255,255,255,0.11) !important;
+  }
+
+  @media (max-width: 680px) {
+    .fcx-match-section-head { display: grid; gap: 8px; margin-bottom: 14px; }
+    .fcx-match-section-head p { font-size: 13px; }
+    .fcx-match-grid { grid-template-columns: 1fr !important; gap: 14px !important; }
+    .fcx-match-card { border-radius: 20px !important; padding: 16px !important; gap: 14px !important; }
+    .fcx-versus-row, .fcx-score-showcase { gap: 12px; }
+    .fcx-team-badge-wrap img,
+    .fcx-team-badge-wrap .fcx-opponent-badge { width: 58px; height: 58px; }
+    .fcx-team-badge-wrap { font-size: 13px; }
+    .fcx-vs-pill { width: 48px; height: 48px; }
+    .fcx-score-showcase > strong { font-size: 50px; }
+    .fcx-match-details-box { padding: 12px 0; }
+  }
+
+  @media (max-width: 390px) {
+    .fcx-match-section { padding: 12px !important; }
+    .fcx-match-card { padding: 14px !important; }
+    .fcx-team-badge-wrap img,
+    .fcx-team-badge-wrap .fcx-opponent-badge { width: 52px; height: 52px; font-size: 18px; }
+    .fcx-team-badge-wrap { font-size: 12px; }
+    .fcx-vs-pill { width: 44px; height: 44px; font-size: 14px; }
+    .fcx-score-showcase > strong { font-size: 42px; }
+  }
+
 `;
 
