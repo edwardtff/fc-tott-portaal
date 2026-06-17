@@ -194,6 +194,32 @@ export default function App() {
   const [loadError, setLoadError] = useState(null);
   const [tab, setTab] = useState("overzicht");
   const swipeStartRef = useRef(null);
+  const [route, setRoute] = useState(() => {
+    if (typeof window === "undefined") return "public";
+    return window.location.pathname.startsWith("/portal") ? "portal" : "public";
+  });
+
+  useEffect(() => {
+    const onPopState = () => setRoute(window.location.pathname.startsWith("/portal") ? "portal" : "public");
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, []);
+
+  const goToPortal = () => {
+    if (typeof window !== "undefined") {
+      window.history.pushState({}, "", "/portal");
+      setRoute("portal");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  };
+
+  const goToPublic = () => {
+    if (typeof window !== "undefined") {
+      window.history.pushState({}, "", "/");
+      setRoute("public");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  };
 
   const [players, setPlayers] = useState([]);
   const [matches, setMatches] = useState([]);
@@ -209,6 +235,8 @@ export default function App() {
   const [sessionId, setSessionId] = useState(null);
   const [clubPosts, setClubPosts] = useState([]);
   const [matchVideos, setMatchVideos] = useState([]);
+  const [clubSponsors, setClubSponsors] = useState([]);
+  const [friendlyRequests, setFriendlyRequests] = useState([]);
   const [branding, setBranding] = useState(DEFAULT_BRANDING);
   const [notificationReads, setNotificationReads] = useState([]);
 
@@ -246,15 +274,17 @@ export default function App() {
   };
 
   const reloadAll = async () => {
-    const [p, m, r, ft, fp, att, lu, gl, fr, fn, posts, videos, sharedBranding] = await Promise.all([
+    const [p, m, r, ft, fp, att, lu, gl, fr, fn, posts, videos, sharedBranding, sponsors, requests] = await Promise.all([
       db.fetchPlayers(), db.fetchMatches(), db.fetchRules(), db.fetchFeeTypes(),
       db.fetchFeePayments(), db.fetchAttendance(), db.fetchLineups(), db.fetchGoals(),
       db.fetchFineRules(), db.fetchFines(), db.fetchClubPosts(), db.fetchClubVideos(), db.fetchClubBranding(),
+      db.fetchClubSponsors(), db.fetchFriendlyMatchRequests(),
     ]);
     setPlayers(p); setMatches(m); setRules(r); setFeeTypes(ft);
     setFeePayments(fp); setAttendance(att); setLineups(lu); setGoals(gl);
     setFineRules(fr); setFines(fn);
     setClubPosts(posts || []); setMatchVideos(videos || []);
+    setClubSponsors(sponsors || []); setFriendlyRequests(requests || []);
     setBranding({ ...DEFAULT_BRANDING, ...(sharedBranding || {}) });
     return p;
   };
@@ -396,7 +426,7 @@ export default function App() {
   if (loading) {
     return (
       <div style={styles.app} className="tott-app dreelio-app">
-        <style>{globalCss + dreelioDashboardCss + appFeelingCss + fcxMobileDashboardCss + kpiRectangleHardFixCss + spacingPolishCss + fullAppFcxThemeCss + readabilityFixCss + roleVideoCss + adminBeheerPolishCss + mobileZoomLockCss}</style>
+        <style>{globalCss + dreelioDashboardCss + appFeelingCss + fcxMobileDashboardCss + kpiRectangleHardFixCss + spacingPolishCss + fullAppFcxThemeCss + readabilityFixCss + roleVideoCss + adminBeheerPolishCss + mobileZoomLockCss + publicLandingCss}</style>
         <div style={styles.loadingScreen}>Laden…</div>
       </div>
     );
@@ -405,7 +435,7 @@ export default function App() {
   if (loadError) {
     return (
       <div style={styles.app} className="tott-app dreelio-app">
-        <style>{globalCss + dreelioDashboardCss + appFeelingCss + fcxMobileDashboardCss + kpiRectangleHardFixCss + spacingPolishCss + fullAppFcxThemeCss + readabilityFixCss + roleVideoCss + adminBeheerPolishCss + mobileZoomLockCss}</style>
+        <style>{globalCss + dreelioDashboardCss + appFeelingCss + fcxMobileDashboardCss + kpiRectangleHardFixCss + spacingPolishCss + fullAppFcxThemeCss + readabilityFixCss + roleVideoCss + adminBeheerPolishCss + mobileZoomLockCss + publicLandingCss}</style>
         <div style={styles.loadingScreen}>
           <AlertCircle size={22} style={{ marginBottom: 10, color: "var(--warn)" }} />
           <div>Het clubportaal is tijdelijk niet bereikbaar.</div>
@@ -417,10 +447,34 @@ export default function App() {
     );
   }
 
+  if (route !== "portal") {
+    const publicPosts = clubPosts.filter((post) => post.public_visible !== false);
+    const publicVideos = matchVideos.filter((video) => video.public_visible !== false);
+    return (
+      <div className="public-site-shell">
+        <style>{globalCss + dreelioDashboardCss + appFeelingCss + fcxMobileDashboardCss + kpiRectangleHardFixCss + spacingPolishCss + fullAppFcxThemeCss + readabilityFixCss + roleVideoCss + adminBeheerPolishCss + mobileZoomLockCss + publicLandingCss}</style>
+        <PublicLanding
+          branding={branding}
+          matches={matches}
+          posts={publicPosts}
+          videos={publicVideos}
+          sponsors={clubSponsors}
+          goals={goals}
+          onLoginClick={goToPortal}
+          onSubmitFriendlyRequest={async (payload) => {
+            await db.createFriendlyMatchRequest(payload);
+            const next = await db.fetchFriendlyMatchRequests();
+            setFriendlyRequests(next || []);
+          }}
+        />
+      </div>
+    );
+  }
+
   if (!me) {
     return (
       <div style={styles.app} className="tott-app dreelio-app">
-        <style>{globalCss + dreelioDashboardCss + appFeelingCss + fcxMobileDashboardCss + kpiRectangleHardFixCss + spacingPolishCss + fullAppFcxThemeCss + readabilityFixCss + roleVideoCss + adminBeheerPolishCss + mobileZoomLockCss}</style>
+        <style>{globalCss + dreelioDashboardCss + appFeelingCss + fcxMobileDashboardCss + kpiRectangleHardFixCss + spacingPolishCss + fullAppFcxThemeCss + readabilityFixCss + roleVideoCss + adminBeheerPolishCss + mobileZoomLockCss + publicLandingCss}</style>
         <Header branding={branding} />
         <LoginScreen players={players} onLogin={login} branding={branding} />
         <footer style={styles.footer}>FC TOTT · Sponsored By Nola Marketing (website, branding en marketing)</footer>
@@ -433,7 +487,7 @@ export default function App() {
 
   return (
     <div style={styles.app} className="tott-app dreelio-app">
-      <style>{globalCss + dreelioDashboardCss + appFeelingCss + fcxMobileDashboardCss + kpiRectangleHardFixCss + spacingPolishCss + fullAppFcxThemeCss + readabilityFixCss + roleVideoCss + adminBeheerPolishCss + mobileZoomLockCss}</style>
+      <style>{globalCss + dreelioDashboardCss + appFeelingCss + fcxMobileDashboardCss + kpiRectangleHardFixCss + spacingPolishCss + fullAppFcxThemeCss + readabilityFixCss + roleVideoCss + adminBeheerPolishCss + mobileZoomLockCss + publicLandingCss}</style>
 
       <div className="dreelio-shell">
         <DreelioSidebar
@@ -520,13 +574,210 @@ export default function App() {
               <FinanceTab players={players} feeTypes={feeTypes} feesByPlayer={feesByPlayer} me={me} isAdmin={isAdmin} reloadAll={reloadAll} />
             )}
             {tab === "beheer" && isAdmin && (
-              <AdminPanel players={players} posts={clubPosts} setPosts={syncClubPosts} videos={matchVideos} setVideos={syncMatchVideos} reloadAll={reloadAll} branding={branding} setBranding={syncBranding} />
+              <AdminPanel players={players} posts={clubPosts} setPosts={syncClubPosts} videos={matchVideos} setVideos={syncMatchVideos} sponsors={clubSponsors} requests={friendlyRequests} reloadAll={reloadAll} branding={branding} setBranding={syncBranding} />
             )}
           </main>
 
           <footer style={styles.footer} className="dreelio-footer">FC TOTT · Sponsored By Nola Marketing (website, branding en marketing)</footer>
         </div>
       </div>
+    </div>
+  );
+}
+
+
+// ============================================================
+// Public Landing Page
+// ============================================================
+function PublicLanding({ branding = DEFAULT_BRANDING, matches = [], posts = [], videos = [], sponsors = [], goals = [], onLoginClick, onSubmitFriendlyRequest }) {
+  const [request, setRequest] = useState({ teamName: "", contactName: "", email: "", phone: "", preferredDate: "", message: "" });
+  const [requestStatus, setRequestStatus] = useState("");
+  const [requestBusy, setRequestBusy] = useState(false);
+
+  const sortedMatches = [...matches].sort((a, b) => new Date(a.match_date) - new Date(b.match_date));
+  const upcoming = sortedMatches.filter((m) => new Date(m.match_date).getTime() > Date.now());
+  const past = sortedMatches.filter((m) => new Date(m.match_date).getTime() <= Date.now()).reverse();
+  const nextMatch = upcoming[0];
+  const latestResult = past.find((m) => m.own_score !== null && m.own_score !== undefined && m.opponent_score !== null && m.opponent_score !== undefined);
+  const publicNews = posts.slice(0, 3);
+  const publicSponsors = sponsors.length > 0 ? sponsors : [
+    { id: "fallback-1", name: "JAKO Teamsport", logo_url: "" },
+    { id: "fallback-2", name: "voetbalshop.nl", logo_url: "" },
+    { id: "fallback-3", name: "Panna Kool", logo_url: "" },
+    { id: "fallback-4", name: "SportConnect", logo_url: "" },
+  ];
+
+  const submitFriendly = async (event) => {
+    event.preventDefault();
+    setRequestStatus("");
+    if (!request.teamName.trim() || !request.contactName.trim() || !request.email.trim()) {
+      setRequestStatus("Vul minimaal teamnaam, contactpersoon en e-mail in.");
+      return;
+    }
+    setRequestBusy(true);
+    try {
+      await onSubmitFriendlyRequest?.(request);
+      setRequest({ teamName: "", contactName: "", email: "", phone: "", preferredDate: "", message: "" });
+      setRequestStatus("Aanvraag ontvangen. We nemen zo snel mogelijk contact op.");
+    } catch (err) {
+      console.error(err);
+      setRequestStatus("Aanvraag kon niet worden verzonden. Probeer het later opnieuw.");
+    } finally {
+      setRequestBusy(false);
+    }
+  };
+
+  const nextDate = nextMatch ? formatDateNL(nextMatch.match_date) : "Nog niet gepland";
+  const latestScore = latestResult ? `${latestResult.own_score} - ${latestResult.opponent_score}` : "—";
+  const totalGoals = goals.length;
+
+  return (
+    <div className="fcx-public">
+      <header className="fcx-public-nav">
+        <a className="fcx-public-brand" href="#home" aria-label="FC Talk Of The Town home">
+          <img src={branding.logoUrl || DEFAULT_BRANDING.logoUrl} alt="FC Talk Of The Town" />
+        </a>
+        <nav className="fcx-public-links" aria-label="Website navigatie">
+          <a href="#home">Home</a>
+          <a href="#team">Team</a>
+          <a href="#wedstrijden">Wedstrijden</a>
+          <a href="#sponsors">Sponsors</a>
+          <a href="#contact">Contact</a>
+        </nav>
+        <div className="fcx-public-actions">
+          <a className="fcx-public-btn fcx-public-btn-ghost" href="#friendly"><Calendar size={16} /> Vraag oefenwedstrijd aan</a>
+          <button className="fcx-public-btn fcx-public-btn-red" onClick={onLoginClick}><Users size={16} /> Log in</button>
+        </div>
+      </header>
+
+      <main id="home" className="fcx-public-main">
+        <section className="fcx-public-hero">
+          <div className="fcx-public-hero-copy">
+            <div className="fcx-public-kicker">Futsal · Community · Passie</div>
+            <h1>FC Talk Of <span>The Town</span></h1>
+            <p>Welkom bij FC Talk Of The Town Futsal Club. Meer dan een team — wij zijn een community. Volg onze wedstrijden, blijf op de hoogte van het laatste nieuws en neem contact met ons op voor een oefenwedstrijd of samenwerking als sponsor.</p>
+            <div className="fcx-public-hero-buttons">
+              <a className="fcx-public-btn fcx-public-btn-red" href="#wedstrijden"><Calendar size={17} /> Volgende wedstrijd bekijken</a>
+              <a className="fcx-public-btn fcx-public-btn-ghost" href="#friendly">Vraag oefenwedstrijd aan <ChevronRight size={17} /></a>
+            </div>
+          </div>
+          <div className="fcx-public-hero-art" aria-hidden="true">
+            <div className="fcx-public-emblem"><img src={branding.logoUrl || DEFAULT_BRANDING.logoUrl} alt="" /></div>
+            <div className="fcx-public-player-card">
+              <div className="fcx-public-shirt">10</div>
+              <div className="fcx-public-shirt-name">Talk Of The Town</div>
+            </div>
+            <div className="fcx-public-dashboard-preview">
+              <div className="fcx-preview-phone">
+                <div className="fcx-preview-pill">Dashboard</div>
+                <strong>Volgende wedstrijd</strong>
+                <span>{nextMatch ? `vs ${nextMatch.opponent}` : "Nog niet gepland"}</span>
+                <small>{nextDate}</small>
+              </div>
+              <div className="fcx-preview-panel">
+                <div><span>Wedstrijden</span><strong>{matches.length}</strong></div>
+                <div><span>Goals</span><strong>{totalGoals}</strong></div>
+                <div><span>Updates</span><strong>{posts.length}</strong></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="wedstrijden" className="fcx-public-card-grid">
+          <article className="fcx-public-card">
+            <h3>Volgende wedstrijd</h3>
+            <div className="fcx-public-match-row">
+              <img src={branding.logoUrl || DEFAULT_BRANDING.logoUrl} alt="FC TOTT" />
+              <strong>VS</strong>
+              <div className="fcx-public-opponent">{nextMatch?.opponent?.slice(0, 2).toUpperCase() || "?"}</div>
+            </div>
+            <p>{nextMatch ? `FC TOTT tegen ${nextMatch.opponent}` : "Er staat nog geen wedstrijd gepland."}</p>
+            <small><Calendar size={14} /> {nextDate}</small>
+            <small><MapPin size={14} /> {nextMatch?.location || "Locatie volgt"}</small>
+            <a href="#contact" className="fcx-card-link">Bekijk wedstrijd <ChevronRight size={14} /></a>
+          </article>
+          <article className="fcx-public-card">
+            <h3>Laatste uitslag</h3>
+            <div className="fcx-public-score">{latestScore}</div>
+            <p>{latestResult ? `FC TOTT tegen ${latestResult.opponent}` : "Zodra er een uitslag is ingevuld, verschijnt die hier."}</p>
+            <small>{latestResult ? formatDateShort(latestResult.match_date) : "Nog geen uitslag"}</small>
+            <a href="#team" className="fcx-card-link">Bekijk team <ChevronRight size={14} /></a>
+          </article>
+          <article className="fcx-public-card fcx-public-news-card" id="team">
+            <h3>Volg het team</h3>
+            {publicNews.length === 0 && <p>Clubnieuws, foto's en mededelingen verschijnen binnenkort hier.</p>}
+            {publicNews.map((post) => (
+              <div className="fcx-public-news-item" key={post.id}>
+                <div>{post.images?.[0] ? <img src={post.images[0]} alt="" /> : <Newspaper size={18} />}</div>
+                <span><strong>{post.title}</strong><small>{post.category || "Clubnieuws"}</small></span>
+              </div>
+            ))}
+            <button className="fcx-card-link" onClick={onLoginClick}>Naar clubportal <ChevronRight size={14} /></button>
+          </article>
+          <article className="fcx-public-card fcx-public-friendly" id="friendly">
+            <h3>Friendly match aanvragen</h3>
+            <p>Op zoek naar een sportieve tegenstander? Stuur je aanvraag in en het bestuur neemt contact met je op.</p>
+            <Handshake size={62} />
+            <a href="#friendly-form" className="fcx-card-link">Aanvraag indienen <ChevronRight size={14} /></a>
+          </article>
+        </section>
+
+        <section id="sponsors" className="fcx-public-sponsors">
+          <div>
+            <h3>Onze trotse partners</h3>
+            <p>Dank aan onze partners die onze club steunen.</p>
+          </div>
+          <div className="fcx-public-sponsor-strip">
+            {publicSponsors.map((sponsor) => (
+              <a key={sponsor.id} href={sponsor.website_url || sponsor.websiteUrl || "#"} target={sponsor.website_url || sponsor.websiteUrl ? "_blank" : undefined} rel="noreferrer" className="fcx-public-sponsor-tile">
+                {sponsor.logo_url ? <img src={sponsor.logo_url} alt={sponsor.name} /> : <span>{sponsor.name}</span>}
+              </a>
+            ))}
+          </div>
+        </section>
+
+        <section className="fcx-public-portal">
+          <div>
+            <h3>Toegang tot het portal</h3>
+            <p>Eén club. Eén platform. Iedereen verbonden.</p>
+          </div>
+          {[{ title: "Spelers", icon: Users, text: "Bekijk wedstrijden, statistieken en teamupdates." }, { title: "Begeleiders", icon: ShieldCheck, text: "Beheer communicatie, updates en video’s." }, { title: "Admins", icon: Settings, text: "Volledige toegang tot clubbeheer en instellingen." }].map((item) => {
+            const Icon = item.icon;
+            return (
+              <button className="fcx-public-portal-card" key={item.title} onClick={onLoginClick}>
+                <Icon size={32} />
+                <span><strong>{item.title}</strong><small>{item.text}</small></span>
+                <b>Log in <ChevronRight size={14} /></b>
+              </button>
+            );
+          })}
+        </section>
+
+        <section id="contact" className="fcx-public-contact">
+          <div className="fcx-public-contact-copy">
+            <div className="fcx-public-kicker">Contact</div>
+            <h2>Vraag een oefenwedstrijd aan</h2>
+            <p>Laat je gegevens achter. Het bestuur ziet je aanvraag in het beheerportaal en neemt contact met je op.</p>
+          </div>
+          <form id="friendly-form" className="fcx-public-form" onSubmit={submitFriendly}>
+            <input value={request.teamName} onChange={(e) => setRequest({ ...request, teamName: e.target.value })} placeholder="Teamnaam" />
+            <input value={request.contactName} onChange={(e) => setRequest({ ...request, contactName: e.target.value })} placeholder="Contactpersoon" />
+            <input type="email" value={request.email} onChange={(e) => setRequest({ ...request, email: e.target.value })} placeholder="E-mail" />
+            <input value={request.phone} onChange={(e) => setRequest({ ...request, phone: e.target.value })} placeholder="Telefoon" />
+            <input type="date" value={request.preferredDate} onChange={(e) => setRequest({ ...request, preferredDate: e.target.value })} />
+            <textarea value={request.message} onChange={(e) => setRequest({ ...request, message: e.target.value })} placeholder="Bericht of voorkeuren" rows={4} />
+            {requestStatus && <div className="fcx-public-form-status">{requestStatus}</div>}
+            <button className="fcx-public-btn fcx-public-btn-red" disabled={requestBusy}>{requestBusy ? "Versturen…" : "Aanvraag versturen"}</button>
+          </form>
+        </section>
+      </main>
+
+      <footer className="fcx-public-footer">
+        <div><img src={branding.logoUrl || DEFAULT_BRANDING.logoUrl} alt="FC TOTT" /><strong>FC Talk Of The Town</strong><span>Futsal · Community · Passie</span></div>
+        <div><MapPin size={15} /> Sporthal De Binnenstad</div>
+        <div><MessageCircle size={15} /> info@talkofthetownfutsal.nl</div>
+        <div>© {new Date().getFullYear()} FC Talk Of The Town Futsal Club</div>
+      </footer>
     </div>
   );
 }
@@ -2145,11 +2396,12 @@ function FinanceTab({ players, feeTypes, feesByPlayer, me, isAdmin, reloadAll })
 // ============================================================
 // Admin panel: user management
 // ============================================================
-function AdminPanel({ players, posts = [], setPosts, videos = [], setVideos, reloadAll, branding = DEFAULT_BRANDING, setBranding }) {
+function AdminPanel({ players, posts = [], setPosts, videos = [], setVideos, sponsors = [], requests = [], reloadAll, branding = DEFAULT_BRANDING, setBranding }) {
   const [section, setSection] = useState("spelers");
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState("iedereen");
   const [newPlayer, setNewPlayer] = useState({ name: "", username: "", password: "", role: "speler" });
+  const [newSponsor, setNewSponsor] = useState({ name: "", logo_url: "", website_url: "", description: "", sort_order: 100 });
   const [playerEdits, setPlayerEdits] = useState({});
   const [brandingDraft, setBrandingDraft] = useState(branding);
   const [busy, setBusy] = useState(false);
@@ -2279,12 +2531,50 @@ function AdminPanel({ players, posts = [], setPosts, videos = [], setVideos, rel
     setVideos?.(videos.filter((item) => item.id !== video.id));
   };
 
+
+  const addSponsorNow = async () => {
+    if (!newSponsor.name.trim()) {
+      setAdminError("Vul minimaal de sponsornaam in.");
+      return;
+    }
+    await runAdminAction(async () => {
+      await db.addClubSponsor(newSponsor);
+      await reloadAll();
+      setNewSponsor({ name: "", logo_url: "", website_url: "", description: "", sort_order: 100 });
+    }, "Sponsor is toegevoegd.");
+  };
+
+  const removeSponsorNow = async (sponsor) => {
+    if (!window.confirm(`Weet je zeker dat je ${sponsor.name} wilt verwijderen?`)) return;
+    await runAdminAction(async () => {
+      await db.deleteClubSponsor(sponsor.id);
+      await reloadAll();
+    }, "Sponsor is verwijderd.");
+  };
+
+  const updateRequestStatus = async (request, status) => {
+    await runAdminAction(async () => {
+      await db.updateFriendlyMatchRequestStatus(request.id, status);
+      await reloadAll();
+    }, "Aanvraag is bijgewerkt.");
+  };
+
+  const removeRequestNow = async (request) => {
+    if (!window.confirm("Weet je zeker dat je deze aanvraag wilt verwijderen?")) return;
+    await runAdminAction(async () => {
+      await db.deleteFriendlyMatchRequest(request.id);
+      await reloadAll();
+    }, "Aanvraag is verwijderd.");
+  };
+
   const sections = [
     { key: "spelers", label: "Spelers", icon: Users },
     { key: "accounts", label: "Accounts", icon: UserPlus },
     { key: "branding", label: "Branding", icon: Camera },
     { key: "updates", label: "Updates", icon: Newspaper },
     { key: "videos", label: "Video's", icon: Video },
+    { key: "sponsors", label: "Sponsors", icon: Star },
+    { key: "requests", label: "Aanvragen", icon: Handshake },
   ];
 
   return (
@@ -2413,7 +2703,8 @@ function AdminPanel({ players, posts = [], setPosts, videos = [], setVideos, rel
             {posts.length === 0 && <EmptyState text="Nog geen updates." />}
             {posts.map((post) => (
               <div key={post.id} className="dreelio-admin-list-row">
-                <div><strong>{post.title}</strong><span>{post.category} · {post.author_name || "Team"}</span></div>
+                <div><strong>{post.title}</strong><span>{post.category} · {post.author_name || "Team"} · {post.public_visible === false ? "Privé" : "Publiek"}</span></div>
+                <button type="button" style={styles.secondaryBtn} onClick={() => setPosts?.(posts.map((item) => item.id === post.id ? { ...item, public_visible: item.public_visible === false } : item))}>{post.public_visible === false ? "Publiek maken" : "Privé maken"}</button>
                 <button type="button" style={styles.secondaryBtn} onClick={() => toggleAdminPostPin(post)}>{post.pinned ? "Losmaken" : "Vastzetten"}</button>
                 <button type="button" className="dreelio-danger-button" onClick={() => removeAdminPost(post)}><Trash2 size={14} /> Verwijderen</button>
               </div>
@@ -2429,9 +2720,63 @@ function AdminPanel({ players, posts = [], setPosts, videos = [], setVideos, rel
             {videos.length === 0 && <EmptyState text="Nog geen video's." />}
             {videos.map((video) => (
               <div key={video.id} className="dreelio-admin-list-row">
-                <div><strong>{video.title}</strong><span>{video.match_label}</span></div>
+                <div><strong>{video.title}</strong><span>{video.match_label} · {video.public_visible === false ? "Privé" : "Publiek"}</span></div>
+                <button type="button" style={styles.secondaryBtn} onClick={() => setVideos?.(videos.map((item) => item.id === video.id ? { ...item, public_visible: item.public_visible === false } : item))}>{video.public_visible === false ? "Publiek maken" : "Privé maken"}</button>
                 <a href={video.youtubeUrl} target="_blank" rel="noreferrer" className="dreelio-admin-link"><ExternalLink size={14} /> Openen</a>
                 <button type="button" className="dreelio-danger-button" onClick={() => removeAdminVideo(video)}><Trash2 size={14} /> Verwijderen</button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+
+      {section === "sponsors" && (
+        <div className="dreelio-panel dreelio-admin-block">
+          <div style={styles.h3}>Sponsors beheren</div>
+          <div style={styles.formRow} className="tott-formrow">
+            <input style={styles.input} placeholder="Sponsornaam" value={newSponsor.name} onChange={(e) => setNewSponsor({ ...newSponsor, name: e.target.value })} />
+            <input style={styles.input} placeholder="Logo URL" value={newSponsor.logo_url} onChange={(e) => setNewSponsor({ ...newSponsor, logo_url: e.target.value })} />
+          </div>
+          <div style={styles.formRow} className="tott-formrow">
+            <input style={styles.input} placeholder="Website URL" value={newSponsor.website_url} onChange={(e) => setNewSponsor({ ...newSponsor, website_url: e.target.value })} />
+            <input style={styles.input} type="number" placeholder="Volgorde" value={newSponsor.sort_order} onChange={(e) => setNewSponsor({ ...newSponsor, sort_order: e.target.value })} />
+          </div>
+          <input style={styles.input} placeholder="Korte omschrijving" value={newSponsor.description} onChange={(e) => setNewSponsor({ ...newSponsor, description: e.target.value })} />
+          <button style={styles.primaryBtn} onClick={addSponsorNow} disabled={busy}><Plus size={15} /> Sponsor toevoegen</button>
+          <div className="dreelio-admin-list" style={{ marginTop: 16 }}>
+            {sponsors.length === 0 && <EmptyState text="Nog geen sponsors." />}
+            {sponsors.map((sponsor) => (
+              <div key={sponsor.id} className="dreelio-admin-list-row">
+                <div><strong>{sponsor.name}</strong><span>{sponsor.website_url || "Geen website"}</span></div>
+                {sponsor.website_url && <a href={sponsor.website_url} target="_blank" rel="noreferrer" className="dreelio-admin-link"><ExternalLink size={14} /> Openen</a>}
+                <button type="button" className="dreelio-danger-button" onClick={() => removeSponsorNow(sponsor)}><Trash2 size={14} /> Verwijderen</button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {section === "requests" && (
+        <div className="dreelio-panel dreelio-admin-block">
+          <div style={styles.h3}>Oefenwedstrijd aanvragen</div>
+          <div className="dreelio-admin-list">
+            {requests.length === 0 && <EmptyState text="Nog geen aanvragen." />}
+            {requests.map((request) => (
+              <div key={request.id} className="dreelio-admin-list-row dreelio-request-row">
+                <div>
+                  <strong>{request.team_name || "Onbekend team"}</strong>
+                  <span>{request.contact_name} · {request.email} {request.phone ? `· ${request.phone}` : ""}</span>
+                  {request.preferred_date && <span>Voorkeursdatum: {request.preferred_date}</span>}
+                  {request.message && <span>{request.message}</span>}
+                </div>
+                <select style={styles.input} value={request.status || "nieuw"} onChange={(e) => updateRequestStatus(request, e.target.value)}>
+                  <option value="nieuw">Nieuw</option>
+                  <option value="contact_opgenomen">Contact opgenomen</option>
+                  <option value="ingepland">Ingepland</option>
+                  <option value="afgewezen">Afgewezen</option>
+                </select>
+                <button type="button" className="dreelio-danger-button" onClick={() => removeRequestNow(request)}><Trash2 size={14} /> Verwijderen</button>
               </div>
             ))}
           </div>
@@ -6305,4 +6650,117 @@ const mobileZoomLockCss = `
   }
 }
 
+`;
+
+const publicLandingCss = String.raw`
+  .public-site-shell { min-height: 100vh; background: #050505; color: #fff; }
+  .fcx-public { min-height: 100vh; background:
+    radial-gradient(circle at 58% 8%, rgba(255, 42, 76, 0.22), transparent 30%),
+    radial-gradient(circle at 82% 20%, rgba(213, 170, 76, 0.12), transparent 26%),
+    linear-gradient(180deg, #050505 0%, #080808 48%, #030303 100%); font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, sans-serif; }
+  .fcx-public-nav { position: sticky; top: 0; z-index: 50; display: flex; align-items: center; gap: 28px; padding: 16px 6vw; border-bottom: 1px solid rgba(255,255,255,0.08); background: rgba(5,5,5,0.72); backdrop-filter: blur(22px); }
+  .fcx-public-brand img { width: 68px; height: 68px; border-radius: 999px; object-fit: contain; filter: drop-shadow(0 12px 24px rgba(255,43,79,.2)); }
+  .fcx-public-links { display: flex; align-items: center; gap: 30px; flex: 1; }
+  .fcx-public-links a { color: rgba(255,255,255,0.86); text-decoration: none; font-weight: 800; font-size: 15px; }
+  .fcx-public-links a:first-child { color: #ff2f57; }
+  .fcx-public-actions, .fcx-public-hero-buttons { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .fcx-public-btn { border: 0; min-height: 48px; padding: 0 20px; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; gap: 10px; color: #fff; text-decoration: none; font-weight: 900; cursor: pointer; white-space: nowrap; }
+  .fcx-public-btn-red { background: linear-gradient(135deg, #ff344f, #b90d22); box-shadow: 0 14px 30px rgba(255, 34, 67, 0.25); }
+  .fcx-public-btn-ghost { background: rgba(255,255,255,0.03); border: 1px solid rgba(213,170,76,0.72); color: #d9b45d; }
+  .fcx-public-main { max-width: 1800px; margin: 0 auto; padding: 48px 6vw 0; }
+  .fcx-public-hero { min-height: 520px; display: grid; grid-template-columns: minmax(0, 0.85fr) minmax(420px, 1.15fr); gap: 42px; align-items: center; position: relative; }
+  .fcx-public-hero-copy { position: relative; z-index: 2; }
+  .fcx-public-kicker { color: #fff; text-transform: uppercase; letter-spacing: .32em; font-size: 20px; font-weight: 950; margin-bottom: 20px; }
+  .fcx-public-hero h1 { margin: 0; font-size: clamp(56px, 7vw, 116px); line-height: .92; letter-spacing: -.055em; text-transform: uppercase; font-weight: 1000; }
+  .fcx-public-hero h1 span { color: #d9b45d; }
+  .fcx-public-hero p { max-width: 640px; color: rgba(255,255,255,0.78); font-size: 18px; line-height: 1.65; margin: 28px 0; }
+  .fcx-public-hero-art { position: relative; min-height: 560px; border-radius: 34px; overflow: hidden; background: linear-gradient(135deg, rgba(30,30,30,0.7), rgba(255,22,58,0.11)); }
+  .fcx-public-hero-art:before { content: ""; position: absolute; inset: 0; background: radial-gradient(circle at 44% 50%, rgba(255,0,42,0.38), transparent 34%), linear-gradient(90deg, transparent, rgba(0,0,0,0.75)); }
+  .fcx-public-emblem { position: absolute; right: 14%; top: 3%; width: 300px; height: 300px; opacity: .42; filter: drop-shadow(0 22px 44px rgba(255,0,55,.28)); }
+  .fcx-public-emblem img { width: 100%; height: 100%; object-fit: contain; }
+  .fcx-public-player-card { position: absolute; left: 18%; bottom: 0; width: 300px; height: 440px; border-radius: 140px 140px 18px 18px; background: linear-gradient(180deg, rgba(18,18,18,0.2), rgba(0,0,0,0.72)), linear-gradient(135deg, #1c1c1c, #070707); border: 1px solid rgba(255,255,255,.08); box-shadow: 0 30px 90px rgba(0,0,0,.7); }
+  .fcx-public-shirt { position: absolute; inset: 110px 0 auto; text-align: center; font-size: 124px; color: #c89e48; font-weight: 1000; opacity: .9; }
+  .fcx-public-shirt-name { position: absolute; top: 82px; left: 0; right: 0; text-align: center; color: #d9b45d; text-transform: uppercase; font-weight: 950; letter-spacing: .12em; }
+  .fcx-public-dashboard-preview { position: absolute; right: 4%; top: 17%; display: flex; align-items: center; gap: 16px; }
+  .fcx-preview-phone, .fcx-preview-panel { background: rgba(17,17,17,0.9); border: 1px solid rgba(255,255,255,0.1); border-radius: 22px; box-shadow: 0 30px 70px rgba(0,0,0,.55); }
+  .fcx-preview-phone { width: 170px; padding: 18px; min-height: 250px; display: grid; gap: 10px; }
+  .fcx-preview-pill { color: #d9b45d; font-size: 12px; font-weight: 900; }
+  .fcx-preview-phone strong { color: #fff; }
+  .fcx-preview-phone span, .fcx-preview-phone small { color: rgba(255,255,255,.66); }
+  .fcx-preview-panel { width: 360px; padding: 20px; display: grid; gap: 12px; }
+  .fcx-preview-panel div { display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,.08); padding: 11px 0; }
+  .fcx-preview-panel span { color: rgba(255,255,255,.58); }
+  .fcx-preview-panel strong { color: #fff; font-size: 28px; }
+  .fcx-public-card-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-top: 32px; }
+  .fcx-public-card, .fcx-public-sponsors, .fcx-public-portal, .fcx-public-contact { background: linear-gradient(135deg, rgba(255,255,255,.06), rgba(255,255,255,.025)); border: 1px solid rgba(255,255,255,.12); box-shadow: 0 22px 70px rgba(0,0,0,.38), inset 0 1px 0 rgba(255,255,255,.08); border-radius: 18px; }
+  .fcx-public-card { padding: 20px; min-height: 240px; display: flex; flex-direction: column; gap: 12px; }
+  .fcx-public-card h3, .fcx-public-sponsors h3, .fcx-public-portal h3, .fcx-public-contact h2 { margin: 0; color: #ff3158; text-transform: uppercase; letter-spacing: .03em; font-weight: 950; }
+  .fcx-public-card p { color: rgba(255,255,255,.78); line-height: 1.5; margin: 0; }
+  .fcx-public-card small { display: inline-flex; gap: 8px; align-items: center; color: rgba(255,255,255,.66); }
+  .fcx-public-match-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; background: rgba(0,0,0,.22); border: 1px solid rgba(255,255,255,.08); padding: 14px; border-radius: 14px; }
+  .fcx-public-match-row img { width: 58px; height: 58px; object-fit: contain; border-radius: 999px; }
+  .fcx-public-opponent { width: 58px; height: 58px; display: grid; place-items: center; border-radius: 999px; border: 2px solid rgba(213,180,93,.75); color: #d9b45d; font-weight: 1000; }
+  .fcx-public-score { font-size: 64px; line-height: 1; font-weight: 1000; color: #fff; }
+  .fcx-card-link { margin-top: auto; min-height: 42px; padding: 0 14px; border-radius: 9px; border: 1px solid rgba(213,170,76,0.62); color: #d9b45d; display: inline-flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; background: rgba(0,0,0,.12); font-weight: 900; cursor: pointer; }
+  .fcx-public-news-item { display: grid; grid-template-columns: 58px 1fr; gap: 12px; align-items: center; background: rgba(0,0,0,.18); border: 1px solid rgba(255,255,255,.08); border-radius: 12px; padding: 8px; }
+  .fcx-public-news-item div { width: 58px; height: 48px; border-radius: 10px; display: grid; place-items: center; background: rgba(213,170,76,.16); overflow: hidden; }
+  .fcx-public-news-item img { width: 100%; height: 100%; object-fit: cover; }
+  .fcx-public-news-item strong { color: #fff; display: block; }
+  .fcx-public-news-item small { color: rgba(255,255,255,.55); }
+  .fcx-public-friendly svg { margin: auto; color: #d9b45d; opacity: .7; }
+  .fcx-public-sponsors, .fcx-public-portal, .fcx-public-contact { margin-top: 24px; padding: 22px; }
+  .fcx-public-sponsors { display: grid; grid-template-columns: 260px 1fr; gap: 18px; align-items: center; }
+  .fcx-public-sponsors p, .fcx-public-portal p, .fcx-public-contact p { color: rgba(255,255,255,.66); margin: 8px 0 0; }
+  .fcx-public-sponsor-strip { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  .fcx-public-sponsor-tile { min-height: 72px; border-radius: 14px; background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08); display: grid; place-items: center; color: rgba(255,255,255,.82); text-decoration: none; font-weight: 950; text-transform: uppercase; }
+  .fcx-public-sponsor-tile img { max-width: 78%; max-height: 44px; object-fit: contain; }
+  .fcx-public-portal { display: grid; grid-template-columns: 260px repeat(3, 1fr); gap: 14px; align-items: stretch; }
+  .fcx-public-portal-card { border: 1px solid rgba(255,255,255,.09); background: rgba(255,255,255,.035); border-radius: 16px; padding: 18px; color: #fff; display: grid; grid-template-columns: auto 1fr auto; gap: 14px; align-items: center; text-align: left; cursor: pointer; }
+  .fcx-public-portal-card svg { color: #ff3158; }
+  .fcx-public-portal-card strong, .fcx-public-portal-card small { display: block; }
+  .fcx-public-portal-card small { color: rgba(255,255,255,.58); margin-top: 5px; }
+  .fcx-public-portal-card b { color: #fff; background: linear-gradient(135deg, #ff344f, #b90d22); border-radius: 9px; padding: 10px 14px; display: inline-flex; gap: 6px; align-items: center; }
+  .fcx-public-contact { display: grid; grid-template-columns: .85fr 1.15fr; gap: 24px; align-items: start; }
+  .fcx-public-form { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+  .fcx-public-form input, .fcx-public-form textarea { width: 100%; border: 1px solid rgba(255,255,255,.12); background: rgba(0,0,0,.34); color: #fff; border-radius: 12px; padding: 14px 15px; font-size: 16px; outline: none; }
+  .fcx-public-form textarea, .fcx-public-form-status, .fcx-public-form button { grid-column: 1 / -1; }
+  .fcx-public-form-status { color: #d9b45d; font-weight: 800; }
+  .fcx-public-footer { margin-top: 26px; padding: 26px 6vw; border-top: 1px solid rgba(255,255,255,.08); display: grid; grid-template-columns: 1.4fr 1fr 1fr 1fr; gap: 18px; color: rgba(255,255,255,.66); }
+  .fcx-public-footer div { display: flex; align-items: center; gap: 10px; }
+  .fcx-public-footer img { width: 52px; height: 52px; object-fit: contain; border-radius: 999px; }
+  .fcx-public-footer strong { color: #fff; text-transform: uppercase; }
+  .fcx-public-footer span { display: block; font-size: 12px; color: rgba(255,255,255,.52); }
+
+  @media (max-width: 1100px) {
+    .fcx-public-links { display: none; }
+    .fcx-public-hero { grid-template-columns: 1fr; }
+    .fcx-public-hero-art { min-height: 420px; }
+    .fcx-public-card-grid { grid-template-columns: repeat(2, 1fr); }
+    .fcx-public-sponsors, .fcx-public-portal, .fcx-public-contact { grid-template-columns: 1fr; }
+    .fcx-public-sponsor-strip { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 640px) {
+    .fcx-public-nav { padding: 14px 18px; gap: 12px; }
+    .fcx-public-brand img { width: 54px; height: 54px; }
+    .fcx-public-actions { margin-left: auto; }
+    .fcx-public-actions .fcx-public-btn-ghost { display: none; }
+    .fcx-public-btn { min-height: 42px; padding: 0 14px; font-size: 14px; }
+    .fcx-public-main { padding: 28px 18px 0; }
+    .fcx-public-kicker { font-size: 12px; letter-spacing: .22em; }
+    .fcx-public-hero h1 { font-size: 48px; }
+    .fcx-public-hero p { font-size: 15.5px; }
+    .fcx-public-hero-art { min-height: 330px; border-radius: 22px; }
+    .fcx-public-player-card { left: 7%; width: 180px; height: 280px; }
+    .fcx-public-shirt { font-size: 72px; top: 88px; }
+    .fcx-public-shirt-name { top: 62px; font-size: 10px; }
+    .fcx-public-emblem { width: 190px; height: 190px; right: -10%; top: 3%; }
+    .fcx-public-dashboard-preview { right: 3%; top: 24%; transform: scale(.74); transform-origin: top right; }
+    .fcx-preview-panel { display: none; }
+    .fcx-public-card-grid { grid-template-columns: 1fr; }
+    .fcx-public-sponsor-strip { grid-template-columns: 1fr; }
+    .fcx-public-portal-card { grid-template-columns: auto 1fr; }
+    .fcx-public-portal-card b { grid-column: 1 / -1; justify-content: center; }
+    .fcx-public-form { grid-template-columns: 1fr; }
+    .fcx-public-footer { grid-template-columns: 1fr; padding: 22px 18px; }
+  }
 `;
