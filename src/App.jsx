@@ -207,19 +207,55 @@ export default function App() {
   const [fines, setFines] = useState([]);
 
   const [sessionId, setSessionId] = useState(null);
-  const [clubPosts, setClubPosts] = useLocalJsonState(LOCAL_POSTS_KEY, []);
-  const [matchVideos, setMatchVideos] = useLocalJsonState(LOCAL_VIDEOS_KEY, []);
-  const [branding, setBranding] = useLocalJsonState(LOCAL_BRANDING_KEY, DEFAULT_BRANDING);
+  const [clubPosts, setClubPosts] = useState([]);
+  const [matchVideos, setMatchVideos] = useState([]);
+  const [branding, setBranding] = useState(DEFAULT_BRANDING);
+  const [notificationReads, setNotificationReads] = useState([]);
+
+  const syncClubPosts = async (nextOrUpdater) => {
+    const next = typeof nextOrUpdater === "function" ? nextOrUpdater(clubPosts) : nextOrUpdater;
+    setClubPosts(next);
+    try {
+      await db.saveClubPosts(next);
+    } catch (err) {
+      console.error(err);
+      alert("Update kon niet worden opgeslagen. Controleer de verbinding en probeer opnieuw.");
+    }
+  };
+
+  const syncMatchVideos = async (nextOrUpdater) => {
+    const next = typeof nextOrUpdater === "function" ? nextOrUpdater(matchVideos) : nextOrUpdater;
+    setMatchVideos(next);
+    try {
+      await db.saveClubVideos(next);
+    } catch (err) {
+      console.error(err);
+      alert("Video kon niet worden opgeslagen. Controleer de verbinding en probeer opnieuw.");
+    }
+  };
+
+  const syncBranding = async (nextBranding) => {
+    const next = { ...DEFAULT_BRANDING, ...(nextBranding || {}) };
+    setBranding(next);
+    try {
+      await db.saveClubBranding(next);
+    } catch (err) {
+      console.error(err);
+      alert("Branding kon niet worden opgeslagen. Controleer de verbinding en probeer opnieuw.");
+    }
+  };
 
   const reloadAll = async () => {
-    const [p, m, r, ft, fp, att, lu, gl, fr, fn] = await Promise.all([
+    const [p, m, r, ft, fp, att, lu, gl, fr, fn, posts, videos, sharedBranding] = await Promise.all([
       db.fetchPlayers(), db.fetchMatches(), db.fetchRules(), db.fetchFeeTypes(),
       db.fetchFeePayments(), db.fetchAttendance(), db.fetchLineups(), db.fetchGoals(),
-      db.fetchFineRules(), db.fetchFines(),
+      db.fetchFineRules(), db.fetchFines(), db.fetchClubPosts(), db.fetchClubVideos(), db.fetchClubBranding(),
     ]);
     setPlayers(p); setMatches(m); setRules(r); setFeeTypes(ft);
     setFeePayments(fp); setAttendance(att); setLineups(lu); setGoals(gl);
     setFineRules(fr); setFines(fn);
+    setClubPosts(posts || []); setMatchVideos(videos || []);
+    setBranding({ ...DEFAULT_BRANDING, ...(sharedBranding || {}) });
     return p;
   };
 
@@ -249,6 +285,27 @@ export default function App() {
     if (item.key === "financien") return !isBegeleider || isAdmin;
     return true;
   });
+
+  useEffect(() => {
+    if (!me?.id) {
+      setNotificationReads([]);
+      return;
+    }
+    db.fetchNotificationReads(me.id)
+      .then((rows) => setNotificationReads((rows || []).map((row) => row.notification_key)))
+      .catch((err) => console.error("Kon gelezen meldingen niet laden", err));
+  }, [me?.id]);
+
+  const markNotificationsRead = async (keys = []) => {
+    if (!me?.id || keys.length === 0) return;
+    const uniqueKeys = [...new Set(keys.filter(Boolean))];
+    setNotificationReads((current) => [...new Set([...current, ...uniqueKeys])]);
+    try {
+      await Promise.all(uniqueKeys.map((key) => db.markNotificationRead(me.id, key)));
+    } catch (err) {
+      console.error("Kon meldingen niet als gelezen opslaan", err);
+    }
+  };
 
   useEffect(() => {
     if (!me) return;
@@ -414,6 +471,8 @@ export default function App() {
                 statsByPlayer={statsByPlayer}
                 feeTypes={feeTypes}
                 feesByPlayer={feesByPlayer}
+                notificationReads={notificationReads}
+                onReadNotifications={markNotificationsRead}
               />
             )}
             {tab === "wedstrijden" && (
@@ -427,7 +486,7 @@ export default function App() {
             {tab === "updates" && (
               <UpdatesTab
                 posts={clubPosts}
-                setPosts={setClubPosts}
+                setPosts={syncClubPosts}
                 me={me}
                 players={players}
                 isAdmin={isAdmin}
@@ -437,7 +496,7 @@ export default function App() {
             {tab === "videos" && (
               <VideosTab
                 videos={matchVideos}
-                setVideos={setMatchVideos}
+                setVideos={syncMatchVideos}
                 matches={matches}
                 me={me}
                 isAdmin={isAdmin}
@@ -461,7 +520,7 @@ export default function App() {
               <FinanceTab players={players} feeTypes={feeTypes} feesByPlayer={feesByPlayer} me={me} isAdmin={isAdmin} reloadAll={reloadAll} />
             )}
             {tab === "beheer" && isAdmin && (
-              <AdminPanel players={players} posts={clubPosts} setPosts={setClubPosts} videos={matchVideos} setVideos={setMatchVideos} reloadAll={reloadAll} branding={branding} setBranding={setBranding} />
+              <AdminPanel players={players} posts={clubPosts} setPosts={syncClubPosts} videos={matchVideos} setVideos={syncMatchVideos} reloadAll={reloadAll} branding={branding} setBranding={syncBranding} />
             )}
           </main>
 
@@ -633,7 +692,7 @@ function DreelioSidebar({ me, tab, setTab, onLogout, myOpenCount, potTotal, post
   );
 }
 
-function Top3({ nextMatch, countdown, myOpenCount, potTotal, me, players = [], attendanceByMatch = {}, setTab, posts = [], branding = DEFAULT_BRANDING, statsByPlayer = {}, feeTypes = [], feesByPlayer = {} }) {
+function Top3({ nextMatch, countdown, myOpenCount, potTotal, me, players = [], attendanceByMatch = {}, setTab, posts = [], branding = DEFAULT_BRANDING, statsByPlayer = {}, feeTypes = [], feesByPlayer = {}, notificationReads = [], onReadNotifications }) {
   const logoUrl = branding?.logoUrl || DEFAULT_BRANDING.logoUrl;
   const activePlayers = players.filter((p) => p.active !== false);
   const nextAttendance = nextMatch ? attendanceByMatch[nextMatch.id] || {} : {};
@@ -661,11 +720,20 @@ function Top3({ nextMatch, countdown, myOpenCount, potTotal, me, players = [], a
     .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
     .slice(0, 2);
 
-  const notificationCount = [
-    myOpenCount > 0,
-    nextMatch && !myNextStatus,
-    latestPosts.length > 0,
-  ].filter(Boolean).length;
+  const notificationItems = [
+    myOpenCount > 0 ? { key: `payments:${myOpenCount}`, tab: "financien" } : null,
+    nextMatch && !myNextStatus ? { key: `status:${nextMatch.id}`, tab: "wedstrijden" } : null,
+    latestPosts.length > 0 ? { key: `updates:${latestPosts[0]?.id || "latest"}`, tab: "updates" } : null,
+  ].filter(Boolean);
+  const unreadNotificationKeys = notificationItems
+    .map((item) => item.key)
+    .filter((key) => !notificationReads.includes(key));
+  const notificationCount = unreadNotificationKeys.length;
+
+  const openNotifications = () => {
+    onReadNotifications?.(unreadNotificationKeys);
+    setTab?.("updates");
+  };
 
   const formatAppDate = (iso) => {
     if (!iso) return "Nog niet gepland";
@@ -710,7 +778,7 @@ function Top3({ nextMatch, countdown, myOpenCount, potTotal, me, players = [], a
           <h1>FC Talk Of The Town</h1>
           <span>Futsal Club</span>
         </div>
-        <button type="button" className="fcx-bell" onClick={() => setTab?.("updates")} aria-label="Notificaties">
+        <button type="button" className="fcx-bell" onClick={openNotifications} aria-label="Notificaties">
           <Bell size={21} />
           {notificationCount > 0 && <b>{notificationCount}</b>}
         </button>
