@@ -235,8 +235,9 @@ export async function deleteGoal(id) {
   if (error) throw error;
 }
 
+
 // ============================================================
-// Shared club content: Updates, Videos, Branding, Notifications
+// Shared club content: Updates, Videos, Branding, Sponsors, Requests, Notifications
 // These are small text/URL rows and are suitable for the Supabase free plan.
 // ============================================================
 export async function fetchClubPosts() {
@@ -256,6 +257,7 @@ export async function fetchClubPosts() {
     author_name: row.author_name || "Team",
     author_photo: row.author_photo || "",
     pinned: !!row.pinned,
+    public_visible: row.public_visible !== false,
     created_at: row.created_at,
   }));
 }
@@ -271,6 +273,7 @@ export async function saveClubPosts(posts = []) {
     author_name: post.author_name || "Team",
     author_photo: post.author_photo || "",
     pinned: !!post.pinned,
+    public_visible: post.public_visible !== false,
     created_at: post.created_at || new Date().toISOString(),
   }));
 
@@ -295,6 +298,7 @@ export async function fetchClubVideos() {
     description: row.description || "",
     match_id: row.match_id || "",
     match_label: row.match_label || "Wedstrijdvideo",
+    public_visible: row.public_visible !== false,
     created_by: row.created_by || null,
     created_at: row.created_at,
   }));
@@ -308,6 +312,7 @@ export async function saveClubVideos(videos = []) {
     description: video.description || "",
     match_id: video.match_id || null,
     match_label: video.match_label || "Wedstrijdvideo",
+    public_visible: video.public_visible !== false,
     created_by: video.created_by || null,
     created_at: video.created_at || new Date().toISOString(),
   })).filter((row) => row.youtube_url);
@@ -341,10 +346,94 @@ export async function saveClubBranding(branding = {}) {
     id: "main",
     logo_url: branding.logoUrl || "",
     login_banner_url: branding.loginBannerUrl || "",
-    banner_url: branding.bannerUrl || "",
+    banner_url: branding.bannerUrl || branding.dashboardBannerUrl || "",
     sponsor_text: branding.sponsorText || "",
     updated_at: new Date().toISOString(),
   });
+  if (error) throw error;
+}
+
+export async function fetchClubSponsors() {
+  const { data, error } = await supabase
+    .from("club_sponsors")
+    .select("*")
+    .eq("active", true)
+    .order("sort_order", { ascending: true })
+    .order("created_at", { ascending: true });
+  if (error) throw error;
+  return data || [];
+}
+
+export async function addClubSponsor(sponsor = {}) {
+  const { data, error } = await supabase
+    .from("club_sponsors")
+    .insert({
+      name: sponsor.name || "Sponsor",
+      logo_url: sponsor.logo_url || sponsor.logoUrl || "",
+      website_url: sponsor.website_url || sponsor.websiteUrl || "",
+      description: sponsor.description || "",
+      sort_order: Number(sponsor.sort_order || sponsor.sortOrder || 100),
+      active: sponsor.active !== false,
+    })
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function updateClubSponsor(id, fields = {}) {
+  const payload = {
+    name: fields.name,
+    logo_url: fields.logo_url || fields.logoUrl,
+    website_url: fields.website_url || fields.websiteUrl,
+    description: fields.description,
+    sort_order: fields.sort_order !== undefined ? Number(fields.sort_order) : undefined,
+    active: fields.active,
+  };
+  Object.keys(payload).forEach((key) => payload[key] === undefined && delete payload[key]);
+  const { error } = await supabase.from("club_sponsors").update(payload).eq("id", id);
+  if (error) throw error;
+}
+
+export async function deleteClubSponsor(id) {
+  const { error } = await supabase.from("club_sponsors").delete().eq("id", id);
+  if (error) throw error;
+}
+
+export async function fetchFriendlyMatchRequests() {
+  const { data, error } = await supabase
+    .from("friendly_match_requests")
+    .select("*")
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return data || [];
+}
+
+export async function createFriendlyMatchRequest(request = {}) {
+  const { data, error } = await supabase
+    .from("friendly_match_requests")
+    .insert({
+      team_name: request.team_name || request.teamName || "",
+      contact_name: request.contact_name || request.contactName || "",
+      email: request.email || "",
+      phone: request.phone || "",
+      preferred_date: request.preferred_date || request.preferredDate || null,
+      message: request.message || "",
+      status: "nieuw",
+    })
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function updateFriendlyMatchRequestStatus(id, status) {
+  const { error } = await supabase.from("friendly_match_requests").update({ status }).eq("id", id);
+  if (error) throw error;
+}
+
+export async function deleteFriendlyMatchRequest(id) {
+  const { error } = await supabase.from("friendly_match_requests").delete().eq("id", id);
   if (error) throw error;
 }
 
