@@ -6,7 +6,7 @@ import { supabase } from "./supabaseClient";
 export async function fetchPlayers() {
   const { data, error } = await supabase.from("players").select("*").order("name");
   if (error) throw error;
-  return data;
+  return data || [];
 }
 
 export async function findPlayerByCredentials(username, password) {
@@ -48,7 +48,7 @@ export async function createPlayer({ name, username, password, role }) {
     .select()
     .single();
   if (error) throw error;
-  // ensure a stats row exists
+
   await supabase.from("stats").insert({ player_id: data.id, goals: 0, assists: 0 });
   return data;
 }
@@ -69,7 +69,7 @@ export async function usernameExists(username) {
 export async function fetchMatches() {
   const { data, error } = await supabase.from("matches").select("*").order("match_date");
   if (error) throw error;
-  return data;
+  return data || [];
 }
 
 export async function createMatch({ category, opponent, date, location }) {
@@ -101,7 +101,7 @@ export async function updateMatchScore(matchId, ownScore, opponentScore) {
 export async function fetchAttendance() {
   const { data, error } = await supabase.from("attendance").select("*");
   if (error) throw error;
-  return data;
+  return data || [];
 }
 
 export async function setAttendanceStatus({ matchId, playerId, status, reason }) {
@@ -118,11 +118,10 @@ export async function setAttendanceStatus({ matchId, playerId, status, reason })
 export async function fetchLineups() {
   const { data, error } = await supabase.from("lineups").select("*");
   if (error) throw error;
-  return data;
+  return data || [];
 }
 
 export async function saveLineup(matchId, keeperId, fielderIds) {
-  // Replace strategy: delete existing rows for this match, then insert fresh ones.
   const { error: delErr } = await supabase.from("lineups").delete().eq("match_id", matchId);
   if (delErr) throw delErr;
 
@@ -142,7 +141,7 @@ export async function saveLineup(matchId, keeperId, fielderIds) {
 export async function fetchRules() {
   const { data, error } = await supabase.from("rules").select("*").order("sort_order");
   if (error) throw error;
-  return data;
+  return data || [];
 }
 
 export async function addRule(text, sortOrder) {
@@ -161,13 +160,13 @@ export async function deleteRule(id) {
 export async function fetchFeeTypes() {
   const { data, error } = await supabase.from("fee_types").select("*");
   if (error) throw error;
-  return data;
+  return data || [];
 }
 
 export async function fetchFeePayments() {
   const { data, error } = await supabase.from("fee_payments").select("*");
   if (error) throw error;
-  return data;
+  return data || [];
 }
 
 export async function toggleFeePayment(playerId, feeTypeId, paid) {
@@ -184,7 +183,7 @@ export async function toggleFeePayment(playerId, feeTypeId, paid) {
 export async function fetchFineRules() {
   const { data, error } = await supabase.from("fine_rules").select("*");
   if (error) throw error;
-  return data;
+  return data || [];
 }
 
 export async function addFineRule(label, amount) {
@@ -200,7 +199,7 @@ export async function deleteFineRule(id) {
 export async function fetchFines() {
   const { data, error } = await supabase.from("fines").select("*").order("created_at", { ascending: false });
   if (error) throw error;
-  return data;
+  return data || [];
 }
 
 export async function assignFine(playerId, fineRuleId, label, amount) {
@@ -216,12 +215,12 @@ export async function deleteFine(id) {
 }
 
 // ============================================================
-// Goals (doelpunten per wedstrijd)
+// Goals
 // ============================================================
 export async function fetchGoals() {
   const { data, error } = await supabase.from("goals").select("*");
   if (error) throw error;
-  return data;
+  return data || [];
 }
 
 export async function addGoal(matchId, scorerId, assistId) {
@@ -233,5 +232,137 @@ export async function addGoal(matchId, scorerId, assistId) {
 
 export async function deleteGoal(id) {
   const { error } = await supabase.from("goals").delete().eq("id", id);
+  if (error) throw error;
+}
+
+// ============================================================
+// Shared club content: Updates, Videos, Branding, Notifications
+// These are small text/URL rows and are suitable for the Supabase free plan.
+// ============================================================
+export async function fetchClubPosts() {
+  const { data, error } = await supabase
+    .from("club_posts")
+    .select("*")
+    .order("pinned", { ascending: false })
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return (data || []).map((row) => ({
+    id: row.id,
+    title: row.title,
+    body: row.body || "",
+    category: row.category || "Mededeling",
+    images: Array.isArray(row.images) ? row.images : [],
+    author_id: row.author_id,
+    author_name: row.author_name || "Team",
+    author_photo: row.author_photo || "",
+    pinned: !!row.pinned,
+    created_at: row.created_at,
+  }));
+}
+
+export async function saveClubPosts(posts = []) {
+  const rows = posts.map((post) => ({
+    id: post.id,
+    title: post.title || "Clubupdate",
+    body: post.body || "",
+    category: post.category || "Mededeling",
+    images: Array.isArray(post.images) ? post.images : [],
+    author_id: post.author_id || null,
+    author_name: post.author_name || "Team",
+    author_photo: post.author_photo || "",
+    pinned: !!post.pinned,
+    created_at: post.created_at || new Date().toISOString(),
+  }));
+
+  const { error: delErr } = await supabase.from("club_posts").delete().neq("id", "__never__");
+  if (delErr) throw delErr;
+  if (rows.length === 0) return;
+
+  const { error: insErr } = await supabase.from("club_posts").insert(rows);
+  if (insErr) throw insErr;
+}
+
+export async function fetchClubVideos() {
+  const { data, error } = await supabase
+    .from("club_videos")
+    .select("*")
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return (data || []).map((row) => ({
+    id: row.id,
+    title: row.title,
+    youtubeUrl: row.youtube_url,
+    description: row.description || "",
+    match_id: row.match_id || "",
+    match_label: row.match_label || "Wedstrijdvideo",
+    created_by: row.created_by || null,
+    created_at: row.created_at,
+  }));
+}
+
+export async function saveClubVideos(videos = []) {
+  const rows = videos.map((video) => ({
+    id: video.id,
+    title: video.title || "Wedstrijdvideo",
+    youtube_url: video.youtubeUrl || video.youtube_url,
+    description: video.description || "",
+    match_id: video.match_id || null,
+    match_label: video.match_label || "Wedstrijdvideo",
+    created_by: video.created_by || null,
+    created_at: video.created_at || new Date().toISOString(),
+  })).filter((row) => row.youtube_url);
+
+  const { error: delErr } = await supabase.from("club_videos").delete().neq("id", "__never__");
+  if (delErr) throw delErr;
+  if (rows.length === 0) return;
+
+  const { error: insErr } = await supabase.from("club_videos").insert(rows);
+  if (insErr) throw insErr;
+}
+
+export async function fetchClubBranding() {
+  const { data, error } = await supabase
+    .from("club_branding")
+    .select("*")
+    .eq("id", "main")
+    .maybeSingle();
+  if (error) throw error;
+  if (!data) return null;
+  return {
+    logoUrl: data.logo_url || "",
+    loginBannerUrl: data.login_banner_url || "",
+    bannerUrl: data.banner_url || "",
+    sponsorText: data.sponsor_text || "",
+  };
+}
+
+export async function saveClubBranding(branding = {}) {
+  const { error } = await supabase.from("club_branding").upsert({
+    id: "main",
+    logo_url: branding.logoUrl || "",
+    login_banner_url: branding.loginBannerUrl || "",
+    banner_url: branding.bannerUrl || "",
+    sponsor_text: branding.sponsorText || "",
+    updated_at: new Date().toISOString(),
+  });
+  if (error) throw error;
+}
+
+export async function fetchNotificationReads(playerId) {
+  if (!playerId) return [];
+  const { data, error } = await supabase
+    .from("club_notification_reads")
+    .select("notification_key, read_at")
+    .eq("player_id", playerId);
+  if (error) throw error;
+  return data || [];
+}
+
+export async function markNotificationRead(playerId, notificationKey) {
+  if (!playerId || !notificationKey) return;
+  const { error } = await supabase.from("club_notification_reads").upsert(
+    { player_id: playerId, notification_key: notificationKey, read_at: new Date().toISOString() },
+    { onConflict: "player_id,notification_key" }
+  );
   if (error) throw error;
 }
